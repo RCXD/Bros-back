@@ -47,7 +47,13 @@ def hello():
 @app.route('/api/data', methods=['POST'])
 def receive_data():
     """Example endpoint that receives and echoes back JSON data."""
-    data = request.get_json()
+    try:
+        data = request.get_json(force=True)
+    except Exception:
+        return jsonify({
+            'error': 'Invalid JSON data',
+            'status': 'error'
+        }), 400
     
     if not data:
         return jsonify({
