@@ -12,9 +12,17 @@ class User(db.Model, UserMixin):
     email = db.Column(db.String(255), unique=True, nullable=False)
     nickname = db.Column(db.String(50))
     created_at = db.Column(db.DateTime, default=datetime.now)
+    login_at = db.Column(db.DateTime, default=datetime.now)
+    is_expired = db.Column(db.Boolean, default=False)
 
     def set_password(self, password):
         self.password_hash = generate_password_hash(password)
 
     def check_password(self, password):
         return check_password_hash(self.password_hash, password)
+
+    def refresh_login(self):
+        self.login_at = datetime.now()
+
+    def expire(self):
+        self.is_expired = True

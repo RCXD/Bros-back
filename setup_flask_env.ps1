@@ -11,7 +11,7 @@ Write-Host "[2/5] 가상환경 활성화 중..."
 
 Write-Host "[3/5] 패키지 설치 중..."
 pip install --upgrade pip
-pip install flask alembic flask_login flask_sqlalchemy mysql-connector-python mysql sqlalchemy email-validator
+pip install flask alembic flask_login flask_sqlalchemy mysql-connector-python mysql sqlalchemy email-validator flask-cors Flask-Migrate
 if (!$?) {
     Write-Host "❌ 패키지 설치 실패. 네트워크 연결을 확인하세요."
     pause
