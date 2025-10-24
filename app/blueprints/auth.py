@@ -16,13 +16,13 @@ def sign_up():
     nickname = data.get("nickname")
 
     if not username or not password or not email:
-        return jsonify(), 400
+        return jsonify({"not username or not password or not email"}), 400
     try:
         validate_email
     except EmailNotValidError as e:
-        return jsonify({str(e)}), 400
+        return jsonify({"not vaidated email"}), 400
     except Exception:
-        return jsonify(), 400
+        return jsonify({"not expected error"}), 400
     user = User(username=username, email=email, nickname=nickname)
     user.set_password(password)
     db.session.add(user)
@@ -30,5 +30,10 @@ def sign_up():
         db.session.commit()
     except Exception:
         db.session.rollback()
-        return jsonify(), 400
-    return jsonify(), 200
+        return jsonify({"existed user"}), 400
+    return jsonify({"success"}), 200
+
+
+@bp.route("/login")
+def login():
+    data = request.get_json()
