@@ -10,7 +10,7 @@ class Config:
     # 비밀 키 (base64 인코딩 된 무작위 32글자)
     SECRET_KEY = secrets.token_urlsafe(32)
     # DB URI
-    SQLALCHEMY_DATABASE_URI = os.getenv("SQLALCHEMY_DATABASE_URI")
+    SQLALCHEMY_DATABASE_URI = 'sqlite:///404found.db'
     # DB 변경 추적(리소스 많이 소모)
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     # 쿼리문 터미널에 출력
