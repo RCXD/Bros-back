@@ -20,7 +20,7 @@ def create_app():
     def unauthorized():
         return jsonify(), 401
 
-    from blueprints.auth import bp as auth_bp
+    from .blueprints.auth import bp as auth_bp
 
     app.register_blueprint(auth_bp, url_prefix="/auth")
 
