@@ -1,5 +1,6 @@
 from ..extensions import db
 
+
 class SightType(db.Model):
     __tablename__ = "sight_types"
 

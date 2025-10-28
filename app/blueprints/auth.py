@@ -16,7 +16,7 @@ from ..blacklist import add_to_blacklist
 bp = Blueprint("auth", __name__)
 
 
-@bp.route("/sign_up")
+@bp.route("/sign_up", methods=["POST"])
 def sign_up():
     data = request.get_json() or {}
     username = data.get("username")
@@ -104,7 +104,7 @@ def google_login():
         db.session.add(user)
         db.session.commit()
 
-    access_token = create_access_token(identity=user.user_id)
+    access_token = create_access_token(identity=str(user.user_id))
     return jsonify({"message": "Google 로그인 완료", "access_token": access_token}), 200
 
 
@@ -147,7 +147,7 @@ def kakao_login():
         db.session.commit()
 
     # 3️⃣ JWT 발급
-    access_token = create_access_token(identity=user.user_id)
+    access_token = create_access_token(identity=str(user.user_id))
     return jsonify({"message": "Kakao 로그인 완료", "access_token": access_token}), 200
 
 
@@ -189,7 +189,7 @@ def naver_login():
         db.session.commit()
 
     # 3️⃣ JWT 발급
-    access_token = create_access_token(identity=user.user_id)
+    access_token = create_access_token(identity=str(user.user_id))
     return jsonify({"message": "Naver 로그인 완료", "access_token": access_token}), 200
 
 
@@ -217,7 +217,7 @@ def logout_refresh():
 def refresh_access_token():
     # 현재 refresh 토큰에서 사용자 ID 추출
     current_user_id = get_jwt_identity()
-    new_access_token = create_access_token(identity=current_user_id)
+    new_access_token = create_access_token(identity=str(current_user_id))
 
     return (
         jsonify(
