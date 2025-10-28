@@ -1,6 +1,7 @@
 from ..extensions import db
 from datetime import datetime
 
+
 class Post(db.Model):
     __tablename__ = "posts"
 
@@ -11,9 +12,7 @@ class Post(db.Model):
     location = db.Column(db.Text)
     style = db.Column(db.Text)
     created_at = db.Column(db.DateTime, default=datetime.now)
-    updated_at = db.Column(
-        db.DateTime, default=datetime.now, onupdate=datetime.now
-    )
+    updated_at = db.Column(db.DateTime, default=datetime.now, onupdate=datetime.now)
 
     likes = db.relationship("postLike", backref="post", lazy=True)
     mentions = db.relationship("Mention", backref="post", lazy=True)
