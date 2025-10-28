@@ -1,11 +1,9 @@
 import enum
 from ..extensions import db
-from flask_login import UserMixin, login_user
 from werkzeug.security import check_password_hash, generate_password_hash
 from datetime import datetime
 from sqlalchemy import func
-from models.follow import Follow
-from ..encryption import EncryptedString
+from ..models.follow import Follow
 
 
 class OauthType(enum.Enum):
@@ -20,13 +18,13 @@ class AccountType(enum.Enum):
     ADMIN = "ADMIN"
 
 
-class User(db.Model, UserMixin):
+class User(db.Model):
     __tablename__ = "users"
     user_id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(50), unique=True, nullable=False, index=True)
     password_hash = db.Column(db.String(255), nullable=False)
-    email = db.Column(EncryptedString(255), unique=True, nullable=False)
-    address = db.Column(EncryptedString(255), nullable=False)
+    email = db.Column(db.String(255), unique=True, nullable=False)
+    address = db.Column(db.String(255), nullable=False)
     profile_img = db.Column(db.String(255))  # directory
     nickname = db.Column(db.String(50))
     created_at = db.Column(db.DateTime, default=datetime.now)

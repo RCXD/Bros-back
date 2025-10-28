@@ -273,3 +273,7 @@ pyvenv.cfg
 pip-selfcheck.json
 
 # End of https://www.toptal.com/developers/gitignore/api/python,venv,flask
+
+# secrets
+secrets.json
+.secret_key
