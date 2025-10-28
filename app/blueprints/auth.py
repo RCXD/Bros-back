@@ -72,33 +72,6 @@ def login():
     refresh = create_refresh_token(identity=user.id)
     return jsonify(access_token=access, refresh_token=refresh), 200
 
-<<<<<<< Updated upstream
-@bp.route("/logout", methods=["POST"])
-@login_required
-def logout():
-    logout_user()
-    return jsonify({"message": "로그아웃 성공"}), 200
-
-@bp.route("/post/<int:post_id>/like", methods=["POST"])
-@login_required
-def toggle_like(post_id):
-    post = Post.query.get_or_404(post_id)
-
-    existing_like = PostLike.query.filter_by(
-        post_id=post_id, user_id=current_user.user_id
-    ).first()
-
-    if existing_like:
-        db.session.delete(existing_like)
-        db.session.commit()
-        return jsonify({"liked": False, "message": "좋아요 취소"}), 200
-    else:
-        new_like = PostLike(post_id=post_id, user_id=current_user.user_id)
-        db.session.add(new_like)
-        db.session.commit()
-        return jsonify({"liked": True, "message": "좋아요 추가"}), 200
-=======
-
 @bp.route('/logout', methods=['DELETE'])
 @jwt_required()
 def logout_access():
@@ -112,4 +85,3 @@ def logout_refresh():
     jti = get_jwt()['jti']
     add_to_blacklist(jti)
     return jsonify(msg='refresh token revoked'), 200
->>>>>>> Stashed changes
