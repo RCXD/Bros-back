@@ -1,5 +1,5 @@
 from flask import Flask, jsonify
-from .extensions import db, migrate, login_manager, cors, jwt
+from .extensions import db, migrate, cors, jwt
 from .config import Config
 from .models import User
 

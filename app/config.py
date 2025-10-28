@@ -23,8 +23,8 @@ class Config:
     SESSION_COOKIE_SECURE = True
     # JWT 암호화 키
     JWT_SECRET_KEY = secrets.token_urlsafe(32)
-    # 액세스 토큰 만료 시간: 1시간
-    JWT_ACCESS_TOKEN_EXPIRES = timedelta(hours=1)
+    # 액세스 토큰 만료 시간: 5분
+    JWT_ACCESS_TOKEN_EXPIRES = timedelta(minutes=5)
     # 리프레시 토큰 만료 시간: 14일
     JWT_REFRESH_TOKEN_EXPIRES = timedelta(days=14)
     # 토큰 위치: Authorization 헤더
