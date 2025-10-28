@@ -1,6 +1,6 @@
 from flask import Blueprint, request, jsonify
 from ..extensions import db
-from ..models import User, Post, PostLike
+from ..models import User
 from email_validator import validate_email, EmailNotValidError
 from datetime import datetime
 from flask_jwt_extended import (
@@ -157,3 +157,6 @@ def get_me():
         "oauth_type": user.oauth_type.name,
         "follower_count": user.follower_count
     }), 200
+
+# get요청 - 추후에 필요할수도 있는 것
+# 검색 / 필터 확장, 팔로우 / 팔로워 관련 등
