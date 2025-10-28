@@ -1,6 +1,6 @@
 from flask import Blueprint, request, jsonify
 from ..extensions import db
-from ..models import User
+from ..models import User, Post, PostLike
 from email_validator import validate_email, EmailNotValidError
 from flask_login import login_user, logout_user, login_required, current_user
 from datetime import datetime
@@ -66,3 +66,22 @@ def login():
 def logout():
     logout_user()
     return jsonify({"message": "로그아웃 성공"}), 200
+
+@bp.route("/post/<int:post_id>/like", methods=["POST"])
+@login_required
+def toggle_like(post_id):
+    post = Post.query.get_or_404(post_id)
+
+    existing_like = PostLike.query.filter_by(
+        post_id=post_id, user_id=current_user.user_id
+    ).first()
+
+    if existing_like:
+        db.session.delete(existing_like)
+        db.session.commit()
+        return jsonify({"liked": False, "message": "좋아요 취소"}), 200
+    else:
+        new_like = PostLike(post_id=post_id, user_id=current_user.user_id)
+        db.session.add(new_like)
+        db.session.commit()
+        return jsonify({"liked": True, "message": "좋아요 추가"}), 200
