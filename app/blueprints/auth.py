@@ -15,14 +15,14 @@ from ..blacklist import add_to_blacklist
 bp = Blueprint("auth", __name__)
 
 
-@bp.route("/sign_up")
+@bp.route("/sign_up", methods=["POST"])
 def sign_up():
     data = request.get_json() or {}
     username = data.get("username")
     password = data.get("password")
     email = data.get("email")
     nickname = data.get("nickname")
-    address= data.get("address")
+    address = data.get("address")
 
     if not username or not password or not email:
         return jsonify(), 400
@@ -61,8 +61,8 @@ def login():
     if not user or not user.check_password(password):
         return jsonify({"message": "로그인 실패"}), 401
 
-    access = create_access_token(identity=user.id)
-    refresh = create_refresh_token(identity=user.id)
+    access = create_access_token(identity=user.user_id)
+    refresh = create_refresh_token(identity=user.user_id)
     return jsonify(access_token=access, refresh_token=refresh), 200
 
 
@@ -80,3 +80,12 @@ def logout_refresh():
     jti = get_jwt()["jti"]
     add_to_blacklist(jti)
     return jsonify(msg="refresh token revoked"), 200
+
+
+# ...existing code...
+@bp.route("/refresh", methods=["POST"])
+@jwt_required(refresh=True)
+def refresh():
+    identity = get_jwt_identity()
+    new_access = create_access_token(identity=identity)
+    return jsonify(access_token=new_access), 200
