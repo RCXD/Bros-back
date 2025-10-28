@@ -6,7 +6,7 @@ class Reply(db.Model):
     __tablename__ = "replies"
 
     reply_id = db.Column(db.Integer, primary_key=True)
-    board_id = db.Column(db.Integer, db.ForeignKey("boards.board_id"))
+    post_id = db.Column(db.Integer, db.ForeignKey("posts.post_id"))
     user_id = db.Column(db.Integer, db.ForeignKey("users.user_id"))
     content = db.Column(db.Text)
     created_at = db.Column(db.DateTime, default=datetime.now)

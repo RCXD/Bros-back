@@ -4,8 +4,8 @@ import enum
 
 class ReportType(enum.Enum):
     USER = "USER"
-    BOARD = "BOARD"
-    REPLY = "BOARD"
+    POST = "POST"
+    REPLY = "POST"
 
 
 class Report(db.Model):

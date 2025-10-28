@@ -1,8 +1,8 @@
 from ..extensions import db
 
 
-class BoardLike(db.Model):
-    __tablename__ = "board_likes"
+class PostLike(db.Model):
+    __tablename__ = "post_likes"
 
-    board_id = db.Column(db.Integer, db.ForeignKey("boards.board_id"), primary_key=True)
+    post_id = db.Column(db.Integer, db.ForeignKey("posts.post_id"), primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey("users.user_id"), primary_key=True)
