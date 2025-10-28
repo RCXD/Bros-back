@@ -1,6 +1,6 @@
 import enum
 from ..extensions import db
-from flask_login import UserMixin
+from flask_login import UserMixin, login_user
 from werkzeug.security import check_password_hash, generate_password_hash
 from datetime import datetime
 from sqlalchemy import func
@@ -30,7 +30,7 @@ class User(db.Model, UserMixin):
     profile_img = db.Column(db.String(255))  # directory
     nickname = db.Column(db.String(50))
     created_at = db.Column(db.DateTime, default=datetime.now)
-    last_login = db.Column(db.DateTime, default=datetime.now)
+    last_login = db.Column(db.DateTime, nullable=True)
     is_expired = db.Column(db.Boolean, nullable=False, default=False)
     oauth_type = db.Column(db.Enum(OauthType), nullable=False, default=OauthType.NONE)
     account_type = db.Column(
