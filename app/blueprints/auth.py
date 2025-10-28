@@ -15,7 +15,7 @@ from ..blacklist import add_to_blacklist
 bp = Blueprint("auth", __name__)
 
 
-@bp.route("/sign_up")
+@bp.route("/sign_up", methods=['POST'])
 def sign_up():
     data = request.get_json() or {}
     username = data.get("username")
