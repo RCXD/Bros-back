@@ -1,8 +1,8 @@
 from ..extensions import db
 
 
-class UserReplyLike(db.Model):
-    __tablename__ = "user_reply_likes"
+class ReplyLike(db.Model):
+    __tablename__ = "reply_likes"
 
     reply_id = db.Column(
         db.Integer, db.ForeignKey("replies.reply_id"), primary_key=True
