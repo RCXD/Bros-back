@@ -10,6 +10,5 @@ class Post(db.Model):
     category_id = db.Column(db.Integer, db.ForeignKey("categories.category_id"))
     content = db.Column(db.Text)
     location = db.Column(db.Text)
-    style = db.Column(db.Text)
     created_at = db.Column(db.DateTime, default=datetime.now)
     updated_at = db.Column(db.DateTime, default=datetime.now, onupdate=datetime.now)

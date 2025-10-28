@@ -1,6 +1,6 @@
 from flask import Blueprint, request, jsonify
 from ..extensions import db
-from ..models import User, Post, PostLike
+from ..models import User
 from email_validator import validate_email, EmailNotValidError
 from datetime import datetime
 from flask_jwt_extended import (
@@ -15,7 +15,7 @@ from ..blacklist import add_to_blacklist
 bp = Blueprint("auth", __name__)
 
 
-@bp.route("/sign_up")
+@bp.route("/sign_up", methods=['POST'])
 def sign_up():
     data = request.get_json() or {}
     username = data.get("username")
