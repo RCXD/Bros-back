@@ -1,6 +1,6 @@
 from flask import Blueprint, request, jsonify
 from ..extensions import db
-from ..models import User, Post, PostLike
+from ..models import User
 from email_validator import validate_email, EmailNotValidError
 from datetime import datetime
 from flask_jwt_extended import (
