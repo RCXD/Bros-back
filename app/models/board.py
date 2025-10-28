@@ -1,10 +1,10 @@
 from ..extensions import db
 from datetime import datetime
 
-class Board(db.Model):
-    __tablename__ = "boards"
+class Post(db.Model):
+    __tablename__ = "posts"
 
-    board_id = db.Column(db.Integer, primary_key=True)
+    post_id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey("users.user_id"))
     category_id = db.Column(db.Integer, db.ForeignKey("categories.category_id"))
     content = db.Column(db.Text)
@@ -15,7 +15,7 @@ class Board(db.Model):
         db.DateTime, default=datetime.now, onupdate=datetime.now
     )
 
-    likes = db.relationship("BoardLike", backref="board", lazy=True)
-    mentions = db.relationship("Mention", backref="board", lazy=True)
-    replies = db.relationship("Reply", backref="board", lazy=True)
-    images = db.relationship("Image", backref="board", lazy=True)
+    likes = db.relationship("postLike", backref="post", lazy=True)
+    mentions = db.relationship("Mention", backref="post", lazy=True)
+    replies = db.relationship("Reply", backref="post", lazy=True)
+    images = db.relationship("Image", backref="post", lazy=True)

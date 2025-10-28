@@ -52,7 +52,7 @@ class User(db.Model, UserMixin):
             .scalar()
         )
 
-    boards = db.relationship("Board", backref="author", lazy=True)
+    posts = db.relationship("Post", backref="author", lazy=True)
     replies = db.relationship("Reply", backref="author", lazy=True)
     images = db.relationship("Image", backref="uploader", lazy=True)
     accident_reports = db.relationship("AccidentReport", backref="reporter", lazy=True)
