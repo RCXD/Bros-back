@@ -9,6 +9,7 @@ from flask_jwt_extended import (
     get_jwt_identity,
     get_jwt,
 )
+from ..blueprints.jwt_handlers import register_jwt_handlers
 import requests
 from ..models.user import OauthType
 from ..blacklist import add_to_blacklist
