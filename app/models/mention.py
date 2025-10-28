@@ -2,10 +2,12 @@ from ..extensions import db
 from datetime import datetime
 import enum
 
+
 class MentionType(enum.Enum):
-    POST = "POST",
-    REPLY = "REPLY",
+    POST = ("POST",)
+    REPLY = ("REPLY",)
     SUBREPLY = "SUBREPLY"
+
 
 class Mention(db.Model):
     __tablename__ = "mentions"
@@ -20,5 +22,7 @@ class Mention(db.Model):
     user = db.relationship("User", backref=db.backref("mentions", lazy="dynamic"))
 
     __table_args__ = (
-        db.UniqueConstraint("content_type", "object_id", "user_id", name="unique_mention"),
+        db.UniqueConstraint(
+            "content_type", "object_id", "user_id", name="unique_mention"
+        ),
     )
