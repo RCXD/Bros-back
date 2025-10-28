@@ -11,4 +11,4 @@ class Reply(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.now)
     updated_at = db.Column(db.DateTime, default=datetime.now, onupdate=datetime.now)
 
-    likes = db.relationship("UserReplyLike", backref="reply", lazy=True)
+    likes = db.relationship("ReplyLike", backref="reply", lazy=True)

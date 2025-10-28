@@ -14,7 +14,8 @@ class Mention(db.Model):
     content_type = db.Column(db.Enum(MentionType), nullable=False)
     object_id = db.Column(db.Integer, nullable=False)
     user_id = db.Column(db.Integer, db.ForeignKey("users.user_id"), nullable=False)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=datetime.now)
+    post_id = db.Column(db.Integer, db.ForeignKey("posts.post_id"))
 
     user = db.relationship("User", backref=db.backref("mentions", lazy="dynamic"))
 

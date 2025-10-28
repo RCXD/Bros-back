@@ -13,8 +13,3 @@ class Post(db.Model):
     style = db.Column(db.Text)
     created_at = db.Column(db.DateTime, default=datetime.now)
     updated_at = db.Column(db.DateTime, default=datetime.now, onupdate=datetime.now)
-
-    likes = db.relationship("postLike", backref="post", lazy=True)
-    mentions = db.relationship("Mention", backref="post", lazy=True)
-    replies = db.relationship("Reply", backref="post", lazy=True)
-    images = db.relationship("Image", backref="post", lazy=True)
