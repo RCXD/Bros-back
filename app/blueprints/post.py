@@ -30,7 +30,8 @@ def write():
     return jsonify({"message": "글 생성 완료"}), 200
 
 # ✅ 게시글 수정
-@bp.route("/edit/<int:post_id>", methods=["PUT"])
+# @jwt.user_lookup_loader 등록 후 get_current_user() 사용 가능
+@bp.route("/edit/<int:post_id>", methods=['PUT'])
 @jwt_required()
 def edit_post(post_id):
     post = Post.query.get_or_404(post_id)

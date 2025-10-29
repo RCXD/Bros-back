@@ -9,15 +9,26 @@ def create_app():
 
     db.init_app(app)
     migrate.init_app(app, db)
-    cors.init_app(app, origins=app.config["CORS_ORIGINS"], supports_credentials=True)
+    cors.init_app(app, origins=Config.CORS_ORIGINS, )
+    # cors.init_app(app,origins="*")
     jwt.init_app(app)
 
     from .blueprints.auth import bp as auth_bp
     from .blueprints.post import bp as post_bp
     from .blueprints.mypage import bp as mypage_bp
+    from .blueprints.reply import bp as reply_bp
+    from .blueprints.mention import bp as mention_bp
+    from .blueprints.report import bp as report_bp
+    from .blueprints.post_like import bp as post_like_bp
+    from .blueprints.reply_like import bp as reply_like_bp
 
+    app.register_blueprint(mypage_bp, url_prefix="/mypage")
     app.register_blueprint(auth_bp, url_prefix="/auth")
     app.register_blueprint(post_bp, url_prefix="/post")
-    app.register_blueprint(mypage_bp, url_prefix="/mypage")
+    app.register_blueprint(reply_bp, url_prefix="/reply")
+    app.register_blueprint(mention_bp, url_prefix="/mention")
+    app.register_blueprint(report_bp, url_prefix="/report")
+    app.register_blueprint(post_like_bp, url_prefix="/post_like")
+    app.register_blueprint(reply_like_bp, url_prefix="/reply_like")
 
     return app
