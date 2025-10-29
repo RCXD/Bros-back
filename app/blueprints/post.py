@@ -1,8 +1,10 @@
-from flask import Blueprint, request, jsonify
+from flask import Blueprint, request, jsonify, current_app
 from ..models import Post, Image
 from ..extensions import db, jwt
 from flask_jwt_extended import get_current_user, jwt_required, get_jwt_identity
 from ..utils.image_storage import save_image, delete_image
+import os
+
 
 bp = Blueprint("post", __name__)
 
@@ -11,29 +13,43 @@ bp = Blueprint("post", __name__)
 @bp.route("/write", methods=["POST"])
 @jwt_required()
 def write():
+    """
+    ✅ 게시글 작성
+    - 게시글 생성 후 post_id 반환
+    - 이미지 업로드는 별도 엔드포인트에서 post_id 기반으로 수행
+    """
     data = request.get_json() or {}
-    current_user_id = get_jwt_identity()
+    user_id = get_jwt_identity()
 
     post = Post(
-        user_id=current_user_id,
+        user_id=user_id,
         category_id=data.get("category_id"),
         content=data.get("content"),
         location=data.get("location"),
     )
     db.session.add(post)
-    try:
-        db.session.commit()
-    except:
-        db.session.rollback()
-        return jsonify({"message": "글 저장 실패"}), 400
+    db.session.commit()  # commit해야 post_id 생성됨
 
-    return jsonify({"message": "글 생성 완료"}), 200
+    return (
+        jsonify(
+            {
+                "message": "게시글 생성 완료",
+                "post_id": post.post_id,  # 프론트가 이 값을 받아 이미지 업로드에 사용
+            }
+        ),
+        200,
+    )
+
 
 # ✅ 게시글 수정
-# @jwt.user_lookup_loader 등록 후 get_current_user() 사용 가능
-@bp.route("/edit/<int:post_id>", methods=['PUT'])
+@bp.route("/edit/<int:post_id>", methods=["PUT"])
 @jwt_required()
 def edit_post(post_id):
+    """
+    ✅ 게시글 수정
+    - 내용 수정
+    - 이미지 추가/삭제는 별도 엔드포인트에서 처리
+    """
     post = Post.query.get_or_404(post_id)
     current_user = get_current_user()
 
@@ -41,49 +57,12 @@ def edit_post(post_id):
         return jsonify({"error": "권한 없음"}), 403
 
     data = request.get_json() or {}
-    new_content = data.get("content")
-    new_images = data.get("images", [])
-
-    # 1️⃣ 내용 수정
-    if new_content:
-        post.content = new_content
-
-    # 2️⃣ 기존 이미지 삭제 (파일 + DB)
-    for image in post.images.all():
-        delete_image(image)
-        db.session.delete(image)
-
-    # 3️⃣ 새로운 이미지 추가
-    post.images = []
-    for img_data in new_images:
-        image = Image.query.filter_by(uuid=img_data["uuid"]).first()
-        if image:
-            post.images.append(image)
+    post.content = data.get("content", post.content)
+    post.location = data.get("location", post.location)
+    post.category_id = data.get("category_id", post.category_id)
 
     db.session.commit()
-    return jsonify({"message": "게시글 수정 완료"}), 200
-
-
-# ✅ 게시글 삭제
-@bp.route("/delete/<int:post_id>", methods=["DELETE"])
-@jwt_required()
-def delete_post(post_id):
-    post = Post.query.get_or_404(post_id)
-    current_user = get_current_user()
-
-    if post.user_id != current_user.user_id:
-        return jsonify({"error": "권한 없음"}), 403
-
-    # 1️⃣ 관련 이미지 파일 및 DB 삭제
-    for image in post.images.all():
-        delete_image(image)
-        db.session.delete(image)
-
-    # 2️⃣ 게시글 자체 삭제
-    db.session.delete(post)
-    db.session.commit()
-
-    return jsonify({"message": "게시글 및 이미지 삭제 완료"}), 200
+    return jsonify({"message": "게시글 수정 완료", "post_id": post_id}), 200
 
 
 # ✅ 공통 정렬 함수
@@ -280,32 +259,71 @@ def get_my_posts():
     )
 
 
-# ✅ 게시글 이미지 업로드
 @bp.route("/upload_post_image", methods=["POST"])
 @jwt_required()
 def upload_post_image():
     """
     ✅ 게시글 이미지 업로드
-    - 파일을 받아 save_image()로 저장
-    - 자동 압축 + 크기 제한 + 비동기 리사이즈 적용
+    - 게시글 작성 후 받은 post_id를 form-data로 전달받아 저장
     """
     user_id = get_jwt_identity()
     post_id = request.form.get("post_id")
     file = request.files.get("image")
 
     if not file or not post_id:
-        return jsonify({"error": "필수 데이터 누락"}), 400
-
-    try:
-        relative_path = save_image(file, folder="static/post_images", image_type="post")
-    except Exception as e:
-        return jsonify({"error": f"이미지 저장 실패: {e}"}), 400
+        return jsonify({"error": "post_id 또는 이미지 파일이 누락되었습니다."}), 400
 
     post = Post.query.get(post_id)
     if not post:
-        return jsonify({"error": "게시글이 존재하지 않습니다."}), 404
+        return jsonify({"error": "해당 게시글이 존재하지 않습니다."}), 404
 
-    post.image_path = relative_path
+    if post.user_id != int(user_id):
+        return (
+            jsonify({"error": "해당 게시글에 이미지를 업로드할 권한이 없습니다."}),
+            403,
+        )
+
+    # 이미지 저장
+    relative_path = save_image(file, folder="static/post_images", image_type="post")
+
+    image = Image(
+        user_id=user_id,
+        post_id=post_id,
+        directory=relative_path,
+        original_image_name=file.filename,
+        ext=os.path.splitext(file.filename)[1].lower(),
+    )
+
+    db.session.add(image)
     db.session.commit()
 
-    return jsonify({"message": "이미지 업로드 완료", "path": relative_path}), 200
+    return (
+        jsonify(
+            {
+                "message": "이미지 업로드 완료",
+                "uuid": image.uuid,
+                "path": relative_path,
+                "post_id": post_id,
+            }
+        ),
+        200,
+    )
+
+
+@bp.route("/delete_post_image/<string:uuid>", methods=["DELETE"])
+@jwt_required()
+def delete_post_image(uuid):
+    user_id = get_jwt_identity()
+    image = Image.query.filter_by(uuid=uuid, user_id=user_id).first()
+
+    if not image:
+        return jsonify({"error": "이미지를 찾을 수 없습니다."}), 404
+
+    abs_path = os.path.join(current_app.root_path, image.directory)
+    if os.path.exists(abs_path):
+        os.remove(abs_path)
+
+    db.session.delete(image)
+    db.session.commit()
+
+    return jsonify({"message": "이미지 삭제 완료", "uuid": uuid}), 200
