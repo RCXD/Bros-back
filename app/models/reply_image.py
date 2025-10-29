@@ -1,10 +1,10 @@
-import uuid
-from datetime import datetime
 from ..extensions import db
+from datetime import datetime
+import uuid
 
 
-class Image(db.Model):
-    __tablename__ = "images"
+class ReplyImage(db.Model):
+    __tablename__ = "reply_images"
 
     image_id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     uuid = db.Column(
@@ -16,8 +16,3 @@ class Image(db.Model):
     original_image_name = db.Column(db.String(255), nullable=False)
     ext = db.Column(db.String(10), nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.now)
-
-    post = db.relationship("Post", backref=db.backref("images", lazy="dynamic"))
-    user = db.relationship(
-        "User", backref=db.backref("uploaded_images", lazy="dynamic")
-    )
