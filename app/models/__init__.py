@@ -12,3 +12,4 @@ from .location import Location
 from .path import Path
 from .post_like import PostLike
 from .report import Report
+from .reply_like import ReplyLike
