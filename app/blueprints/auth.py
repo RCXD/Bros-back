@@ -16,6 +16,13 @@ from ..blacklist import add_to_blacklist
 
 bp = Blueprint("auth", __name__)
 
+@bp.route("/test", methods=["GET"])
+def get_info():
+    return jsonify({
+        "message": "서버 연결 성공 ✅",
+        "ip": request.remote_addr,
+        "path": request.path
+    }), 200
 
 @bp.route("/sign_up", methods=["POST"])
 def sign_up():
@@ -25,6 +32,8 @@ def sign_up():
     email = data.get("email")
     nickname = data.get("nickname")
     address = data.get("address")
+
+    print(data)
 
     if not username or not password or not email:
         return jsonify(), 400
