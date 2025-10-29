@@ -28,7 +28,9 @@ class User(db.Model):
     profile_img = db.Column(db.String(255))  # directory
     nickname = db.Column(db.String(50))
     created_at = db.Column(db.DateTime, default=datetime.now)
-    last_login = db.Column(db.DateTime, nullable=True, default=datetime.now, onupdate=datetime.now)
+    last_login = db.Column(
+        db.DateTime, nullable=True, default=datetime.now, onupdate=datetime.now
+    )
     is_expired = db.Column(db.Boolean, nullable=False, default=False)
     oauth_type = db.Column(db.Enum(OauthType), nullable=False, default=OauthType.NONE)
     account_type = db.Column(
