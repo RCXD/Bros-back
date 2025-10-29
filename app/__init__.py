@@ -17,8 +17,10 @@ def create_app():
 
     from .blueprints.auth import bp as auth_bp
     from .blueprints.post import bp as post_bp
+    from .blueprints.reply import bp as reply_bp
 
     app.register_blueprint(auth_bp, url_prefix="/auth")
     app.register_blueprint(post_bp, url_prefix="/post")
+    app.register_blueprint(reply_bp, url_prefix="/reply")
 
     return app
