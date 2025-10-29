@@ -4,8 +4,8 @@ import enum
 
 
 class MentionType(enum.Enum):
-    POST = ("POST",)
-    REPLY = ("REPLY",)
+    POST = "POST",
+    REPLY = "REPLY",
     SUBREPLY = "SUBREPLY"
 
 
@@ -17,7 +17,8 @@ class Mention(db.Model):
     object_id = db.Column(db.Integer, nullable=False)
     user_id = db.Column(db.Integer, db.ForeignKey("users.user_id"), nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.now)
-    post_id = db.Column(db.Integer, db.ForeignKey("posts.post_id"))
+    post_id = db.Column(db.Integer, db.ForeignKey("posts.post_id"), nullable=True)
+    is_checked = db.Column(db.Boolean, default=False)
 
     user = db.relationship("User", backref=db.backref("mentions", lazy="dynamic"))
 
