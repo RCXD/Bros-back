@@ -21,6 +21,7 @@ def create_app():
     from .blueprints.report import bp as report_bp
     from .blueprints.post_like import bp as post_like_bp
     from .blueprints.reply_like import bp as reply_like_bp
+    from .blueprints.follow import bp as follow_bp
 
     app.register_blueprint(mypage_bp, url_prefix="/mypage")
     app.register_blueprint(auth_bp, url_prefix="/auth")
@@ -30,5 +31,6 @@ def create_app():
     app.register_blueprint(report_bp, url_prefix="/report")
     app.register_blueprint(post_like_bp, url_prefix="/post_like")
     app.register_blueprint(reply_like_bp, url_prefix="/reply_like")
+    app.register_blueprint(follow_bp, url_prefix="/follow")
 
     return app
