@@ -277,3 +277,6 @@ pip-selfcheck.json
 # secrets
 secrets.json
 .secret_key
+
+# vscode
+.vscode/
