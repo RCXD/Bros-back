@@ -1,8 +1,8 @@
 """empty message
 
-Revision ID: 216302f933cf
+Revision ID: 7a5f71904380
 Revises: 
-Create Date: 2025-10-28 12:06:10.441749
+Create Date: 2025-10-28 17:44:43.713432
 
 """
 from alembic import op
@@ -10,7 +10,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision = '216302f933cf'
+revision = '7a5f71904380'
 down_revision = None
 branch_labels = None
 depends_on = None
@@ -95,7 +95,6 @@ def upgrade():
     sa.Column('category_id', sa.Integer(), nullable=True),
     sa.Column('content', sa.Text(), nullable=True),
     sa.Column('location', sa.Text(), nullable=True),
-    sa.Column('style', sa.Text(), nullable=True),
     sa.Column('created_at', sa.DateTime(), nullable=True),
     sa.Column('updated_at', sa.DateTime(), nullable=True),
     sa.ForeignKeyConstraint(['category_id'], ['categories.category_id'], ),
@@ -146,9 +145,11 @@ def upgrade():
     sa.Column('reply_id', sa.Integer(), nullable=False),
     sa.Column('post_id', sa.Integer(), nullable=True),
     sa.Column('user_id', sa.Integer(), nullable=True),
-    sa.Column('content', sa.Text(), nullable=True),
+    sa.Column('content', sa.LargeBinary(), nullable=True),
+    sa.Column('parent_id', sa.Integer(), nullable=True),
     sa.Column('created_at', sa.DateTime(), nullable=True),
     sa.Column('updated_at', sa.DateTime(), nullable=True),
+    sa.ForeignKeyConstraint(['parent_id'], ['replies.reply_id'], ),
     sa.ForeignKeyConstraint(['post_id'], ['posts.post_id'], ),
     sa.ForeignKeyConstraint(['user_id'], ['users.user_id'], ),
     sa.PrimaryKeyConstraint('reply_id')

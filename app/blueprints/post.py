@@ -1,6 +1,6 @@
 from flask import Blueprint, request, jsonify
 from ..models import Post, Image
-from ..extensions import db, jwt
+from ..extensions import db
 from flask_jwt_extended import get_current_user, jwt_required, get_jwt_identity
 
 bp = Blueprint("post", __name__)
