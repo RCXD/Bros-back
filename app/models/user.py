@@ -55,4 +55,5 @@ class User(db.Model):
     posts = db.relationship("Post", backref="author", lazy=True)
     replies = db.relationship("Reply", backref="author", lazy=True)
     images = db.relationship("Image", backref="uploader", lazy=True)
+    histories = db.relationship("History", backref="user", lazy=True)
     accident_reports = db.relationship("AccidentReport", backref="reporter", lazy=True)

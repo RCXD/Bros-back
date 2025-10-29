@@ -2,7 +2,7 @@ from flask import Blueprint, request, jsonify
 from ..models import Post, Image
 from ..extensions import db, jwt
 from flask_jwt_extended import get_current_user, jwt_required, get_jwt_identity
-from ..utils.image_storage import save_image
+from ..utils.image_storage import save_image, delete_image
 
 bp = Blueprint("post", __name__)
 
@@ -29,26 +29,60 @@ def write():
 
     return jsonify({"message": "글 생성 완료"}), 200
 
-
 # ✅ 게시글 수정
 @bp.route("/edit/<int:post_id>", methods=["PUT"])
 @jwt_required()
 def edit_post(post_id):
-    post = Post.query.get(post_id)
+    post = Post.query.get_or_404(post_id)
     current_user = get_current_user()
-    if not post or post.user_id != current_user.user_id:
+
+    if post.user_id != current_user.user_id:
         return jsonify({"error": "권한 없음"}), 403
 
     data = request.get_json() or {}
-    post.content = data.get("content", post.content)
+    new_content = data.get("content")
+    new_images = data.get("images", [])
+
+    # 1️⃣ 내용 수정
+    if new_content:
+        post.content = new_content
+
+    # 2️⃣ 기존 이미지 삭제 (파일 + DB)
+    for image in post.images.all():
+        delete_image(image)
+        db.session.delete(image)
+
+    # 3️⃣ 새로운 이미지 추가
     post.images = []
-    for img_data in data.get("images", []):
+    for img_data in new_images:
         image = Image.query.filter_by(uuid=img_data["uuid"]).first()
         if image:
             post.images.append(image)
 
     db.session.commit()
     return jsonify({"message": "게시글 수정 완료"}), 200
+
+
+# ✅ 게시글 삭제
+@bp.route("/delete/<int:post_id>", methods=["DELETE"])
+@jwt_required()
+def delete_post(post_id):
+    post = Post.query.get_or_404(post_id)
+    current_user = get_current_user()
+
+    if post.user_id != current_user.user_id:
+        return jsonify({"error": "권한 없음"}), 403
+
+    # 1️⃣ 관련 이미지 파일 및 DB 삭제
+    for image in post.images.all():
+        delete_image(image)
+        db.session.delete(image)
+
+    # 2️⃣ 게시글 자체 삭제
+    db.session.delete(post)
+    db.session.commit()
+
+    return jsonify({"message": "게시글 및 이미지 삭제 완료"}), 200
 
 
 # ✅ 공통 정렬 함수

@@ -6,6 +6,8 @@ from concurrent.futures import ThreadPoolExecutor
 from PIL import Image, UnidentifiedImageError
 from flask import current_app
 from .image_rules import IMAGE_RULES
+from ..models.image import Image
+
 
 # 전역 스레드 풀 (이미지 병렬 처리)
 executor = ThreadPoolExecutor(max_workers=4)
@@ -71,7 +73,7 @@ def save_image(file, folder="static/uploads", image_type="default"):
         ".apng",
         ".avif",
         ".jfif",
-        "pjpeg",
+        ".pjpeg",
         ".pjp",
     ]
     if ext not in allowed_ext:
@@ -89,3 +91,34 @@ def save_image(file, folder="static/uploads", image_type="default"):
     executor.submit(_compress_and_resize, save_path, image_type)
 
     return relative_path
+
+
+def delete_image(image):
+    """
+    ✅ 이미지를 서버에서 삭제 (DB 처리는 Blueprint에서 수행)
+    - 실제 파일 삭제만 담당
+    - DB 세션 변경은 하지 않음
+    - 파일이 없어도 예외 없이 통과
+    """
+    if not image:
+        current_app.logger.warning("[!] delete_image 호출: image 객체가 None입니다.")
+        return False
+
+    try:
+        # 1️⃣ 실제 파일 절대 경로
+        abs_path = os.path.join(current_app.root_path, image.directory)
+
+        # 2️⃣ 파일 존재 여부 확인 후 삭제
+        if os.path.exists(abs_path):
+            os.remove(abs_path)
+            current_app.logger.info(f"[✓] 이미지 파일 삭제 완료: {abs_path}")
+        else:
+            current_app.logger.warning(
+                f"[!] 삭제 대상 이미지 파일이 존재하지 않음: {abs_path}"
+            )
+
+        return True
+
+    except Exception as e:
+        current_app.logger.warning(f"[!] 이미지 삭제 실패: {e}")
+        return False

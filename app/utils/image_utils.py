@@ -8,6 +8,7 @@ from flask import current_app
 from ..extensions import db
 from .image_storage import save_image  # ✅ 통합 이미지 저장 함수 사용
 
+
 DEFAULT_PROFILE_PATH = "static/profile_images/default.png"
 
 
@@ -48,11 +49,15 @@ def upload_profile(user, file=None, url=None):
         try:
             old_path = os.path.join(current_app.root_path, user.profile_img)
             if os.path.exists(old_path):
-                os.makedirs(os.path.join(current_app.root_path, backup_folder), exist_ok=True)
+                os.makedirs(
+                    os.path.join(current_app.root_path, backup_folder), exist_ok=True
+                )
 
                 # 새로운 파일명: 2025-10-29_12-30-45_UUID.jpg
                 filename = f"{datetime.now().strftime('%Y%m%d_%H%M%S')}_{uuid.uuid4().hex}{os.path.splitext(old_path)[1]}"
-                backup_path = os.path.join(current_app.root_path, backup_folder, filename)
+                backup_path = os.path.join(
+                    current_app.root_path, backup_folder, filename
+                )
 
                 shutil.move(old_path, backup_path)
                 current_app.logger.info(f"이전 프로필 백업 완료: {backup_path}")
