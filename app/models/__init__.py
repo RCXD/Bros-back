@@ -12,3 +12,6 @@ from .location import Location
 from .path import Path
 from .post_like import PostLike
 from .events import *
+from .emoji import Emoji
+from .friend import Friend
+from .reply_image import ReplyImage
