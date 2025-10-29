@@ -1,6 +1,7 @@
 from ..extensions import db
 from datetime import datetime
 
+
 class Reply(db.Model):
     __tablename__ = "replies"
 

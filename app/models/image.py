@@ -12,7 +12,7 @@ class Image(db.Model):
     directory = db.Column(db.Text, nullable=False)
     original_image_name = db.Column(db.String(255), nullable=False)
     ext = db.Column(db.String(10), nullable=False)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=datetime.now)
 
     post = db.relationship("Post", backref=db.backref("images", lazy="dynamic"))
     user = db.relationship("User", backref=db.backref("uploaded_images", lazy="dynamic"))
