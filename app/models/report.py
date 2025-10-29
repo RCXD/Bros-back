@@ -16,7 +16,7 @@ class Report(db.Model):
     report_target_id = db.Column(db.Integer, nullable=False)
     report_reason = db.Column(db.String(255), nullable=False)
     report_count = db.Column(db.Integer, default=0, nullable=False)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=datetime.now)
 
     user = db.relationship("User", backref=db.backref("reports_made", lazy="dynamic"))
 

@@ -12,8 +12,6 @@ class Friend(db.Model):
     """
     __tablename__ = "friends"
 
-    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
-
     # ondelete='CASCADE'로 User 삭제 시 Friend 자동 삭제
     user_id = db.Column(
         db.Integer,

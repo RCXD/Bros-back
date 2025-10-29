@@ -8,7 +8,7 @@ class Image(db.Model):
 
     image_id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     uuid = db.Column(
-        db.String(36), unique=True, nullable=False, default=lambda: str(uuid.uuid4())
+        db.String(255), unique=True, nullable=False, default=lambda: str(uuid.uuid4())
     )
     post_id = db.Column(db.Integer, db.ForeignKey("posts.post_id"), nullable=False)
     user_id = db.Column(db.Integer, db.ForeignKey("users.user_id"), nullable=False)

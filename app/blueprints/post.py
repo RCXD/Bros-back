@@ -86,8 +86,8 @@ def get_posts():
         if key not in ["page", "per_page", "order_by"] and value:
             filters[key] = value
 
-    page = int(request.args.get("page", 1))
-    per_page = int(request.args.get("per_page", 10))
+    page = request.args.get("page", 1, type=int)
+    per_page = request.args.get("per_page", 10, type=int)
     order_by = request.args.get("order_by", "latest")
 
     query = Post.query
@@ -130,7 +130,7 @@ def get_posts():
 
 
 # ✅ 특정 게시글 조회 (단일)
-@bp.route("/posts/<int:post_id>", methods=["GET"])
+@bp.route("/<int:post_id>", methods=["GET"])
 def get_post(post_id):
     post = Post.query.get_or_404(post_id)
     return (
@@ -150,10 +150,10 @@ def get_post(post_id):
 
 
 # ✅ 특정 유저의 게시글 조회 (pagination + 정렬)
-@bp.route("/posts/user/<int:user_id>", methods=["GET"])
+@bp.route("/user/<int:user_id>", methods=["GET"])
 def get_user_posts(user_id):
-    page = int(request.args.get("page", 1))
-    per_page = int(request.args.get("per_page", 10))
+    page = request.args.get("page", 1, type=int)
+    per_page = request.args.get("per_page", 10, type=int)
     order_by = request.args.get("order_by", "latest")
 
     query = Post.query.filter_by(user_id=user_id)
@@ -186,10 +186,10 @@ def get_user_posts(user_id):
 
 
 # ✅ 카테고리별 게시글 조회 (pagination + 정렬)
-@bp.route("/posts/categories/<int:category_id>", methods=["GET"])
+@bp.route("/categories/<int:category_id>", methods=["GET"])
 def get_category_posts(category_id):
-    page = int(request.args.get("page", 1))
-    per_page = int(request.args.get("per_page", 10))
+    page = request.args.get("page", 1, type=int)
+    per_page = request.args.get("per_page", 10, type=int)
     order_by = request.args.get("order_by", "latest")
 
     query = Post.query.filter_by(category_id=category_id)
@@ -222,12 +222,12 @@ def get_category_posts(category_id):
 
 
 # ✅ 내 게시글 조회 (pagination + 정렬)
-@bp.route("/posts/me", methods=["GET"])
+@bp.route("/me", methods=["GET"])
 @jwt_required()
 def get_my_posts():
     current_user_id = get_jwt_identity()
-    page = int(request.args.get("page", 1))
-    per_page = int(request.args.get("per_page", 10))
+    page = request.args.get("page", 1, type=int)
+    per_page = request.args.get("per_page", 10, type=int)
     order_by = request.args.get("order_by", "latest")
 
     query = Post.query.filter_by(user_id=current_user_id)
@@ -264,34 +264,33 @@ def get_my_posts():
 def upload_post_image():
     """
     ✅ 게시글 이미지 업로드
-    - 게시글 작성 후 받은 post_id를 form-data로 전달받아 저장
+    - 이미지 저장 후 DB에 메타데이터 반영
     """
     user_id = get_jwt_identity()
     post_id = request.form.get("post_id")
     file = request.files.get("image")
 
     if not file or not post_id:
-        return jsonify({"error": "post_id 또는 이미지 파일이 누락되었습니다."}), 400
+        return jsonify({"error": "필수 데이터 누락"}), 400
+
+    # 이미지 저장 및 메타데이터 획득
+    try:
+        image_data = save_image(file, folder="static/post_images", image_type="post")
+    except Exception as e:
+        return jsonify({"error": f"이미지 저장 실패: {e}"}), 400
 
     post = Post.query.get(post_id)
     if not post:
-        return jsonify({"error": "해당 게시글이 존재하지 않습니다."}), 404
+        return jsonify({"error": "게시글이 존재하지 않습니다."}), 404
 
-    if post.user_id != int(user_id):
-        return (
-            jsonify({"error": "해당 게시글에 이미지를 업로드할 권한이 없습니다."}),
-            403,
-        )
-
-    # 이미지 저장
-    relative_path = save_image(file, folder="static/post_images", image_type="post")
-
+    # ✅ DB에 Image 객체 생성
     image = Image(
-        user_id=user_id,
         post_id=post_id,
-        directory=relative_path,
-        original_image_name=file.filename,
-        ext=os.path.splitext(file.filename)[1].lower(),
+        user_id=user_id,
+        directory=image_data["directory"],
+        original_image_name=image_data["original_image_name"],
+        ext=image_data["ext"],
+        uuid=image_data["uuid"],
     )
 
     db.session.add(image)
@@ -301,9 +300,11 @@ def upload_post_image():
         jsonify(
             {
                 "message": "이미지 업로드 완료",
-                "uuid": image.uuid,
-                "path": relative_path,
-                "post_id": post_id,
+                "image": {
+                    "uuid": image.uuid,
+                    "path": image.directory,
+                    "original_name": image.original_image_name,
+                },
             }
         ),
         200,
@@ -327,3 +328,21 @@ def delete_post_image(uuid):
     db.session.commit()
 
     return jsonify({"message": "이미지 삭제 완료", "uuid": uuid}), 200
+
+
+@bp.route("/<int:post_id>/images", methods=["GET"])
+def get_post_images(post_id):
+    images = Image.query.filter_by(post_id=post_id).all()
+    return (
+        jsonify(
+            [
+                {
+                    "uuid": img.uuid,
+                    "path": img.directory,
+                    "original_name": img.original_image_name,
+                }
+                for img in images
+            ]
+        ),
+        200,
+    )
