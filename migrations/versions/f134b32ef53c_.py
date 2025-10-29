@@ -1,8 +1,8 @@
 """empty message
 
-Revision ID: 7a5f71904380
+Revision ID: f134b32ef53c
 Revises: 
-Create Date: 2025-10-28 17:44:43.713432
+Create Date: 2025-10-29 13:18:55.567038
 
 """
 from alembic import op
@@ -10,7 +10,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision = '7a5f71904380'
+revision = 'f134b32ef53c'
 down_revision = None
 branch_labels = None
 depends_on = None
@@ -34,10 +34,10 @@ def upgrade():
     )
     op.create_table('paths',
     sa.Column('path_id', sa.Integer(), nullable=False),
-    sa.Column('start_latitude', sa.Float(), nullable=True),
-    sa.Column('start_longitude', sa.Float(), nullable=True),
-    sa.Column('arrive_latitude', sa.Float(), nullable=True),
-    sa.Column('arrive_longitude', sa.Float(), nullable=True),
+    sa.Column('start_latitude', sa.Float(), nullable=False),
+    sa.Column('start_longitude', sa.Float(), nullable=False),
+    sa.Column('arrive_latitude', sa.Float(), nullable=False),
+    sa.Column('arrive_longitude', sa.Float(), nullable=False),
     sa.PrimaryKeyConstraint('path_id')
     )
     op.create_table('users',
@@ -93,13 +93,25 @@ def upgrade():
     sa.Column('post_id', sa.Integer(), nullable=False),
     sa.Column('user_id', sa.Integer(), nullable=True),
     sa.Column('category_id', sa.Integer(), nullable=True),
-    sa.Column('content', sa.Text(), nullable=True),
+    sa.Column('content', sa.Text(), nullable=False),
     sa.Column('location', sa.Text(), nullable=True),
     sa.Column('created_at', sa.DateTime(), nullable=True),
     sa.Column('updated_at', sa.DateTime(), nullable=True),
     sa.ForeignKeyConstraint(['category_id'], ['categories.category_id'], ),
     sa.ForeignKeyConstraint(['user_id'], ['users.user_id'], ),
     sa.PrimaryKeyConstraint('post_id')
+    )
+    op.create_table('reports',
+    sa.Column('report_id', sa.Integer(), autoincrement=True, nullable=False),
+    sa.Column('user_id', sa.Integer(), nullable=False),
+    sa.Column('report_target_type', sa.Enum('USER', 'POST', 'REPLY', name='reporttype'), nullable=False),
+    sa.Column('report_target_id', sa.Integer(), nullable=False),
+    sa.Column('report_reason', sa.String(length=255), nullable=False),
+    sa.Column('report_count', sa.Integer(), nullable=False),
+    sa.Column('created_at', sa.DateTime(), nullable=True),
+    sa.ForeignKeyConstraint(['user_id'], ['users.user_id'], ),
+    sa.PrimaryKeyConstraint('report_id'),
+    sa.UniqueConstraint('user_id', 'report_target_type', 'report_target_id', name='unique_report_per_user')
     )
     op.create_table('sub_categories',
     sa.Column('subcategory_id', sa.Integer(), nullable=False),
@@ -129,6 +141,7 @@ def upgrade():
     sa.Column('user_id', sa.Integer(), nullable=False),
     sa.Column('created_at', sa.DateTime(), nullable=True),
     sa.Column('post_id', sa.Integer(), nullable=True),
+    sa.Column('is_checked', sa.Boolean(), nullable=True),
     sa.ForeignKeyConstraint(['post_id'], ['posts.post_id'], ),
     sa.ForeignKeyConstraint(['user_id'], ['users.user_id'], ),
     sa.PrimaryKeyConstraint('mention_id'),
@@ -172,6 +185,7 @@ def downgrade():
     op.drop_table('mentions')
     op.drop_table('images')
     op.drop_table('sub_categories')
+    op.drop_table('reports')
     op.drop_table('posts')
     op.drop_table('histories')
     op.drop_table('follows')
