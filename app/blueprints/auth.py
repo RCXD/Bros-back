@@ -92,7 +92,7 @@ def login():
         return jsonify({"message": "로그인 실패"}), 401
     access = create_access_token(identity=str(user.user_id))
     refresh = create_refresh_token(identity=str(user.user_id))
-    return jsonify(access_token=access, refresh_token=refresh), 200
+    return jsonify(access_token=access, refresh_token=refresh, username=user.username, nickname=user.nickname, email=user.email), 200
 
 
 GOOGLE_TOKEN_INFO_URL = "https://oauth2.googleapis.com/tokeninfo"
