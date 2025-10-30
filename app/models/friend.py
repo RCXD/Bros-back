@@ -7,10 +7,10 @@ class Friend(db.Model):
     """
     ✅ 즐겨찾기 친구 관계 테이블
     - 한쪽이 팔로우 중이면 즐겨찾기 등록 가능
-    - 양쪽 모두 언팔 시 자동 삭제
+    - 등록한 사람 쪽에서 언팔로우 시 자동 삭제
     - 유저 삭제 시 CASCADE
     """
-    __tablename__ = "friends"
+    __tablename__ = "friend"
 
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
 
