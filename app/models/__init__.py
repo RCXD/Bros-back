@@ -1,6 +1,5 @@
 from .accident_report import AccidentReport
 from .category import Category
-from .events import *
 from .follow import Follow
 from .friend import Friend
 from .history import History
