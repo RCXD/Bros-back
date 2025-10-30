@@ -1,5 +1,5 @@
 from ..extensions import db
-from sqlalchemy import event
+from sqlalchemy import event, PrimaryKeyConstraint
 from ..models.follow import Follow
 
 
@@ -10,6 +10,7 @@ class Friend(db.Model):
     - 등록한 사람 쪽에서 언팔로우 시 자동 삭제
     - 유저 삭제 시 CASCADE
     """
+
     __tablename__ = "friend"
 
     # ondelete='CASCADE'로 User 삭제 시 Friend 자동 삭제
@@ -25,6 +26,9 @@ class Friend(db.Model):
         nullable=False,
     )
 
+    __table_args__ = (
+        PrimaryKeyConstraint("user_id", "friend_id", name="pk_friend_user_friend"),
+    )
     # -------------------------------------------------------
     # ✅ relationship (User 자기참조)
     # -------------------------------------------------------
@@ -32,9 +36,7 @@ class Friend(db.Model):
         "User",
         foreign_keys=[user_id],
         backref=db.backref(
-            "favorite_friends",
-            lazy="dynamic",
-            cascade="all, delete-orphan"
+            "favorite_friends", lazy="dynamic", cascade="all, delete-orphan"
         ),
     )
 
@@ -42,11 +44,43 @@ class Friend(db.Model):
         "User",
         foreign_keys=[friend_id],
         backref=db.backref(
-            "favorited_by",
-            lazy="dynamic",
-            cascade="all, delete-orphan"
+            "favorited_by", lazy="dynamic", cascade="all, delete-orphan"
         ),
     )
 
     def __repr__(self):
         return f"<Friend user_id={self.user_id}, friend_id={self.friend_id}>"
+
+
+@event.listens_for(Friend, "before_insert")
+def check_follow_before_add(mapper, connection, target):
+    """
+    ✅ 즐겨찾기 추가 전에
+    'user_id(A)'가 'friend_id(B)'를 팔로우 중인지 확인
+    """
+    follow_exists = connection.execute(
+        db.select(Follow).where(
+            (Follow.follower_id == target.user_id)
+            & (Follow.following_id == target.friend_id)
+        )
+    ).first()
+
+    if not follow_exists:
+        raise ValueError("팔로우 중인 사용자만 즐겨찾기에 추가할 수 있습니다.")
+
+
+@event.listens_for(Follow, "after_delete")
+def remove_friend_on_unfollow(mapper, connection, target):
+    """
+    ✅ 팔로우가 끊기면 해당 Friend 관계 자동 삭제
+    (즉, follower_id → following_id 관계가 없어졌을 때)
+    """
+    connection.execute(
+        db.text(
+            """
+            DELETE FROM friends
+            WHERE user_id = :u AND friend_id = :f
+        """
+        ),
+        {"u": target.follower_id, "f": target.following_id},
+    )
