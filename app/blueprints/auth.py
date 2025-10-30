@@ -52,7 +52,6 @@ def sign_up():
     email = data.get("email")
     nickname = data.get("nickname")
     address = data.get("address")
-    file = request.files.get("profile_img")
 
     if not username or not password or not email:
         return jsonify({"error": "필수 항목 누락"}), 400
@@ -76,9 +75,6 @@ def sign_up():
     except Exception:
         db.session.rollback()
         return jsonify({"message": "회원가입 실패"}), 400
-    # ✅ 프로필 이미지 업로드 처리
-    upload_profile(user, file=file)
-
     return jsonify({"message": "회원가입 완료"}), 200
 
 
