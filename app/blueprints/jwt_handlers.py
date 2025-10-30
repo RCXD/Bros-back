@@ -1,15 +1,22 @@
 from ..models import User
 from flask import jsonify
 
+
 # ======================================
-# ✅ JWT 관련 설정 및 예외 처리
+#  JWT 관련 설정 및 예외 처리
 # ======================================
 def register_jwt_handlers(jwt):
 
     # 1️⃣ JWT에 저장할 identity 값 정의
     @jwt.user_identity_loader
     def user_identity_lookup(user):
-        return user.user_id if isinstance(user, User) else user
+        return {
+            "username": user.username,
+            "nickname": user.nickname,
+            "email": user.email,
+            "oauth_type": user.oauth_type.value,
+            "account_type": user.account_type.value,
+        } if isinstance(user, User) else {}
 
     # 2️⃣ JWT로부터 실제 User 객체 로드
     @jwt.user_lookup_loader

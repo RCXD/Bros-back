@@ -6,7 +6,7 @@ from io import BytesIO
 from datetime import datetime
 from flask import current_app
 from ..extensions import db
-from .image_storage import save_image  # ✅ 통합 이미지 저장 함수 사용
+from .image_storage import save_to_disk  #  통합 이미지 저장 함수 사용
 
 
 DEFAULT_PROFILE_PATH = "static/profile_images/default.png"
@@ -14,7 +14,7 @@ DEFAULT_PROFILE_PATH = "static/profile_images/default.png"
 
 def upload_profile(user, file=None, url=None):
     """
-    ✅ 프로필 이미지를 서버에 저장하고 DB에 경로를 반영하는 유틸 함수 (비동기 압축 호환 + 이전 이미지 백업)
+     프로필 이미지를 서버에 저장하고 DB에 경로를 반영하는 유틸 함수 (비동기 압축 호환 + 이전 이미지 백업)
     - file: 사용자가 업로드한 파일 (form-data)
     - url: 외부 이미지 URL (소셜 로그인 시)
     - 기존 이미지 자동 백업, 기본 이미지 자동 설정
@@ -66,13 +66,8 @@ def upload_profile(user, file=None, url=None):
 
     # 4️⃣ 새 프로필 이미지 저장 (비동기 압축 + 규칙 적용)
     try:
-        image_data = save_image(file, folder=folder, image_type="profile")
-
-        # ✅ save_image가 dict를 반환하면 경로만 추출
-        if isinstance(image_data, dict):
-            relative_path = image_data.get("directory", DEFAULT_PROFILE_PATH)
-        else:
-            relative_path = image_data  # 문자열 반환인 경우도 대비
+        relative_path, _ = save_to_disk(file, folder=folder, image_type="profile")
+        current_app.logger.info(f"새 프로필 이미지 저장 완료: {relative_path}")
     except Exception as e:
         current_app.logger.warning(f"프로필 이미지 저장 실패: {e}")
         relative_path = DEFAULT_PROFILE_PATH

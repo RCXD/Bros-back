@@ -3,7 +3,7 @@ from ..extensions import db
 
 class Follow(db.Model):
     """
-    ✅ 유저 간 팔로우 관계를 나타내는 중간 테이블 (Many-to-Many)
+     유저 간 팔로우 관계를 나타내는 중간 테이블 (Many-to-Many)
     
     - follower_id : 팔로우 하는 사람 (예: A)
     - following_id : 팔로우 받는 사람 (예: B)
