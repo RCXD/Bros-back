@@ -38,7 +38,6 @@ def get_info():
 def sign_up():
     """
     일반 회원가입 (프로필 이미지 업로드 지원)
-    form-data:
       - username
       - password
       - email
@@ -55,18 +54,18 @@ def sign_up():
     address = data.get("address")
 
     if not username or not password or not email:
-        return jsonify({"error": "필수 항목 누락"}), 400
+        return jsonify({"message": "필수 항목 누락"}), 400
 
     try:
         validate_email(email)
     except EmailNotValidError as e:
-        return jsonify({"error": str(e)}), 400
+        return jsonify({"message": str(e)}), 400
 
     existing_user = User.query.filter(
         (User.username == username) | (User.email == email)
     ).first()
     if existing_user:
-        return jsonify({"error": "이미 존재하는 사용자"}), 409
+        return jsonify({"message": "이미 존재하는 사용자입니다."}), 409
 
     user = User(username=username, email=email, nickname=nickname, address=address)
     user.set_password(password)
@@ -104,13 +103,13 @@ GOOGLE_TOKEN_INFO_URL = "https://oauth2.googleapis.com/tokeninfo"
 def google_login():
     google_token = request.json.get("token")
     if not google_token:
-        return jsonify({"error": "Token required"}), 400
+        return jsonify({"message": "Token required"}), 400
 
     resp = requests.get(
         "https://oauth2.googleapis.com/tokeninfo", params={"id_token": google_token}
     )
     if resp.status_code != 200:
-        return jsonify({"error": "Invalid Google token"}), 401
+        return jsonify({"message": "Invalid Google token"}), 401
 
     data = resp.json()
     email = data.get("email")
@@ -119,7 +118,7 @@ def google_login():
     picture_url = data.get("picture")  # ✅ Google 프로필 이미지 URL
 
     if not email or not social_id:
-        return jsonify({"error": "Invalid token data"}), 401
+        return jsonify({"message": "Invalid token data"}), 401
 
     user = User.query.filter_by(username=social_id, oauth_type=OauthType.GOOGLE).first()
     if not user:
@@ -146,7 +145,7 @@ def google_login():
 def kakao_login():
     kakao_token = request.json.get("token")
     if not kakao_token:
-        return jsonify({"error": "Token required"}), 400
+        return jsonify({"message": "Token required"}), 400
 
     kakao_user_info = requests.get(
         "https://kapi.kakao.com/v2/user/me",
@@ -154,7 +153,7 @@ def kakao_login():
     )
 
     if kakao_user_info.status_code != 200:
-        return jsonify({"error": "Invalid Kakao token"}), 401
+        return jsonify({"message": "Invalid Kakao token"}), 401
 
     data = kakao_user_info.json()
     kakao_id = data.get("id")
@@ -191,7 +190,7 @@ def kakao_login():
 def naver_login():
     naver_token = request.json.get("token")
     if not naver_token:
-        return jsonify({"error": "Token required"}), 400
+        return jsonify({"message": "Token required"}), 400
 
     naver_user_info = requests.get(
         "https://openapi.naver.com/v1/nid/me",
@@ -199,7 +198,7 @@ def naver_login():
     )
 
     if naver_user_info.status_code != 200:
-        return jsonify({"error": "Invalid Naver token"}), 401
+        return jsonify({"message": "Invalid Naver token"}), 401
 
     data = naver_user_info.json().get("response", {})
     naver_id = data.get("id")
