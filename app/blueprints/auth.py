@@ -62,11 +62,20 @@ def sign_up():
         return jsonify({"message": "이메일 형식이 잘못되었습니다."}), 400
 
     existing_user = User.query.filter(
-        (User.username == username) | (User.email == email)
+        (User.username == username)
     ).first()
     if existing_user:
-        return jsonify({"message": "이미 존재하는 사용자입니다."}), 409
+        return jsonify({"message": "이미 존재하는 아이디입니다."}), 409
 
+    existing_email = User.query.filter(
+        (User.email == email)
+    ).first()
+    if existing_email:
+        return jsonify({"message": "이미 사용중인 이메일입니다."}), 409
+
+    if not nickname:
+        nickname = username
+        
     user = User(username=username, email=email, nickname=nickname, address=address)
     user.set_password(password)
     db.session.add(user)
