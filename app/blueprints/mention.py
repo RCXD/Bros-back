@@ -47,7 +47,7 @@ def create_mention():
     mention = Mention(
         content_type=MentionType[content_type.upper()],
         object_id=object_id,
-        user_id=mentioned_user_id,
+        mentioned_user_id=mentioned_user_id,
         post_id=post_id
     )
 

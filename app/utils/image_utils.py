@@ -66,7 +66,13 @@ def upload_profile(user, file=None, url=None):
 
     # 4️⃣ 새 프로필 이미지 저장 (비동기 압축 + 규칙 적용)
     try:
-        relative_path = save_image(file, folder=folder, image_type="profile").get("directory")
+        image_data = save_image(file, folder=folder, image_type="profile")
+
+        # ✅ save_image가 dict를 반환하면 경로만 추출
+        if isinstance(image_data, dict):
+            relative_path = image_data.get("directory", DEFAULT_PROFILE_PATH)
+        else:
+            relative_path = image_data  # 문자열 반환인 경우도 대비
     except Exception as e:
         current_app.logger.warning(f"프로필 이미지 저장 실패: {e}")
         relative_path = DEFAULT_PROFILE_PATH
