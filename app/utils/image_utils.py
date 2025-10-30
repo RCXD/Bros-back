@@ -66,7 +66,7 @@ def upload_profile(user, file=None, url=None):
 
     # 4️⃣ 새 프로필 이미지 저장 (비동기 압축 + 규칙 적용)
     try:
-        relative_path = save_image(file, folder=folder, image_type="profile")
+        relative_path = save_image(file, folder=folder, image_type="profile").get("directory")
     except Exception as e:
         current_app.logger.warning(f"프로필 이미지 저장 실패: {e}")
         relative_path = DEFAULT_PROFILE_PATH
