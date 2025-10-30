@@ -9,3 +9,4 @@ class Path(db.Model):
     start_longitude = db.Column(db.Float, nullable=False)
     arrive_latitude = db.Column(db.Float, nullable=False)
     arrive_longitude = db.Column(db.Float, nullable=False)
+    

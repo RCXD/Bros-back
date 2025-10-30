@@ -2,19 +2,21 @@ from flask import Blueprint, request, jsonify, current_app
 from ..models import Post, Image
 from ..extensions import db, jwt
 from flask_jwt_extended import get_current_user, jwt_required, get_jwt_identity
-from ..utils.image_storage import save_image, delete_image
+from ..utils.image_storage import save_to_disk, delete_image
 import os
+from ..utils.image_compressor import compress_image
+from sqlalchemy.orm import selectinload
 
 
 bp = Blueprint("post", __name__)
 
 
-# ✅ 게시글 작성
+#  게시글 작성
 @bp.route("/write", methods=["POST"])
 @jwt_required()
 def write():
     """
-    ✅ 게시글 작성
+     게시글 작성
     - 게시글 생성 후 post_id 반환
     - 이미지 업로드는 별도 엔드포인트에서 post_id 기반으로 수행
     """
@@ -41,12 +43,12 @@ def write():
     )
 
 
-# ✅ 게시글 수정
+#  게시글 수정
 @bp.route("/edit/<int:post_id>", methods=["PUT"])
 @jwt_required()
 def edit_post(post_id):
     """
-    ✅ 게시글 수정
+     게시글 수정
     - 내용 수정
     - 이미지 추가/삭제는 별도 엔드포인트에서 처리
     """
@@ -65,7 +67,7 @@ def edit_post(post_id):
     return jsonify({"message": "게시글 수정 완료", "post_id": post_id}), 200
 
 
-# ✅ 공통 정렬 함수
+#  공통 정렬 함수
 def apply_order(query, order_by):
     """정렬 기준을 적용하는 헬퍼 함수"""
     if order_by == "latest":
@@ -78,7 +80,7 @@ def apply_order(query, order_by):
         return query.order_by(Post.created_at.desc())
 
 
-# ✅ 전체 게시글 조회 (조건부 필터 + pagination + 정렬)
+#  전체 게시글 조회 (조건부 필터 + pagination + 정렬)
 @bp.route("/posts", methods=["GET"])
 def get_posts():
     filters = {}
@@ -90,7 +92,7 @@ def get_posts():
     per_page = request.args.get("per_page", 10, type=int)
     order_by = request.args.get("order_by", "latest")
 
-    query = Post.query
+    query = Post.query.options(selectinload(Post.images))
 
     for key, value in filters.items():
         column = getattr(Post, key, None)
@@ -99,19 +101,30 @@ def get_posts():
 
     query = apply_order(query, order_by)
     pagination = query.paginate(page=page, per_page=per_page, error_out=False)
-
-    result = [
-        {
-            "post_id": p.post_id,
-            "user_id": p.user_id,
-            "category_id": p.category_id,
-            "content": p.content,
-            "location": p.location,
-            "created_at": p.created_at.isoformat(),
-            "updated_at": p.updated_at.isoformat() if p.updated_at else None,
-        }
-        for p in pagination.items
-    ]
+    result = []
+    for p in pagination.items:
+        images = [
+            {
+                "image_id": img.image_id,
+                "uuid": img.uuid,
+                "directory": img.directory,
+                "original_image_name": img.original_image_name,
+                "ext": img.ext,
+            }
+            for img in p.images.all()  # lazy="dynamic" 관계이므로 .all() 필요
+        ]
+        result.append(
+            {
+                "post_id": p.post_id,
+                "user_id": p.user_id,
+                "category_id": p.category_id,
+                "content": p.content,
+                "location": p.location,
+                "created_at": p.created_at.isoformat(),
+                "updated_at": p.updated_at.isoformat() if p.updated_at else None,
+                "images": images,
+            }
+        )
 
     return (
         jsonify(
@@ -129,10 +142,24 @@ def get_posts():
     )
 
 
-# ✅ 특정 게시글 조회 (단일)
+#  특정 게시글 조회 (단일)
 @bp.route("/<int:post_id>", methods=["GET"])
 def get_post(post_id):
-    post = Post.query.get_or_404(post_id)
+    post = (
+        Post.query.options(selectinload(Post.images))
+        .filter_by(post_id=post_id)
+        .first_or_404()
+    )
+    images = [
+        {
+            "image_id": img.image_id,
+            "uuid": img.uuid,
+            "directory": img.directory,
+            "original_image_name": img.original_image_name,
+            "ext": img.ext,
+        }
+        for img in post.images
+    ]
     return (
         jsonify(
             {
@@ -143,13 +170,14 @@ def get_post(post_id):
                 "location": post.location,
                 "created_at": post.created_at.isoformat(),
                 "updated_at": post.updated_at.isoformat() if post.updated_at else None,
+                "images": images,
             }
         ),
         200,
     )
 
 
-# ✅ 특정 유저의 게시글 조회 (pagination + 정렬)
+#  특정 유저의 게시글 조회 (pagination + 정렬)
 @bp.route("/user/<int:user_id>", methods=["GET"])
 def get_user_posts(user_id):
     page = request.args.get("page", 1, type=int)
@@ -158,8 +186,24 @@ def get_user_posts(user_id):
 
     query = Post.query.filter_by(user_id=user_id)
     query = apply_order(query, order_by)
-    pagination = query.paginate(page=page, per_page=per_page, error_out=False)
-
+    pagination = (
+        Post.query.filter_by(user_id=user_id)
+        .options(selectinload(Post.images))
+        .order_by(Post.created_at.desc())
+        .paginate(page=page, per_page=per_page, error_out=False)
+    )
+    result = []
+    for p in pagination.items:
+        images = [
+            {
+                "image_id": img.image_id,
+                "uuid": img.uuid,
+                "directory": img.directory,
+                "original_image_name": img.original_image_name,
+                "ext": img.ext,
+            }
+            for img in p.images.all()  # lazy="dynamic" 관계이므로 .all() 필요
+        ]
     result = [
         {
             "post_id": p.post_id,
@@ -168,8 +212,8 @@ def get_user_posts(user_id):
             "location": p.location,
             "created_at": p.created_at.isoformat(),
             "updated_at": p.updated_at.isoformat() if p.updated_at else None,
+            "images": images,
         }
-        for p in pagination.items
     ]
     return (
         jsonify(
@@ -185,7 +229,7 @@ def get_user_posts(user_id):
     )
 
 
-# ✅ 카테고리별 게시글 조회 (pagination + 정렬)
+#  카테고리별 게시글 조회 (pagination + 정렬)
 @bp.route("/categories/<int:category_id>", methods=["GET"])
 def get_category_posts(category_id):
     page = request.args.get("page", 1, type=int)
@@ -194,19 +238,35 @@ def get_category_posts(category_id):
 
     query = Post.query.filter_by(category_id=category_id)
     query = apply_order(query, order_by)
-    pagination = query.paginate(page=page, per_page=per_page, error_out=False)
-
-    result = [
-        {
-            "post_id": p.post_id,
-            "user_id": p.user_id,
-            "content": p.content,
-            "location": p.location,
-            "created_at": p.created_at.isoformat(),
-            "updated_at": p.updated_at.isoformat() if p.updated_at else None,
-        }
-        for p in pagination.items
-    ]
+    pagination = (
+        Post.query.filter_by(category_id=category_id)
+        .options(selectinload(Post.images))
+        .order_by(Post.created_at.desc())
+        .paginate(page=page, per_page=per_page, error_out=False)
+    )
+    result = []
+    for p in pagination.items:
+        images = [
+            {
+                "image_id": img.image_id,
+                "uuid": img.uuid,
+                "directory": img.directory,
+                "original_image_name": img.original_image_name,
+                "ext": img.ext,
+            }
+            for img in p.images.all()  # lazy="dynamic" 관계이므로 .all() 필요
+        ]
+        result = [
+            {
+                "post_id": p.post_id,
+                "user_id": p.user_id,
+                "content": p.content,
+                "location": p.location,
+                "created_at": p.created_at.isoformat(),
+                "updated_at": p.updated_at.isoformat() if p.updated_at else None,
+                "images": images,
+            }
+        ]
     return (
         jsonify(
             {
@@ -221,7 +281,7 @@ def get_category_posts(category_id):
     )
 
 
-# ✅ 내 게시글 조회 (pagination + 정렬)
+#  내 게시글 조회 (pagination + 정렬)
 @bp.route("/me", methods=["GET"])
 @jwt_required()
 def get_my_posts():
@@ -232,8 +292,24 @@ def get_my_posts():
 
     query = Post.query.filter_by(user_id=current_user_id)
     query = apply_order(query, order_by)
-    pagination = query.paginate(page=page, per_page=per_page, error_out=False)
-
+    pagination = (
+        Post.query.filter_by(user_id=current_user_id)
+        .options(selectinload(Post.images))
+        .order_by(Post.created_at.desc())
+        .paginate(page=page, per_page=per_page, error_out=False)
+    )
+    result = []
+    for p in pagination.items:
+        images = [
+            {
+                "image_id": img.image_id,
+                "uuid": img.uuid,
+                "directory": img.directory,
+                "original_image_name": img.original_image_name,
+                "ext": img.ext,
+            }
+            for img in p.images.all()  # lazy="dynamic" 관계이므로 .all() 필요
+        ]
     result = [
         {
             "post_id": p.post_id,
@@ -242,8 +318,8 @@ def get_my_posts():
             "location": p.location,
             "created_at": p.created_at.isoformat(),
             "updated_at": p.updated_at.isoformat() if p.updated_at else None,
+            "images": images,
         }
-        for p in pagination.items
     ]
     return (
         jsonify(
@@ -263,7 +339,7 @@ def get_my_posts():
 @jwt_required()
 def upload_post_image():
     """
-    ✅ 게시글 이미지 업로드
+     게시글 이미지 업로드
     - 이미지 저장 후 DB에 메타데이터 반영
     """
     user_id = get_jwt_identity()
@@ -275,7 +351,8 @@ def upload_post_image():
 
     # 이미지 저장 및 메타데이터 획득
     try:
-        image_data = save_image(file, folder="static/post_images", image_type="post")
+        output, fmt = compress_image(file, image_type="post")
+        _, rel_path = save_to_disk(output, fmt, category="post")
     except Exception as e:
         return jsonify({"error": f"이미지 저장 실패: {e}"}), 400
 
@@ -283,14 +360,13 @@ def upload_post_image():
     if not post:
         return jsonify({"error": "게시글이 존재하지 않습니다."}), 404
 
-    # ✅ DB에 Image 객체 생성
+    #  DB에 Image 객체 생성
     image = Image(
         post_id=post_id,
         user_id=user_id,
-        directory=image_data["directory"],
-        original_image_name=image_data["original_image_name"],
-        ext=image_data["ext"],
-        uuid=image_data["uuid"],
+        directory=rel_path,
+        original_image_name=file.filename,
+        ext=os.path.splitext(file.filename)[1].lstrip("."),
     )
 
     db.session.add(image)

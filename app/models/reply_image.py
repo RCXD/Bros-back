@@ -16,3 +16,9 @@ class ReplyImage(db.Model):
     original_image_name = db.Column(db.String(255), nullable=False)
     ext = db.Column(db.String(10), nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.now)
+
+    post = db.relationship("Post", back_populates="reply_images")
+    user = db.relationship("User", back_populates="reply_images")
+
+    def __repr__(self):
+        return f"<ReplyImage {self.image_id} - {self.original_image_name}>"

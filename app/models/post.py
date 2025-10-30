@@ -13,3 +13,5 @@ class Post(db.Model):
     view_count = db.Column(db.Integer, default=0)
     created_at = db.Column(db.DateTime, default=datetime.now)
     updated_at = db.Column(db.DateTime, default=datetime.now, onupdate=datetime.now)
+
+    category = db.relationship("Category", backref="posts")

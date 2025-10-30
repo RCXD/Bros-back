@@ -1,19 +1,22 @@
 from flask import Blueprint, request, jsonify
 from ..extensions import db
 from ..models import User
-from ..utils.image_utils import upload_profile  #  추가
+from ..utils.image_utils import upload_profile
 from email_validator import validate_email, EmailNotValidError
 from flask_jwt_extended import (
     create_access_token,
     create_refresh_token,
     jwt_required,
     get_jwt_identity,
-    get_jwt,
+    set_access_cookies,
+    unset_jwt_cookies,
+    set_refresh_cookies,
+    get_csrf_token,
 )
+
 from ..blueprints.jwt_handlers import register_jwt_handlers
 import requests
 from ..models.user import OauthType
-from ..blacklist import add_to_blacklist
 
 
 bp = Blueprint("auth", __name__)
@@ -24,7 +27,7 @@ def get_info():
     return (
         jsonify(
             {
-                "message": "서버 연결 성공~~~!~!~!~!!!",
+                "message": "서버 연결 성공",
                 "ip": request.remote_addr,
                 "path": request.path,
             }
@@ -98,10 +101,29 @@ def login():
 
     user = User.query.filter_by(username=username).first()
     if not user or not user.check_password(password):
-        return jsonify({"message": "로그인에 실패하였습니다."}), 401
+        return jsonify({"message": "로그인 실패"}), 401
+
     access = create_access_token(identity=str(user.user_id))
     refresh = create_refresh_token(identity=str(user.user_id))
-    return jsonify(access_token=access, refresh_token=refresh, username=user.username, nickname=user.nickname, email=user.email, OauthType=user.oauth_type.value), 200
+
+    response = jsonify(
+        {
+            "message": "로그인 성공",
+            "access_token": access,
+            "refresh_token": refresh,
+            "csrf_access_token": get_csrf_token(access),
+            "csrf_refresh_token": get_csrf_token(refresh),
+        }
+    )
+
+    # 쿠키에 토큰 설정
+    set_access_cookies(response, access)
+    set_refresh_cookies(response, refresh)
+
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    response.headers["X-Frame-Options"] = "SAMEORIGIN"
+
+    return response
 
 
 GOOGLE_TOKEN_INFO_URL = "https://oauth2.googleapis.com/tokeninfo"
@@ -115,7 +137,7 @@ def google_login():
         return jsonify({"message": "Token required"}), 400
 
     resp = requests.get(
-        "https://oauth2.googleapis.com/tokeninfo", params={"id_token": google_token}
+        GOOGLE_TOKEN_INFO_URL, params={"id_token": google_token}
     )
     if resp.status_code != 200:
         return jsonify({"message": "잘못된 요청입니다."}), 401
@@ -145,8 +167,26 @@ def google_login():
         #  Google 프로필 이미지 저장
         upload_profile(user, url=picture_url)
 
-    access_token = create_access_token(identity=str(user.user_id))
-    return jsonify({"message": "Google 로그인 완료", "access_token": access_token}), 200
+        access = create_access_token(identity=str(user.user_id))
+    refresh = create_refresh_token(identity=str(user.user_id))
+
+    response = jsonify(
+        {
+            "message": "로그인 성공",
+            "access_token": access,
+            "refresh_token": refresh,
+            "csrf_access_token": get_csrf_token(access),
+            "csrf_refresh_token": get_csrf_token(refresh),
+        }
+    )
+
+    # 쿠키에 토큰 설정
+    set_access_cookies(response, access)
+    set_refresh_cookies(response, refresh)
+
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    response.headers["X-Frame-Options"] = "SAMEORIGIN"
+    return response
 
 
 #  Kakao 로그인
@@ -190,8 +230,26 @@ def kakao_login():
         #  카카오 프로필 이미지 업로드
         upload_profile(user, url=image_url)
 
-    access_token = create_access_token(identity=str(user.user_id))
-    return jsonify({"message": "Kakao 로그인 완료", "access_token": access_token}), 200
+        access = create_access_token(identity=str(user.user_id))
+    refresh = create_refresh_token(identity=str(user.user_id))
+
+    response = jsonify(
+        {
+            "message": "로그인 성공",
+            "access_token": access,
+            "refresh_token": refresh,
+            "csrf_access_token": get_csrf_token(access),
+            "csrf_refresh_token": get_csrf_token(refresh),
+        }
+    )
+
+    # 쿠키에 토큰 설정
+    set_access_cookies(response, access)
+    set_refresh_cookies(response, refresh)
+
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    response.headers["X-Frame-Options"] = "SAMEORIGIN"
+    return response
 
 
 #  Naver 로그인
@@ -233,24 +291,35 @@ def naver_login():
         #  네이버 프로필 이미지 업로드
         upload_profile(user, url=image_url)
 
-    access_token = create_access_token(identity=str(user.user_id))
-    return jsonify({"message": "Naver 로그인 완료", "access_token": access_token}), 200
+        access = create_access_token(identity=str(user.user_id))
+    refresh = create_refresh_token(identity=str(user.user_id))
+
+    response = jsonify(
+        {
+            "message": "로그인 성공",
+            "access_token": access,
+            "refresh_token": refresh,
+            "csrf_access_token": get_csrf_token(access),
+            "csrf_refresh_token": get_csrf_token(refresh),
+        }
+    )
+
+    # 쿠키에 토큰 설정
+    set_access_cookies(response, access)
+    set_refresh_cookies(response, refresh)
+
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    response.headers["X-Frame-Options"] = "SAMEORIGIN"
+
+    return response
 
 
 @bp.route("/logout", methods=["DELETE"])
 @jwt_required()
 def logout_access():
-    jti = get_jwt()["jti"]
-    add_to_blacklist(jti)
-    return jsonify(msg="액세스 토큰이 거부되었습니다"), 200
-
-
-@bp.route("/logout_refresh", methods=["DELETE"])
-@jwt_required(refresh=True)
-def logout_refresh():
-    jti = get_jwt()["jti"]
-    add_to_blacklist(jti)
-    return jsonify(msg="리프레시 토큰이 삭제되었습니다."), 200
+    response = jsonify(msg="로그아웃 되었습니다."), 200
+    unset_jwt_cookies(response)
+    return response
 
 
 # 모든 유저 조건부 조회(쿼리 들어오면 들어온걸로 조회, 안들어오면 전체조회)
@@ -301,6 +370,7 @@ def get_users():
 @bp.route("/users/<int:user_id>", methods=["GET"])
 def get_user(user_id):
     user = User.query.get_or_404(user_id)
+    user_profile = user.profile_img
     return (
         jsonify(
             {
