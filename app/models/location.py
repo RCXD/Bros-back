@@ -10,4 +10,3 @@ class Location(db.Model):
     is_danger = db.Column(db.Boolean, default=False)
     risk_level = db.Column(db.Integer)
 
-    posts = db.relationship("Post", backref="location", lazy=True)
