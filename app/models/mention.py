@@ -29,6 +29,6 @@ class Mention(db.Model):
 
     __table_args__ = (
         db.UniqueConstraint(
-            "content_type", "object_id", "user_id", name="unique_mention"
+            "content_type", "object_id", "mentioned_user_id", name="unique_mention"
         ),
     )
