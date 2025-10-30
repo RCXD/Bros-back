@@ -45,8 +45,7 @@ def sign_up():
       - address
       - profile_img (선택, 파일)
     """
-    data = request.form  # ✅ form-data로 받음
-    file = request.files.get("profile_img")  # ✅ 파일 처리
+    data = request.get_json()  # ✅ form-data로 받음
 
     username = data.get("username")
     password = data.get("password")
