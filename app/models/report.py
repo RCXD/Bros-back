@@ -12,11 +12,11 @@ class Report(db.Model):
 
     report_id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     user_id = db.Column(db.Integer, db.ForeignKey("users.user_id"), nullable=False)
+    
     report_target_type = db.Column(db.Enum(ReportType), nullable=False)
     report_target_id = db.Column(db.Integer, nullable=False)
     report_reason = db.Column(db.String(255), nullable=False)
-    report_count = db.Column(db.Integer, default=0, nullable=False)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=datetime.now)
 
     user = db.relationship("User", backref=db.backref("reports_made", lazy="dynamic"))
 

@@ -5,6 +5,7 @@ from ..models import ReplyLike, Reply, User
 
 bp = Blueprint("reply_like", __name__)
 
+
 # 특정 댓글의 좋아요 수 조회
 @bp.route("/reply/<int:reply_id>", methods=["GET"])
 def get_reply_likes(reply_id):
@@ -16,16 +17,16 @@ def get_reply_likes(reply_id):
 @bp.route("/me", methods=["GET"])
 @jwt_required()
 def get_my_reply_likes():
+    page = request.args.get("page", 1, type=int)
     current_user_id = get_jwt_identity()
-    likes = ReplyLike.query.filter_by(user_id=current_user_id).all()
+    likes = ReplyLike.query.filter_by(user_id=current_user_id).paginate(
+        page=page, per_page=10
+    )
 
-    result = []
-    for like in likes:
-        result.append({
-            "reply_id": like.reply_id,
-            "user_id": like.user_id
-        })
-    return jsonify(result), 200
+    result_list = []
+    for like in likes.items:
+        result_list.append({"reply_id": like.reply_id, "user_id": like.user_id})
+    return jsonify(result_list), 200
 
 
 # 좋아요 등록 (댓글/대댓글 모두 동일)
@@ -34,7 +35,9 @@ def get_my_reply_likes():
 def add_reply_like(reply_id):
     current_user_id = get_jwt_identity()
 
-    existing = ReplyLike.query.filter_by(reply_id=reply_id, user_id=current_user_id).first()
+    existing = ReplyLike.query.filter_by(
+        reply_id=reply_id, user_id=current_user_id
+    ).first()
     if existing:
         return jsonify({"message": "이미 좋아요한 댓글입니다"}), 400
 
@@ -42,11 +45,16 @@ def add_reply_like(reply_id):
     db.session.add(like)
     db.session.commit()
 
-    return jsonify({
-        "message": "댓글 좋아요 등록 완료",
-        "reply_id": reply_id,
-        "user_id": current_user_id
-    }), 201
+    return (
+        jsonify(
+            {
+                "message": "댓글 좋아요 등록 완료",
+                "reply_id": reply_id,
+                "user_id": current_user_id,
+            }
+        ),
+        201,
+    )
 
 
 # 좋아요 취소
@@ -62,8 +70,13 @@ def remove_reply_like(reply_id):
     db.session.delete(like)
     db.session.commit()
 
-    return jsonify({
-        "message": "댓글 좋아요 취소 완료",
-        "reply_id": reply_id,
-        "user_id": current_user_id
-    }), 200
+    return (
+        jsonify(
+            {
+                "message": "댓글 좋아요 취소 완료",
+                "reply_id": reply_id,
+                "user_id": current_user_id,
+            }
+        ),
+        200,
+    )

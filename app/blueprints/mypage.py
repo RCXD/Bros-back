@@ -25,3 +25,20 @@ def get_info():
         "follower_count": current_user.follower_count,
     }
     return jsonify(user_info), 200
+
+@bp.route("/profile_img", methods=["POST"])
+@jwt_required()
+def update_profile_img():
+    current_user = get_current_user()
+    if not current_user:
+        return jsonify({"error": "사용자를 찾을 수 없습니다."}), 404
+
+    file = request.files.get("profile_img")
+    if not file:
+        return jsonify({"error": "프로필 이미지를 업로드해주세요."}), 400
+
+    image_url = save_image(file)
+    current_user.profile_img = image_url
+    db.session.commit()
+
+    return jsonify({"message": "프로필 이미지가 업데이트되었습니다.", "profile_img": image_url}), 200

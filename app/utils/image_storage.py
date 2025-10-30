@@ -55,42 +55,36 @@ def _compress_and_resize(file_path, image_type="default"):
         current_app.logger.warning(f"[!] 이미지 압축 실패: {e}")
 
 
+# utils/image_storage.py 수정
 def save_image(file, folder="static/uploads", image_type="default"):
-    """
-    ✅ 이미지를 서버에 저장하고 경로 반환
-    - 저장 후 즉시 응답 반환
-    - 백그라운드에서 압축 및 리사이즈 수행
-    """
     os.makedirs(os.path.join(current_app.root_path, folder), exist_ok=True)
 
-    ext = os.path.splitext(file.filename)[1].lower()
-    allowed_ext = [
-        ".jpg",
-        ".jpeg",
-        ".png",
-        ".gif",
-        ".webp",
-        ".apng",
-        ".avif",
-        ".jfif",
-        ".pjpeg",
-        ".pjp",
-    ]
+    # 확장자 및 유효성 검사
+    original_name = file.filename
+    ext = os.path.splitext(original_name)[1].lower()
+    allowed_ext = [".jpg", ".jpeg", ".png", ".gif", ".webp"]
     if ext not in allowed_ext:
         raise ValueError(f"❌ 지원하지 않는 이미지 형식: {ext}")
 
-    # 파일 이름 및 경로
-    filename = f"{uuid.uuid4()}{ext}"
+    # 고유 UUID 파일명 생성
+    uid = str(uuid.uuid4())
+    filename = f"{uid}{ext}"
     save_path = os.path.join(current_app.root_path, folder, filename)
     relative_path = f"{folder}/{filename}"
 
     # 즉시 저장 (압축 전 원본)
     file.save(save_path)
 
-    # 비동기로 압축 처리
+    # 비동기 압축
     executor.submit(_compress_and_resize, save_path, image_type)
 
-    return relative_path
+    # ✅ 전체 메타데이터 반환
+    return {
+        "uuid": uid,
+        "directory": relative_path,
+        "original_image_name": original_name,
+        "ext": ext,
+    }
 
 
 def delete_image(image):
