@@ -9,5 +9,3 @@ class Location(db.Model):
     longitude = db.Column(db.Float)
     is_danger = db.Column(db.Boolean, default=False)
     risk_level = db.Column(db.Integer)
-
-    posts = db.relationship("Post", backref="location", lazy=True)
