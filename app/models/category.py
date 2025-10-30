@@ -1,12 +1,13 @@
 from ..extensions import db
 
+# post의 카테고리
 
 class SubCategory(db.Model):
     __tablename__ = "sub_categories"
 
     subcategory_id = db.Column(db.Integer, primary_key=True)
     category_id = db.Column(db.Integer, db.ForeignKey("categories.category_id"))
-    subcategory_name = db.Column(db.String(255), nullable=True)
+    subcategory_name = db.Column(db.String(255), nullable=True, unique=True)
 
 
 class Category(db.Model):
