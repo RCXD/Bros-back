@@ -256,8 +256,8 @@ def logout_refresh():
 # 모든 유저 조건부 조회(쿼리 들어오면 들어온걸로 조회, 안들어오면 전체조회)
 # 쿼리 = username, nickname
 # 쿼리 없으면 전체조회
-@jwt_required()
 @bp.route("/users", methods=["GET"])
+@jwt_required()
 def get_users():
 
     filters = {}
@@ -297,8 +297,8 @@ def get_users():
 
 
 # id로 유저 조회(특정 회원 조회)
-@jwt_required()
 @bp.route("/users/<int:user_id>", methods=["GET"])
+@jwt_required()
 def get_user(user_id):
     user = User.query.get_or_404(user_id)
     return (
@@ -323,7 +323,7 @@ def get_user(user_id):
 
 
 # 내 정보 조회
-@bp.route("/users/me", methods=["GET"])
+@bp.route("/me", methods=["GET"])
 @jwt_required()
 def get_me():
     current_id = get_jwt_identity()

@@ -9,12 +9,12 @@ import os
 bp = Blueprint("post", __name__)
 
 
-# ✅ 게시글 작성
+#  게시글 작성
 @bp.route("/write", methods=["POST"])
 @jwt_required()
 def write():
     """
-    ✅ 게시글 작성
+     게시글 작성
     - 게시글 생성 후 post_id 반환
     - 이미지 업로드는 별도 엔드포인트에서 post_id 기반으로 수행
     """
@@ -41,12 +41,12 @@ def write():
     )
 
 
-# ✅ 게시글 수정
+#  게시글 수정
 @bp.route("/edit/<int:post_id>", methods=["PUT"])
 @jwt_required()
 def edit_post(post_id):
     """
-    ✅ 게시글 수정
+     게시글 수정
     - 내용 수정
     - 이미지 추가/삭제는 별도 엔드포인트에서 처리
     """
@@ -65,7 +65,7 @@ def edit_post(post_id):
     return jsonify({"message": "게시글 수정 완료", "post_id": post_id}), 200
 
 
-# ✅ 공통 정렬 함수
+#  공통 정렬 함수
 def apply_order(query, order_by):
     """정렬 기준을 적용하는 헬퍼 함수"""
     if order_by == "latest":
@@ -78,7 +78,7 @@ def apply_order(query, order_by):
         return query.order_by(Post.created_at.desc())
 
 
-# ✅ 전체 게시글 조회 (조건부 필터 + pagination + 정렬)
+#  전체 게시글 조회 (조건부 필터 + pagination + 정렬)
 @bp.route("/posts", methods=["GET"])
 def get_posts():
     filters = {}
@@ -129,7 +129,7 @@ def get_posts():
     )
 
 
-# ✅ 특정 게시글 조회 (단일)
+#  특정 게시글 조회 (단일)
 @bp.route("/<int:post_id>", methods=["GET"])
 def get_post(post_id):
     post = Post.query.get_or_404(post_id)
@@ -149,7 +149,7 @@ def get_post(post_id):
     )
 
 
-# ✅ 특정 유저의 게시글 조회 (pagination + 정렬)
+#  특정 유저의 게시글 조회 (pagination + 정렬)
 @bp.route("/user/<int:user_id>", methods=["GET"])
 def get_user_posts(user_id):
     page = request.args.get("page", 1, type=int)
@@ -185,7 +185,7 @@ def get_user_posts(user_id):
     )
 
 
-# ✅ 카테고리별 게시글 조회 (pagination + 정렬)
+#  카테고리별 게시글 조회 (pagination + 정렬)
 @bp.route("/categories/<int:category_id>", methods=["GET"])
 def get_category_posts(category_id):
     page = request.args.get("page", 1, type=int)
@@ -221,7 +221,7 @@ def get_category_posts(category_id):
     )
 
 
-# ✅ 내 게시글 조회 (pagination + 정렬)
+#  내 게시글 조회 (pagination + 정렬)
 @bp.route("/me", methods=["GET"])
 @jwt_required()
 def get_my_posts():
@@ -263,7 +263,7 @@ def get_my_posts():
 @jwt_required()
 def upload_post_image():
     """
-    ✅ 게시글 이미지 업로드
+     게시글 이미지 업로드
     - 이미지 저장 후 DB에 메타데이터 반영
     """
     user_id = get_jwt_identity()
@@ -283,7 +283,7 @@ def upload_post_image():
     if not post:
         return jsonify({"error": "게시글이 존재하지 않습니다."}), 404
 
-    # ✅ DB에 Image 객체 생성
+    #  DB에 Image 객체 생성
     image = Image(
         post_id=post_id,
         user_id=user_id,
@@ -311,7 +311,7 @@ def upload_post_image():
     )
 
 
-@bp.route("/delete_post_image/<string:uuid>", methods=["DELETE"])
+@bp.route("/<string:uuid>", methods=["DELETE"])
 @jwt_required()
 def delete_post_image(uuid):
     user_id = get_jwt_identity()

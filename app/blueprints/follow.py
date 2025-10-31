@@ -5,8 +5,8 @@ from ..models import Follow, User
 
 bp = Blueprint("follow", __name__)
 
-# 1️⃣ 팔로우 등록
-@bp.route("/apply/<int:target_id>", methods=["POST"])
+# 팔로우 등록
+@bp.route("/<int:target_id>", methods=["POST"])
 @jwt_required()
 def follow_user(target_id):
     current_user_id = get_jwt_identity()
@@ -25,8 +25,8 @@ def follow_user(target_id):
     return jsonify({"message": f"user {target_id} 팔로우 완료"}), 201
 
 
-# 2️⃣ 팔로우 취소
-@bp.route("/delete/<int:target_id>", methods=["DELETE"])
+# 팔로우 취소
+@bp.route("/<int:target_id>", methods=["DELETE"])
 @jwt_required()
 def unfollow_user(target_id):
     current_user_id = get_jwt_identity()
@@ -41,7 +41,7 @@ def unfollow_user(target_id):
     return jsonify({"message": f"user {target_id} 팔로우 취소 완료"}), 200
 
 
-# 3️⃣ 내가 팔로우하는 유저 목록 조회
+# 내가 팔로우하는 유저 목록 조회
 @bp.route("/following", methods=["GET"])
 @jwt_required()
 def get_following():
@@ -60,7 +60,7 @@ def get_following():
     return jsonify(result), 200
 
 
-# 4️⃣ 나를 팔로우하는 유저 목록 조회
+# 나를 팔로우하는 유저 목록 조회
 @bp.route("/followers", methods=["GET"])
 @jwt_required()
 def get_followers():

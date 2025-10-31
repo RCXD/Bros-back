@@ -8,7 +8,7 @@ from ..extensions import db
 bp = Blueprint('mention', __name__)
 
 # 멘션 등록
-@bp.route("/create_mention", methods=["POST"])
+@bp.route("/create", methods=["POST"])
 @jwt_required()
 def create_mention():
     """
