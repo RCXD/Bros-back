@@ -70,15 +70,13 @@ def create_mention():
         }
     }), 201
 
-# user_id로 특정 유저가 언급된 멘션 조회
-@bp.route("/user/<int:user_id>", methods=["GET"])
+# 내 맨션 조회
+@bp.route("/mine", methods=["GET"])
 @jwt_required()
-def get_mentions_for_user(user_id):
+def get_mentions_for_user():
     current_user_id = int(get_jwt_identity())  # JWT에서 현재 유저 ID 가져오기
-    if user_id != current_user_id:
-        return jsonify({"message": "권한 없음"}), 403
 
-    mentions = Mention.query.filter_by(user_id=user_id).all()
+    mentions = Mention.query.filter_by(user_id=current_user_id).all()
     result = []
     for m in mentions:
         result.append({

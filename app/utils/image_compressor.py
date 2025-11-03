@@ -3,6 +3,8 @@ from io import BytesIO
 from flask import current_app
 from .image_rules import IMAGE_RULES
 from ..models.image import Image
+from PIL import Image as PILImage
+
 
 def compress_image(file, image_type="default"):
     """
@@ -14,12 +16,12 @@ def compress_image(file, image_type="default"):
     max_size = rule["max_size"]
     max_bytes = rule["max_bytes"]
 
-    image = Image.open(file)
+    image = PILImage.open(file)
     fmt = (image.format or "JPEG").lower()
 
     # 1️⃣ 리사이즈 (비율 유지)
     if max_size:
-        image.thumbnail(max_size, Image.Resampling.LANCZOS)
+        image.thumbnail(max_size, PILImage.Resampling.LANCZOS)
 
     # 2️⃣ 압축 반복
     quality = 85

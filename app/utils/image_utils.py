@@ -22,7 +22,7 @@ def upload_profile(user, file=None, url=None):
     folder = "static/profile_images"
     backup_folder = os.path.join(folder, "backup")
 
-    # 1️⃣ 파일 or URL이 없는 경우 → 기본 이미지 유지
+    # 파일 or URL이 없는 경우 → 기본 이미지 유지
     if not file and not url:
         if not user.profile_img:
             user.profile_img = DEFAULT_PROFILE_PATH
@@ -30,7 +30,7 @@ def upload_profile(user, file=None, url=None):
             db.session.commit()
         return user.profile_img
 
-    # 2️⃣ URL로부터 이미지 다운로드
+    # URL로부터 이미지 다운로드
     if url and not file:
         try:
             resp = requests.get(url, timeout=5)
@@ -44,7 +44,7 @@ def upload_profile(user, file=None, url=None):
             db.session.commit()
             return user.profile_img
 
-    # 3️⃣ 기존 프로필 이미지 백업 처리
+    # 기존 프로필 이미지 백업 처리
     if user.profile_img and user.profile_img != DEFAULT_PROFILE_PATH:
         try:
             old_path = os.path.join(current_app.root_path, user.profile_img)
@@ -64,15 +64,15 @@ def upload_profile(user, file=None, url=None):
         except Exception as e:
             current_app.logger.warning(f"이전 프로필 백업 실패: {e}")
 
-    # 4️⃣ 새 프로필 이미지 저장 (비동기 압축 + 규칙 적용)
+    # 새 프로필 이미지 저장 (비동기 압축 + 규칙 적용)
     try:
-        relative_path, _ = save_to_disk(file, folder=folder, image_type="profile")
+        relative_path = save_to_disk(file, fmt=file.filename.rsplit(".", 1)[-1], category="profile")
         current_app.logger.info(f"새 프로필 이미지 저장 완료: {relative_path}")
     except Exception as e:
         current_app.logger.warning(f"프로필 이미지 저장 실패: {e}")
         relative_path = DEFAULT_PROFILE_PATH
 
-    # 5️⃣ DB 반영
+    # DB 반영
     user.profile_img = relative_path
     db.session.add(user)
     db.session.commit()

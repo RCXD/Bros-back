@@ -78,22 +78,3 @@ def get_my_friends():
             "user_id": f.user_id,
         })
     return jsonify(result), 200
-
-
-#  나를 즐겨찾기한 사람 목록
-@bp.route("/for_me", methods=["GET"])
-@jwt_required()
-def get_favorited_by():
-    """
-    나를 즐겨찾기로 등록한 사용자 목록
-    """
-    current_user_id = get_jwt_identity()
-    users = Friend.query.filter_by(friend_id=current_user_id).all()
-
-    result = []
-    for u in users:
-        result.append({
-            "user_id": u.user_id,
-            "nickname": u.user.nickname if hasattr(u.user, "nickname") else None,
-        })
-    return jsonify(result), 200

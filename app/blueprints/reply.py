@@ -21,7 +21,7 @@ def create_reply():
     db.session.add(reply)
     db.session.commit()
 
-    return jsonify({"message": "댓글이 작성되었습니다.", "reply_id": reply.id}), 201
+    return jsonify({"message": "댓글이 작성되었습니다.", "reply_id": reply.reply_id}), 201
 
 
 @bp.route("/<int:reply_id>", methods=["DELETE"])
@@ -61,7 +61,7 @@ def update_reply(reply_id):
     return jsonify({"message": "댓글이 수정되었습니다."}), 200
 
 
-@bp.route("/post/<int:post_id>/replies", methods=["GET"])
+@bp.route("/<int:post_id>/replies", methods=["GET"])
 def get_root_replies(post_id):
     """
     루트 댓글 10개 단위로 페이지네이션
@@ -110,7 +110,7 @@ def get_root_replies(post_id):
     )
 
 
-@bp.route("/reply/<int:parent_id>/children", methods=["GET"])
+@bp.route("/<int:parent_id>/children", methods=["GET"])
 def get_child_replies(parent_id):
     """
     ✅ 특정 댓글(parent_id)의 대댓글 30개 단위로 페이지네이션
