@@ -1,6 +1,7 @@
 from flask import Flask, jsonify
 from .extensions import db, migrate, cors, jwt
 from .config import Config
+from .jwt_handlers import register_jwt_handlers
 
 
 def create_app():
@@ -9,9 +10,13 @@ def create_app():
 
     db.init_app(app)
     migrate.init_app(app, db)
-    cors.init_app(app, origins=Config.CORS_ORIGINS, )
+    cors.init_app(
+        app,
+        origins=Config.CORS_ORIGINS,
+    )
     # cors.init_app(app,origins="*")
     jwt.init_app(app)
+    register_jwt_handlers(jwt)
 
     from .blueprints.auth import bp as auth_bp
     from .blueprints.post import bp as post_bp
