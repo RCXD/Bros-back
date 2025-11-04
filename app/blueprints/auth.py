@@ -6,7 +6,7 @@ from email_validator import validate_email, EmailNotValidError
 from flask_jwt_extended import jwt_required, create_access_token, get_current_user
 import requests
 from ..models.user import OauthType
-from ..utils.user_utils import token_provider
+from ..utils.user_utils import token_provider, is_valid_phone
 
 
 bp = Blueprint("auth", __name__)
@@ -31,7 +31,7 @@ def sign_up():
     email = data.get("email")
     nickname = data.get("nickname")
     address = data.get("address")
-    phone = data.get("phone")
+    phone = data.get("phone") # string으로 요청 받음(정규식 처리 필요)
 
     if not username or not password or not email:
         return jsonify({"message": "필수 항목 누락되었습니다."}), 400
@@ -49,6 +49,9 @@ def sign_up():
     if existing_email:
         return jsonify({"message": "이미 사용중인 이메일입니다."}), 409
 
+    if not is_valid_phone(phone):
+        return jsonify({"message": "전화번호 형식이 잘못되었습니다."}), 400
+
     if not nickname:
         nickname = username
 
@@ -64,6 +67,72 @@ def sign_up():
         db.session.rollback()
         return jsonify({"message": "회원가입에 실패했습니다."}), 400
     return jsonify({"message": "회원가입에 완료했습니다."}), 200
+
+from flask_jwt_extended import jwt_required, get_jwt_identity
+
+# 회원 정보 수정
+@bp.route("/update", methods=["PUT"])
+@jwt_required()
+def update_profile():
+    """
+    회원 정보 수정 (JSON 기반)
+      - email (선택)
+      - password (선택)
+      - nickname (선택)
+      - address (선택)
+      - phone (선택)
+    """
+    data = request.get_json()
+    if not data:
+        return jsonify({"message": "요청 데이터가 없습니다."}), 400
+
+    user_id = get_jwt_identity()
+    user = User.query.get(user_id)
+    if not user:
+        return jsonify({"message": "사용자를 찾을 수 없습니다."}), 404
+
+    email = data.get("email")
+    password = data.get("password")
+    nickname = data.get("nickname")
+    address = data.get("address")
+    phone = data.get("phone")
+
+    if not is_valid_phone(phone):
+        return jsonify({"message": "전화번호 형식이 잘못되었습니다."}), 400
+
+    # 이메일 유효성 및 중복 검사
+    if email:
+        try:
+            validate_email(email)
+        except EmailNotValidError:
+            return jsonify({"message": "이메일 형식이 잘못되었습니다."}), 400
+
+        existing_email = User.query.filter(
+            User.email == email, User.user_id != user.user_id
+        ).first()
+        if existing_email:
+            return jsonify({"message": "이미 사용중인 이메일입니다."}), 409
+        user.email = email
+
+    # 비밀번호 변경
+    if password:
+        user.set_password(password)
+
+    # 닉네임, 주소 수정
+    if nickname:
+        user.nickname = nickname
+    if address:
+        user.address = address
+    if phone:
+        user.phone = phone
+
+    # DB 저장
+    try:
+        db.session.commit()
+        return jsonify({"message": "회원 정보가 수정되었습니다."}), 200
+    except Exception:
+        db.session.rollback()
+        return jsonify({"message": "회원 정보 수정에 실패했습니다."}), 400
 
 
 @bp.route("/login", methods=["POST"])
@@ -306,3 +375,47 @@ def get_info():
         "follower_count": current_user.follower_count,
     }
     return jsonify(user_info), 200
+
+# 회원 탈퇴(회원이 직접 탈퇴)
+@bp.route("/", methods=["DELETE"])
+@jwt_required()
+def delete_user():
+    """
+    회원 탈퇴 (JWT 인증 기반)
+    """
+    user_id = get_jwt_identity()
+    user = User.query.get(user_id)
+
+    if not user:
+        return jsonify({"message": "사용자를 찾을 수 없습니다."}), 404
+
+    try:
+        db.session.delete(user)
+        db.session.commit()
+        return jsonify({"message": "회원 탈퇴가 완료되었습니다."}), 200
+    except Exception:
+        db.session.rollback()
+        return jsonify({"message": "회원 탈퇴에 실패했습니다."}), 400
+    
+# 회원 탈퇴(관리자 전용)
+@bp.route("/<int:user_id>", methods=["DELETE"])
+# @jwt_required()
+def delete_user_by_admin(user_id):
+    """
+    관리자 전용 회원 삭제
+    """
+    # current_user = get_current_user()
+    # if current_user.account_type.name != "ADMIN":
+        # return jsonify({"message": "권한이 없습니다."}), 403
+
+    target = User.query.get(user_id)
+    if not target:
+        return jsonify({"message": "대상 사용자를 찾을 수 없습니다."}), 404
+
+    try:
+        db.session.delete(target)
+        db.session.commit()
+        return jsonify({"message": "회원 삭제가 완료되었습니다."}), 200
+    except Exception:
+        db.session.rollback()
+        return jsonify({"message": "회원 삭제에 실패했습니다."}), 400

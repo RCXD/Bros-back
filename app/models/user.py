@@ -27,6 +27,7 @@ class User(db.Model):
     address = db.Column(db.String(255), nullable=False)
     profile_img = db.Column(db.String(255))  # directory
     nickname = db.Column(db.String(50))
+    phone = db.Column(db.String(20))
     created_at = db.Column(db.DateTime, default=datetime.now)
     last_login = db.Column(
         db.DateTime, nullable=True, default=datetime.now, onupdate=datetime.now
