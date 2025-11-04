@@ -341,6 +341,7 @@ def get_user(user_id):
         jsonify(
             {
                 "user_id": user.user_id,
+                "username": user.username,
                 "nickname": user.nickname,
                 "email": user.email,
                 "address": user.address,
