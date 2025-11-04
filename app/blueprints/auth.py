@@ -11,62 +11,85 @@ from ..utils.user_utils import token_provider, is_valid_phone
 
 bp = Blueprint("auth", __name__)
 
+ALLOWED_EXTENSIONS = {"png", "jpg", "jpeg", "gif"}
+
+
+def allowed_file(filename):
+    return "." in filename and filename.rsplit(".", 1)[1].lower() in ALLOWED_EXTENSIONS
+
+
+def save_profile_image(file):
+    ext = file.filename.rsplit(".", 1)[1].lower()
+    today = datetime.now().strftime("%Y-%m-%d")
+    folder_path = os.path.join(current_app.root_path, "static/profile_images", today)
+    os.makedirs(folder_path, exist_ok=True)
+    filename = f"{uuid.uuid4()}.{ext}"
+    file_path = os.path.join(folder_path, filename)
+    file.save(file_path)
+    return f"static/profile_images/{today}/{filename}"  # DB에 저장할 경로
+
 
 #  일반 회원가입 시 프로필 이미지 처리 추가
 @bp.route("/sign_up", methods=["POST"])
 def sign_up():
     """
-    일반 회원가입 (프로필 이미지 업로드 지원)
-      - username
-      - password
-      - email
-      - nickname
-      - address
-      - profile_img (선택, 파일)
+    일반 회원가입 (멀티파트 지원)
     """
-    data = request.get_json()  #  form-data로 받음
-
-    username = data.get("username")
-    password = data.get("password")
-    email = data.get("email")
-    nickname = data.get("nickname")
-    address = data.get("address")
-    phone = data.get("phone") # string으로 요청 받음(정규식 처리 필요)
+    username = request.form.get("username")
+    password = request.form.get("password")
+    email = request.form.get("email")
+    nickname = request.form.get("nickname")
+    address = request.form.get("address")
+    phone = request.form.get("phone")
 
     if not username or not password or not email:
         return jsonify({"message": "필수 항목 누락되었습니다."}), 400
 
     try:
         validate_email(email)
-    except EmailNotValidError as e:
+    except EmailNotValidError:
         return jsonify({"message": "이메일 형식이 잘못되었습니다."}), 400
 
-    existing_user = User.query.filter((User.username == username)).first()
-    if existing_user:
+    if User.query.filter_by(username=username).first():
         return jsonify({"message": "이미 존재하는 아이디입니다."}), 409
 
-    existing_email = User.query.filter((User.email == email)).first()
-    if existing_email:
+    if User.query.filter_by(email=email).first():
         return jsonify({"message": "이미 사용중인 이메일입니다."}), 409
 
-    if not is_valid_phone(phone):
-        return jsonify({"message": "전화번호 형식이 잘못되었습니다."}), 400
+    # 프로필 이미지 처리
+    if "profile_img" in request.files:
+        files = request.files.getlist(
+            "profile_img"
+        )  # 멀티파트로 여러 개 들어올 수 있음
+        if len(files) > 1:
+            return jsonify({"message": "프로필 이미지는 1장만 업로드 가능합니다."}), 400
+
+    file = files[0]
+    if file and allowed_file(file.filename):
+        profile_img_path = save_profile_image(file)
+    else:
+        return jsonify({"message": "지원하지 않는 이미지 형식입니다."}), 400
 
     if not nickname:
         nickname = username
 
     user = User(
-        username=username, email=email, nickname=nickname, address=address, phone=phone
+        username=username,
+        email=email,
+        nickname=nickname,
+        address=address,
+        phone=phone,
+        profile_img=profile_img_path,
     )
     user.set_password(password)
-    db.session.add(user)
 
+    db.session.add(user)
     try:
-        db.session.commit()  #  먼저 커밋해야 user.id 존재
+        db.session.commit()
+        return jsonify({"message": "회원가입 완료", "user_id": user.user_id}), 200
     except Exception:
         db.session.rollback()
-        return jsonify({"message": "회원가입에 실패했습니다."}), 400
-    return jsonify({"message": "회원가입에 완료했습니다."}), 200
+        return jsonify({"message": "회원가입 실패"}), 400
 
 from flask_jwt_extended import jwt_required, get_jwt_identity
 

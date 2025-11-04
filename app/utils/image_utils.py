@@ -9,7 +9,7 @@ from ..extensions import db
 from .image_storage import save_to_disk  #  통합 이미지 저장 함수 사용
 
 
-DEFAULT_PROFILE_PATH = "static/profile_images/default.png"
+DEFAULT_PROFILE_PATH = "static/default_profile.jpg"
 
 
 def upload_profile(user, file=None, url=None):
