@@ -335,7 +335,7 @@ def get_users():
 
 # id로 유저 조회(특정 회원 조회)
 @bp.route("/users/<int:user_id>", methods=["GET"])
-@jwt_required()
+# @jwt_required()
 def get_user(user_id):
     user = User.query.get_or_404(user_id)
     return (

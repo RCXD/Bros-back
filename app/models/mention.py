@@ -37,7 +37,7 @@ class Mention(db.Model):
 
     __table_args__ = (
         db.CheckConstraint(
-            "((post_id IS NOT NULL)::int + (reply_id IS NOT NULL)::int + (subreply_id IS NOT NULL)::int) = 1",
+            "((post_id IS NOT NULL)::int + (reply_id IS NOT NULL)::int) = 1",
             name="check_one_target",
         ),
         db.UniqueConstraint(
