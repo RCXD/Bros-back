@@ -71,6 +71,7 @@ def edit_post(post_id):
 
 # 게시글 삭제
 @bp.route("/", methods=["DELETE"])
+@jwt_required()
 def delete_post():
     current_user = get_current_user()
     post = Post.query.get_or_404(request.args.get("post_id", type=int))
