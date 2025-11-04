@@ -52,7 +52,7 @@ def create_report():
         user_id=current_user_id,
         report_target_type=target_type_enum,
         report_target_id=report_target_id,
-        report_reason=report_reason,
+        report_reason=report_reason
     )
     db.session.add(report)
     try:

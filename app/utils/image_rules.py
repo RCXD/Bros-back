@@ -1,6 +1,6 @@
 # utils/image_rules.py
 """
- 이미지 종류별 리사이즈 / 용량 제한 / 포맷 규칙
+✅ 이미지 종류별 리사이즈 / 용량 제한 / 포맷 규칙
 """
 IMAGE_RULES = {
     "profile": {
