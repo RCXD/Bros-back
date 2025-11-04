@@ -2,6 +2,7 @@ from flask_jwt_extended import create_access_token, create_refresh_token, get_cs
 from flask import jsonify
 from ..extensions import db
 from ..models import User
+import re
 
 
 def token_provider(user_id):
@@ -40,3 +41,8 @@ def user_to_dict(user):
         "oauth_type": user.oauth_type.name,
         "follower_count": user.follower_count,
     }
+
+PHONE_REGEX = re.compile(r"^0\d{1,2}-?\d{3,4}-?\d{4}$")
+
+def is_valid_phone(phone: str) -> bool:
+    return bool(PHONE_REGEX.match(phone))
