@@ -8,7 +8,7 @@ def token_provider(user_id):
     access = create_access_token(identity=str(user_id))
     refresh = create_refresh_token(identity=str(user_id))
 
-    user = db.Query.filter(User.user_id == user_id).first_or_404()
+    user = User.query.filter(User.user_id == user_id).first_or_404()
     response = jsonify(
         {
             "message": "로그인 성공",
