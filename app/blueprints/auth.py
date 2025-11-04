@@ -155,7 +155,12 @@ def login():
     if not user or not user.check_password(password):
         return jsonify({"message": "로그인 실패"}), 401
 
-    return token_provider(user.user_id, user.username, user.email, user.nickname)
+    return token_provider(
+    user.user_id,
+    username=user.username,
+    email=user.email,
+    nickname=user.nickname
+)
 
 
 GOOGLE_TOKEN_INFO_URL = "https://oauth2.googleapis.com/tokeninfo"
