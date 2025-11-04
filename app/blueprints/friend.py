@@ -41,8 +41,8 @@ def add_friend(target_id):
     return jsonify({"message": "즐겨찾기 등록 완료"}), 201
 
 
-#  즐겨찾기 삭제
-@bp.route("delete/<int:friend_id>", methods=["DELETE"])
+# 즐겨찾기 삭제
+@bp.route("/<int:friend_id>", methods=["DELETE"])
 @jwt_required()
 def remove_friend(friend_id):
     """

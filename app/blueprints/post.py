@@ -109,7 +109,7 @@ def get_posts():
 
     return paginate_posts(query, page, per_page)
 
-
+# 특정 포스트 조회
 @bp.route("/<int:post_id>", methods=["GET"])
 def get_post(post_id):
     post = Post.query.filter(Post.post_id == post_id).first_or_404()
@@ -192,7 +192,7 @@ def upload_post_image():
     )
 
 
-@bp.route("/delete/<string:uuid>", methods=["DELETE"])
+@bp.route("/<string:uuid>", methods=["DELETE"])
 @jwt_required()
 def delete_post_image(uuid):
     user_id = get_jwt_identity()

@@ -227,8 +227,8 @@ def logout_access():
 # 모든 유저 조건부 조회(쿼리 들어오면 들어온걸로 조회, 안들어오면 전체조회)
 # 쿼리 = username, nickname
 # 쿼리 없으면 전체조회
-@jwt_required()
 @bp.route("/users", methods=["GET"])
+@jwt_required()
 def get_users():
 
     filters = {}
@@ -284,7 +284,8 @@ def get_user(user_id):
     )
 
 
-@bp.route("/info", methods=["GET"])
+# 내 정보 조회
+@bp.route("/me", methods=["GET"])
 @jwt_required()
 def get_info():
     current_user=get_current_user()

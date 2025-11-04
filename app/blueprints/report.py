@@ -9,7 +9,7 @@ bp = Blueprint("report", __name__)
 
 
 # 신고 등록
-@bp.route("/report", methods=["POST"])
+@bp.route("/", methods=["POST"])            
 @jwt_required()
 def create_report():
     data = request.get_json() or {}

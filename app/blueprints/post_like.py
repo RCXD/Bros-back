@@ -7,7 +7,7 @@ bp = Blueprint("post_like", __name__)
 
 
 # 좋아요 등록
-@bp.route("/like", methods=["POST"])
+@bp.route("/", methods=["POST"])
 @jwt_required()
 def add_like():
     data = request.get_json() or {}
@@ -36,7 +36,7 @@ def add_like():
 
 
 # 좋아요 취소
-@bp.route("/delete", methods=["DELETE"])
+@bp.route("/", methods=["DELETE"])
 @jwt_required()
 def remove_like():
     data = request.get_json() or {}
@@ -91,7 +91,7 @@ def get_user_likes(user_id):
 
 
 # 전체 좋아요 목록 조회 (테스트용)
-@bp.route("/likes", methods=["GET"])
+@bp.route("/", methods=["GET"])
 def get_all_likes():
     likes = PostLike.query.all()
 

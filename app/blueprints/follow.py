@@ -6,7 +6,7 @@ from ..models import Follow, User
 bp = Blueprint("follow", __name__)
 
 # 팔로우 등록
-@bp.route("/apply/<int:target_id>", methods=["POST"])
+@bp.route("/<int:target_id>", methods=["POST"])
 @jwt_required()
 def follow_user(target_id):
     current_user_id = get_jwt_identity()
@@ -26,7 +26,7 @@ def follow_user(target_id):
 
 
 # 팔로우 취소
-@bp.route("/delete/<int:target_id>", methods=["DELETE"])
+@bp.route("/<int:target_id>", methods=["DELETE"])
 @jwt_required()
 def unfollow_user(target_id):
     current_user_id = get_jwt_identity()
