@@ -1,22 +1,23 @@
-from .models import User
+from ..models import User
 from flask import jsonify
 
-
-#  JWT 관련 설정 및 예외 처리
+# ======================================
+# ✅ JWT 관련 설정 및 예외 처리
+# ======================================
 def register_jwt_handlers(jwt):
 
-    # JWT에 저장할 identity 값 정의
+    # 1️⃣ JWT에 저장할 identity 값 정의
     @jwt.user_identity_loader
     def user_identity_lookup(user):
         return user.user_id if isinstance(user, User) else user
 
-    # JWT로부터 실제 User 객체 로드
+    # 2️⃣ JWT로부터 실제 User 객체 로드
     @jwt.user_lookup_loader
     def user_lookup_callback(_jwt_header, jwt_data):
         identity = jwt_data["sub"]
         return User.query.get(identity)
 
-    # 토큰 관련 예외 처리 통일
+    # 3️⃣ 토큰 관련 예외 처리 통일
     @jwt.unauthorized_loader
     def unauthorized_callback(err):
         return (
@@ -42,7 +43,7 @@ def register_jwt_handlers(jwt):
             jsonify(
                 {
                     "error": "token_expired",
-                    "message": "토큰이 만료되었습니다.",
+                    "message": "토큰이 만료되었습니다. Refresh Token으로 재발급 받으세요.",
                 }
             ),
             401,

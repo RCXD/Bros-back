@@ -1,15 +1,36 @@
 from flask import Blueprint, request, jsonify
 from ..extensions import db
 from ..models import User
-from ..utils.image_utils import upload_profile
+from ..utils.image_utils import upload_profile  #  추가
 from email_validator import validate_email, EmailNotValidError
-from flask_jwt_extended import jwt_required, create_access_token, get_current_user
+from flask_jwt_extended import (
+    create_access_token,
+    create_refresh_token,
+    jwt_required,
+    get_jwt_identity,
+    get_jwt,
+)
+from ..blueprints.jwt_handlers import register_jwt_handlers
 import requests
 from ..models.user import OauthType
-from ..utils.user_utils import token_provider
+from ..blacklist import add_to_blacklist
 
 
 bp = Blueprint("auth", __name__)
+
+
+@bp.route("/test", methods=["GET"])
+def get_info():
+    return (
+        jsonify(
+            {
+                "message": "서버 연결 성공~~~!~!~!~!!!",
+                "ip": request.remote_addr,
+                "path": request.path,
+            }
+        ),
+        200,
+    )
 
 
 #  일반 회원가입 시 프로필 이미지 처리 추가
@@ -31,7 +52,6 @@ def sign_up():
     email = data.get("email")
     nickname = data.get("nickname")
     address = data.get("address")
-    phone = data.get("phone")
 
     if not username or not password or not email:
         return jsonify({"message": "필수 항목 누락되었습니다."}), 400
@@ -41,23 +61,24 @@ def sign_up():
     except EmailNotValidError as e:
         return jsonify({"message": "이메일 형식이 잘못되었습니다."}), 400
 
-    existing_user = User.query.filter((User.username == username)).first()
+    existing_user = User.query.filter(
+        (User.username == username)
+    ).first()
     if existing_user:
         return jsonify({"message": "이미 존재하는 아이디입니다."}), 409
 
-    existing_email = User.query.filter((User.email == email)).first()
+    existing_email = User.query.filter(
+        (User.email == email)
+    ).first()
     if existing_email:
         return jsonify({"message": "이미 사용중인 이메일입니다."}), 409
 
     if not nickname:
         nickname = username
-
-    user = User(
-        username=username, email=email, nickname=nickname, address=address, phone=phone
-    )
+        
+    user = User(username=username, email=email, nickname=nickname, address=address)
     user.set_password(password)
     db.session.add(user)
-
     try:
         db.session.commit()  #  먼저 커밋해야 user.id 존재
     except Exception:
@@ -75,16 +96,12 @@ def login():
     if not username or not password:
         return jsonify({"message": "아이디와 비밀번호를 입력하세요"}), 400
 
-    user = User.query.filter_by(username=username).first_or_404()
-    try:
-        user.follower_count = User.calculate_follower(user)
-        db.session.commit()
-    except:
-        db.session.rollback()
+    user = User.query.filter_by(username=username).first()
     if not user or not user.check_password(password):
-        return jsonify({"message": "로그인 실패"}), 401
-
-    return token_provider(user.user_id)
+        return jsonify({"message": "로그인에 실패하였습니다."}), 401
+    access = create_access_token(identity=str(user.user_id))
+    refresh = create_refresh_token(identity=str(user.user_id))
+    return jsonify(access_token=access, refresh_token=refresh, username=user.username, nickname=user.nickname, email=user.email, OauthType=user.oauth_type.value), 200
 
 
 GOOGLE_TOKEN_INFO_URL = "https://oauth2.googleapis.com/tokeninfo"
@@ -97,7 +114,9 @@ def google_login():
     if not google_token:
         return jsonify({"message": "Token required"}), 400
 
-    resp = requests.get(GOOGLE_TOKEN_INFO_URL, params={"id_token": google_token})
+    resp = requests.get(
+        "https://oauth2.googleapis.com/tokeninfo", params={"id_token": google_token}
+    )
     if resp.status_code != 200:
         return jsonify({"message": "잘못된 요청입니다."}), 401
 
@@ -121,14 +140,13 @@ def google_login():
             password_hash="",
         )
         db.session.add(user)
-        try:
-            db.session.commit()
-        except:
-            db.session.rollback()
+        db.session.commit()
+
         #  Google 프로필 이미지 저장
         upload_profile(user, url=picture_url)
 
-    return token_provider(user.user_id)
+    access_token = create_access_token(identity=str(user.user_id))
+    return jsonify({"message": "Google 로그인 완료", "access_token": access_token}), 200
 
 
 #  Kakao 로그인
@@ -172,7 +190,8 @@ def kakao_login():
         #  카카오 프로필 이미지 업로드
         upload_profile(user, url=image_url)
 
-    return token_provider(user.user_id)
+    access_token = create_access_token(identity=str(user.user_id))
+    return jsonify({"message": "Kakao 로그인 완료", "access_token": access_token}), 200
 
 
 #  Naver 로그인
@@ -214,14 +233,24 @@ def naver_login():
         #  네이버 프로필 이미지 업로드
         upload_profile(user, url=image_url)
 
-    return token_provider(user.user_id)
+    access_token = create_access_token(identity=str(user.user_id))
+    return jsonify({"message": "Naver 로그인 완료", "access_token": access_token}), 200
 
 
 @bp.route("/logout", methods=["DELETE"])
 @jwt_required()
 def logout_access():
-    response = jsonify({"message": "로그아웃 되었습니다."}), 200
-    return response
+    jti = get_jwt()["jti"]
+    add_to_blacklist(jti)
+    return jsonify(msg="액세스 토큰이 거부되었습니다"), 200
+
+
+@bp.route("/logout_refresh", methods=["DELETE"])
+@jwt_required(refresh=True)
+def logout_refresh():
+    jti = get_jwt()["jti"]
+    add_to_blacklist(jti)
+    return jsonify(msg="리프레시 토큰이 삭제되었습니다."), 200
 
 
 # 모든 유저 조건부 조회(쿼리 들어오면 들어온걸로 조회, 안들어오면 전체조회)
@@ -251,11 +280,16 @@ def get_users():
         result.append(
             {
                 "user_id": u.user_id,
+                "username": u.username,
                 "nickname": u.nickname,
                 "email": u.email,
                 "address": u.address,
                 "profile_img": u.profile_img,
                 "created_at": u.created_at.isoformat(),
+                "last_login": u.last_login.isoformat() if u.last_login else None,
+                "account_type": u.account_type.name,
+                "oauth_type": u.oauth_type.name,
+                "is_expired": u.is_expired,
                 "follower_count": u.follower_count,
             }
         )
@@ -267,16 +301,20 @@ def get_users():
 @jwt_required()
 def get_user(user_id):
     user = User.query.get_or_404(user_id)
-    user_profile = user.profile_img
     return (
         jsonify(
             {
                 "user_id": user.user_id,
+                "username": user.username,
                 "nickname": user.nickname,
                 "email": user.email,
                 "address": user.address,
                 "profile_img": user.profile_img,
                 "created_at": user.created_at.isoformat(),
+                "last_login": user.last_login.isoformat() if user.last_login else None,
+                "account_type": user.account_type.name,
+                "oauth_type": user.oauth_type.name,
+                "is_expired": user.is_expired,
                 "follower_count": user.follower_count,
             }
         ),
@@ -287,22 +325,25 @@ def get_user(user_id):
 # 내 정보 조회
 @bp.route("/me", methods=["GET"])
 @jwt_required()
-def get_info():
-    current_user=get_current_user()
-    if not current_user:
-        return jsonify({"error": "사용자를 찾을 수 없습니다."}), 404
-    User.calculate_follower(current_user)
-    db.session.add(current_user)
-    db.session.commit()
-    user_info = {
-        "user_id": current_user.user_id,
-        "username": current_user.username,
-        "email": current_user.email,
-        "nickname": current_user.nickname,
-        "address": current_user.address,
-        "profile_img": current_user.profile_img,
-        "created_at": current_user.created_at,
-        "last_login": current_user.last_login,
-        "follower_count": current_user.follower_count,
-    }
-    return jsonify(user_info), 200
+def get_me():
+    current_id = get_jwt_identity()
+    user = User.query.get_or_404(current_id)
+    return (
+        jsonify(
+            {
+                "nickname": user.nickname,
+                "email": user.email,
+                "address": user.address,
+                "profile_img": user.profile_img,
+                "created_at": user.created_at.isoformat(),
+                "last_login": user.last_login.isoformat() if user.last_login else None,
+                "oauth_type": user.oauth_type.name,
+                "follower_count": user.follower_count,
+            }
+        ),
+        200,
+    )
+
+
+# get요청 - 추후에 필요할수도 있는 것
+# 검색 / 필터 확장, 팔로우 / 팔로워 관련 등

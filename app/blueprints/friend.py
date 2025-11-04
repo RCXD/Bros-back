@@ -5,15 +5,17 @@ from ..models import Friend, Follow
 
 bp = Blueprint("friend", __name__)
 
-#  즐겨찾기(친한친구) 등록
-@bp.route("/<int:target_id>", methods=["POST"])
+# 즐겨찾기(친한친구) 등록
+@bp.route("/", methods=["POST"])
 @jwt_required()
-def add_friend(target_id):
+def add_friend():
     """
     즐겨찾기 등록
     - 로그인한 사용자가 팔로잉 중인 사람만 등록 가능
     """
+    data = request.get_json() or {}
     current_user_id = get_jwt_identity()
+    target_id = data.get("friend_id")
 
     if not target_id:
         return jsonify({"message": "friend_id는 필수입니다."}), 400
@@ -41,7 +43,7 @@ def add_friend(target_id):
     return jsonify({"message": "즐겨찾기 등록 완료"}), 201
 
 
-# 즐겨찾기 삭제
+# ✅ 즐겨찾기 삭제
 @bp.route("/<int:friend_id>", methods=["DELETE"])
 @jwt_required()
 def remove_friend(friend_id):
@@ -58,7 +60,7 @@ def remove_friend(friend_id):
     return jsonify({"message": "즐겨찾기 해제 완료"}), 200
 
 
-#  내 즐겨찾기 목록 조회
+# ✅ 내 즐겨찾기 목록 조회
 @bp.route("/me", methods=["GET"])
 @jwt_required()
 def get_my_friends():

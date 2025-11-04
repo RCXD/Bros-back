@@ -5,7 +5,6 @@ from datetime import timedelta
 # 기본 경로
 basedir = Path(__file__).parent.parent
 
-
 class Config:
     # 비밀 키 (base64 인코딩 된 무작위 32글자)
     SECRET_KEY = secrets.token_urlsafe(32)
@@ -23,14 +22,13 @@ class Config:
     SESSION_COOKIE_SECURE = True
     # JWT 암호화 키
     JWT_SECRET_KEY = secrets.token_urlsafe(32)
-    # 액세스 토큰 만료 시간: 15분
-    JWT_ACCESS_TOKEN_EXPIRES = timedelta(minutes=15)
-    # 리프레시 토큰 만료 시간: 7일
-    JWT_REFRESH_TOKEN_EXPIRES = timedelta(days=7)
-    JWT_TOKEN_LOCATION = ["cookies", "headers"]  # 토큰 위치
-    JWT_ACCESS_COOKIE_PATH = "/"  # 접근 가능한 경로
-    JWT_REFRESH_COOKIE_PATH = "/token/refresh"
-    JWT_COOKIE_CSRF_PROTECT = True  # CSRF 방지 활성화
-    JWT_ACCESS_CSRF_HEADER_NAME = "X-CSRF-TOKEN"  # CSRF 토큰 헤더 이름
-    JWT_COOKIE_SECURE = True  # 실 사용시엔 True로 설정
-    JWT_COOKIE_HTTPONLY = True  # JS로 쿠키 접근 불가
+    # 액세스 토큰 만료 시간: 5분
+    JWT_ACCESS_TOKEN_EXPIRES = timedelta(minutes=5)
+    # 리프레시 토큰 만료 시간: 14일
+    JWT_REFRESH_TOKEN_EXPIRES = timedelta(days=14)
+    # 토큰 위치: Authorization 헤더
+    JWT_TOKEN_LOCATION = ["headers"]
+    # 헤더 이름
+    JWT_HEADER_NAME = "Authorization"
+    # 토큰 타입
+    JWT_HEADER_TYPE = "Bearer"

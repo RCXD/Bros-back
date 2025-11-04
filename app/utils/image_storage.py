@@ -1,64 +1,108 @@
 # utils/image_storage.py
 import os
 import uuid
+from io import BytesIO
 from concurrent.futures import ThreadPoolExecutor
+from PIL import Image, UnidentifiedImageError
 from flask import current_app
-from datetime import datetime
+from .image_rules import IMAGE_RULES
+from ..models.image import Image
 
 
 # 전역 스레드 풀 (이미지 병렬 처리)
 executor = ThreadPoolExecutor(max_workers=4)
 
 
-def save_to_disk(output_stream, ext, category="post"):
+def _compress_and_resize(file_path, image_type="default"):
     """
-     카테고리/날짜별로 이미지 저장
-    - category: post / reply / profile
-    - 날짜별 폴더 생성 (ex: static/post_images/2025-10-30/)
-    - 반환: (절대경로, 상대경로)
+    ✅ 내부용: 파일 경로를 받아 리사이즈 및 압축 실행
+    - 백그라운드 스레드에서 실행됨
     """
-    category_folder = f"static/{category}_images"
-    if not os.path.exists(os.path.join(current_app.root_path, category_folder)):
-        os.makedirs(os.path.join(current_app.root_path, category_folder), exist_ok=True)
+    rule = IMAGE_RULES.get(image_type, IMAGE_RULES["default"])
+    max_size = rule["max_size"]
+    max_bytes = rule["max_bytes"]
 
-    # 1️⃣ 날짜 폴더 생성
-    date_folder = datetime.now().strftime("%Y-%m-%d")
-    base_folder = f"static/{category}_images/{date_folder}"
-    abs_folder = os.path.join(current_app.root_path, base_folder)
-    if not os.path.exists(abs_folder):
-        os.makedirs(abs_folder, exist_ok=True)
+    try:
+        with Image.open(file_path) as image:
+            ext = os.path.splitext(file_path)[1].lower()
+            fmt = image.format or "JPEG"
 
-    # 2️⃣ 파일명 UUID
-    filename = f"{uuid.uuid4()}.{ext.lower()}"
-    abs_path = os.path.join(abs_folder, filename)
-    rel_path = f"{base_folder}/{filename}"
+            # 리사이즈
+            if max_size:
+                image.thumbnail(max_size, Image.Resampling.LANCZOS)
 
-    # 3️⃣ 실제 파일 저장
-    with open(abs_path, "wb") as f:
-        f.write(output_stream.read())
+            # 압축 저장 반복
+            quality = 85
+            output = BytesIO()
+            image.save(output, format=fmt, optimize=True, quality=quality)
+            output.seek(0)
 
-    current_app.logger.info(f"[✓] 이미지 저장 완료 → {rel_path}")
-    return rel_path
+            while len(output.getvalue()) > max_bytes and quality > 30:
+                quality -= 10
+                output = BytesIO()
+                image.save(output, format=fmt, optimize=True, quality=quality)
+                output.seek(0)
+
+            # 최종 저장 (덮어쓰기)
+            with open(file_path, "wb") as f:
+                f.write(output.read())
+
+            current_app.logger.info(
+                f"[✓] {file_path} 압축 완료 ({len(output.getvalue()) / 1024:.1f} KB)"
+            )
+
+    except Exception as e:
+        current_app.logger.warning(f"[!] 이미지 압축 실패: {e}")
 
 
-def delete_image(image, category="post"):
+# utils/image_storage.py 수정
+def save_image(file, folder="static/uploads", image_type="default"):
+    os.makedirs(os.path.join(current_app.root_path, folder), exist_ok=True)
+
+    # 확장자 및 유효성 검사
+    original_name = file.filename
+    ext = os.path.splitext(original_name)[1].lower()
+    allowed_ext = [".jpg", ".jpeg", ".png", ".gif", ".webp"]
+    if ext not in allowed_ext:
+        raise ValueError(f"❌ 지원하지 않는 이미지 형식: {ext}")
+
+    # 고유 UUID 파일명 생성
+    uid = str(uuid.uuid4())
+    filename = f"{uid}{ext}"
+    save_path = os.path.join(current_app.root_path, folder, filename)
+    relative_path = f"{folder}/{filename}"
+
+    # 즉시 저장 (압축 전 원본)
+    file.save(save_path)
+
+    # 비동기 압축
+    executor.submit(_compress_and_resize, save_path, image_type)
+
+    # ✅ 전체 메타데이터 반환
+    return {
+        "uuid": uid,
+        "directory": relative_path,
+        "original_image_name": original_name,
+        "ext": ext,
+    }
+
+
+def delete_image(image):
     """
-     이미지를 서버에서 삭제 (DB 처리는 Blueprint에서 수행)
+    ✅ 이미지를 서버에서 삭제 (DB 처리는 Blueprint에서 수행)
     - 실제 파일 삭제만 담당
     - DB 세션 변경은 하지 않음
     - 파일이 없어도 예외 없이 통과
     """
     if not image:
-        current_app.logger.warning("존재하지 않는 이미지 경로입니다.")
+        current_app.logger.warning("[!] delete_image 호출: image 객체가 None입니다.")
         return False
 
     try:
-        # 실제 파일 절대 경로
-        date=image.created_at.strftime("%Y-%m-%d")
-        base_folder=f"static/{category}_images/{date}"
-        abs_path = os.path.join(current_app.root_path, base_folder, image.uuid, image.ext)
- 
-        # 파일 존재 여부 확인 후 삭제
+        # 1️⃣ 실제 파일 절대 경로
+        abs_path = os.path.join(current_app.root_path, image.directory)
+
+        # 2️⃣ 파일 존재 여부 확인 후 삭제
         if os.path.exists(abs_path):
             os.remove(abs_path)
             current_app.logger.info(f"[✓] 이미지 파일 삭제 완료: {abs_path}")
