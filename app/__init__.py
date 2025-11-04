@@ -20,7 +20,6 @@ def create_app():
 
     from .blueprints.auth import bp as auth_bp
     from .blueprints.post import bp as post_bp
-    from .blueprints.mypage import bp as mypage_bp
     from .blueprints.reply import bp as reply_bp
     from .blueprints.mention import bp as mention_bp
     from .blueprints.report import bp as report_bp
@@ -29,7 +28,6 @@ def create_app():
     from .blueprints.follow import bp as follow_bp
     from .blueprints.friend import bp as friend_bp
 
-    app.register_blueprint(mypage_bp, url_prefix="/mypage")
     app.register_blueprint(auth_bp, url_prefix="/auth")
     app.register_blueprint(post_bp, url_prefix="/post")
     app.register_blueprint(reply_bp, url_prefix="/reply")
