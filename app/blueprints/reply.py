@@ -12,34 +12,52 @@ def create_reply():
     data = request.get_json() or {}
     content = data.get("content")
     post_id = data.get("post_id")
+    parent_id_ = data.get("parent_id")
 
     if not content or not post_id:
         return jsonify({"error": "내용과 게시글 ID는 필수입니다."}), 400
 
-    current_user_id = get_jwt_identity()
-    reply = Reply(content=content, post_id=post_id, user_id=current_user_id)
-    parent_id_ = data.get("parant_id")
+    # 부모 댓글이 있다면 존재 여부 확인
     if parent_id_:
-        reply.parent_id = parent_id_
-    db.session.add(reply)
-    try :
-        db.session.commit()
-    except:
-        db.session.rollback()
-    return (
-        jsonify({"message": "댓글이 작성되었습니다.", "reply_id": reply.reply_id}),
-        201,
+        parent = Reply.query.get(parent_id_)
+        if not parent:
+            return jsonify({"error": "부모 댓글이 존재하지 않습니다."}), 404
+        
+    # 부모가 이미 대댓글이라면 작성 금지
+    if parent.parent_id is not None:
+        return jsonify({"error": "대댓글에는 추가로 댓글을 달 수 없습니다."}), 400
+
+    # 현재 로그인 유저 ID 가져오기
+    current_user_id = get_jwt_identity()
+
+    # 새 댓글(또는 대댓글) 생성
+    reply = Reply(
+        content=content,
+        post_id=post_id,
+        user_id=current_user_id,
+        parent_id=parent_id_ if parent_id_ else None,
     )
+
+    db.session.add(reply)
+    try:
+        db.session.commit()
+        return jsonify({"message": "댓글이 작성되었습니다.", "reply_id": reply.reply_id}), 201
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"error": f"댓글 등록 실패: {str(e)}"}), 400
 
 
 @bp.route("/<int:reply_id>", methods=["DELETE"])
 @jwt_required()
 def delete_reply(reply_id):
-    current_user_id = get_jwt_identity()
+    current_user_id = int(get_jwt_identity())
     reply = Reply.query.get_or_404(reply_id)
 
     if reply.user_id != current_user_id:
         return jsonify({"error": "본인의 댓글만 삭제할 수 있습니다."}), 403
+
+    # 자식 댓글(대댓글)도 함께 삭제
+    Reply.query.filter_by(parent_id=reply_id).delete()
 
     db.session.delete(reply)
     db.session.commit()
@@ -56,7 +74,7 @@ def update_reply(reply_id):
     if not content:
         return jsonify({"error": "내용은 필수입니다."}), 400
 
-    current_user_id = get_jwt_identity()
+    current_user_id = int(get_jwt_identity())
     reply = Reply.query.get_or_404(reply_id)
 
     if reply.user_id != current_user_id:
@@ -85,9 +103,7 @@ def get_root_replies(post_id):
     root_replies = [
         {
             "reply_id": r.reply_id,
-            "content": (
-                r.content.decode("utf-8") if isinstance(r.content, bytes) else r.content
-            ),
+            "content": r.content,
             "post_id": r.post_id,
             "user_id": r.user_id,
             "created_at": r.created_at.isoformat(),
