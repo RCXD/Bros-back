@@ -21,15 +21,16 @@ def write():
     - 게시글 생성 후 post_id 반환
     - 이미지 업로드는 별도 엔드포인트에서 post_id 기반으로 수행
     """
-    data = request.files
+    data = request.get_json()
     user_id = get_jwt_identity()
-
+    location = data.get("location")
     post = Post(
         user_id=user_id,
         category_id=data.get("category_id"),
         content=data.get("content"),
-        location=data.get("location"),
     )
+    if location:
+        post.location = data.get("location")
     db.session.add(post)
     db.session.commit()  # commit해야 post_id 생성됨
 
@@ -85,6 +86,10 @@ def delete_post():
 #  전체 게시글 조회 (조건부 필터 + pagination + 정렬)
 @bp.route("/posts", methods=["GET"])
 def get_posts():
+    """
+    원하는 검색 조건 입력시 필터 적용해서 반환
+    post_id, user_id, category_id, content, location, view_count, created_at, updated_at
+    """
     filters = {
         key: value
         for key, value in request.args.items()
@@ -105,9 +110,24 @@ def get_posts():
     return paginate_posts(query, page, per_page)
 
 
-@bp.route("/mine")
+@bp.route("/<int:post_id>", methods=["GET"])
+def get_post(post_id):
+    post = Post.query.filter(Post.post_id == post_id).first_or_404()
+    try:
+        Post.add_view_counts(post)
+        db.session.commit()
+    except:
+        db.session.rollback()
+    return jsonify(serialize_post(post))
+
+
+@bp.route("/mine", methods=["GET"])
 @jwt_required
 def get_my_posts():
+    """
+    내 게시글 조회
+    - page, per_page, order_by
+    """
     current_user = get_current_user()
     page = request.args.get("page", 1, type=int)
     per_page = request.args.get("per_page", 10, type=int)
@@ -137,7 +157,7 @@ def upload_post_image():
     # 이미지 저장 및 메타데이터 획득
     try:
         output, ext = compress_image(file, image_type="post")
-        _, rel_path = save_to_disk(output, ext, category="post")
+        rel_path = save_to_disk(output, ext, category="post")
     except Exception as e:
         return jsonify({"error": f"이미지 저장 실패: {e}"}), 400
 
@@ -172,7 +192,7 @@ def upload_post_image():
     )
 
 
-@bp.route("/delete_post_image/<string:uuid>", methods=["DELETE"])
+@bp.route("/delete/<string:uuid>", methods=["DELETE"])
 @jwt_required()
 def delete_post_image(uuid):
     user_id = get_jwt_identity()

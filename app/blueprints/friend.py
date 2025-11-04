@@ -6,16 +6,14 @@ from ..models import Friend, Follow
 bp = Blueprint("friend", __name__)
 
 #  즐겨찾기(친한친구) 등록
-@bp.route("/", methods=["POST"])
+@bp.route("/<int:target_id>", methods=["POST"])
 @jwt_required()
-def add_friend():
+def add_friend(target_id):
     """
     즐겨찾기 등록
     - 로그인한 사용자가 팔로잉 중인 사람만 등록 가능
     """
-    data = request.get_json() or {}
     current_user_id = get_jwt_identity()
-    target_id = data.get("friend_id")
 
     if not target_id:
         return jsonify({"message": "friend_id는 필수입니다."}), 400

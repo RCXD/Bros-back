@@ -1,4 +1,4 @@
-from ..models import User
+from .models import User
 from flask import jsonify
 
 
@@ -8,13 +8,7 @@ def register_jwt_handlers(jwt):
     # JWT에 저장할 identity 값 정의
     @jwt.user_identity_loader
     def user_identity_lookup(user):
-        return {
-            "username": user.username,
-            "nickname": user.nickname,
-            "email": user.email,
-            "oauth_type": user.oauth_type.value,
-            "account_type": user.account_type.value,
-        }
+        return user.user_id if isinstance(user, User) else user
 
     # JWT로부터 실제 User 객체 로드
     @jwt.user_lookup_loader
@@ -48,7 +42,7 @@ def register_jwt_handlers(jwt):
             jsonify(
                 {
                     "error": "token_expired",
-                    "message": "토큰이 만료되었습니다. Refresh Token으로 재발급 받으세요.",
+                    "message": "토큰이 만료되었습니다.",
                 }
             ),
             401,

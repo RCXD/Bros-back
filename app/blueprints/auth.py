@@ -3,33 +3,13 @@ from ..extensions import db
 from ..models import User
 from ..utils.image_utils import upload_profile
 from email_validator import validate_email, EmailNotValidError
-from flask_jwt_extended import (
-    jwt_required,
-    get_jwt_identity,
-    unset_jwt_cookies,
-)
-
-from ..blueprints.jwt_handlers import register_jwt_handlers
+from flask_jwt_extended import jwt_required, create_access_token, get_current_user
 import requests
 from ..models.user import OauthType
 from ..utils.user_utils import token_provider
 
 
 bp = Blueprint("auth", __name__)
-
-
-@bp.route("/test", methods=["GET"])
-def get_info():
-    return (
-        jsonify(
-            {
-                "message": "서버 연결 성공",
-                "ip": request.remote_addr,
-                "path": request.path,
-            }
-        ),
-        200,
-    )
 
 
 #  일반 회원가입 시 프로필 이미지 처리 추가
@@ -77,6 +57,7 @@ def sign_up():
     )
     user.set_password(password)
     db.session.add(user)
+
     try:
         db.session.commit()  #  먼저 커밋해야 user.id 존재
     except Exception:
@@ -94,7 +75,12 @@ def login():
     if not username or not password:
         return jsonify({"message": "아이디와 비밀번호를 입력하세요"}), 400
 
-    user = User.query.filter_by(username=username).first()
+    user = User.query.filter_by(username=username).first_or_404()
+    try:
+        user.follower_count = User.calculate_follower(user)
+        db.session.commit()
+    except:
+        db.session.rollback()
     if not user or not user.check_password(password):
         return jsonify({"message": "로그인 실패"}), 401
 
@@ -135,8 +121,10 @@ def google_login():
             password_hash="",
         )
         db.session.add(user)
-        db.session.commit()
-
+        try:
+            db.session.commit()
+        except:
+            db.session.rollback()
         #  Google 프로필 이미지 저장
         upload_profile(user, url=picture_url)
 
@@ -233,7 +221,6 @@ def naver_login():
 @jwt_required()
 def logout_access():
     response = jsonify({"message": "로그아웃 되었습니다."}), 200
-    unset_jwt_cookies(response)
     return response
 
 
@@ -264,16 +251,11 @@ def get_users():
         result.append(
             {
                 "user_id": u.user_id,
-                "username": u.username,
                 "nickname": u.nickname,
                 "email": u.email,
                 "address": u.address,
                 "profile_img": u.profile_img,
                 "created_at": u.created_at.isoformat(),
-                "last_login": u.last_login.isoformat() if u.last_login else None,
-                "account_type": u.account_type.name,
-                "oauth_type": u.oauth_type.name,
-                "is_expired": u.is_expired,
                 "follower_count": u.follower_count,
             }
         )
@@ -290,18 +272,36 @@ def get_user(user_id):
         jsonify(
             {
                 "user_id": user.user_id,
-                "username": user.username,
                 "nickname": user.nickname,
                 "email": user.email,
                 "address": user.address,
                 "profile_img": user.profile_img,
                 "created_at": user.created_at.isoformat(),
-                "last_login": user.last_login.isoformat() if user.last_login else None,
-                "account_type": user.account_type.name,
-                "oauth_type": user.oauth_type.name,
-                "is_expired": user.is_expired,
                 "follower_count": user.follower_count,
             }
         ),
         200,
     )
+
+
+@bp.route("/info", methods=["GET"])
+@jwt_required()
+def get_info():
+    current_user=get_current_user()
+    if not current_user:
+        return jsonify({"error": "사용자를 찾을 수 없습니다."}), 404
+    User.calculate_follower(current_user)
+    db.session.add(current_user)
+    db.session.commit()
+    user_info = {
+        "user_id": current_user.user_id,
+        "username": current_user.username,
+        "email": current_user.email,
+        "nickname": current_user.nickname,
+        "address": current_user.address,
+        "profile_img": current_user.profile_img,
+        "created_at": current_user.created_at,
+        "last_login": current_user.last_login,
+        "follower_count": current_user.follower_count,
+    }
+    return jsonify(user_info), 200

@@ -6,14 +6,16 @@ from sqlalchemy import event
 class History(db.Model):
     __tablename__ = "histories"
 
-    user_id = db.Column(db.Integer, db.ForeignKey("users.user_id", ondelete="CASCADE"), primary_key=True)
-    path_id = db.Column(db.Integer, db.ForeignKey("paths.path_id", ondelete="CASCADE"), primary_key=True)
+    user_id = db.Column(
+        db.Integer, db.ForeignKey("users.user_id", ondelete="CASCADE"), primary_key=True
+    )
+    path_id = db.Column(
+        db.Integer, db.ForeignKey("paths.path_id", ondelete="CASCADE"), primary_key=True
+    )
     created_at = db.Column(db.DateTime, default=datetime.now)
 
     path = db.relationship("Path", backref=db.backref("histories", lazy="dynamic"))
 
-    def __repr__(self):
-        return f"<History user_id={self.user_id}, path_id={self.path_id}>"
 
 @event.listens_for(History, "before_insert")
 def check_duplicate_history(mapper, connection, target):

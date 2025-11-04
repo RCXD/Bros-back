@@ -27,7 +27,7 @@ class Follow(db.Model):
         primary_key=True
     )
 
-    # ▶ 관계 설정
+    # 관계 설정
     # follower : 팔로우 하는 유저 (A)
     # following : 팔로우 받는 유저 (B)
     follower = db.relationship(

@@ -3,7 +3,7 @@ from ..models import Reply
 from ..extensions import db
 from flask_jwt_extended import jwt_required, get_jwt_identity
 
-bp = Blueprint("replies", __name__)
+bp = Blueprint("reply", __name__)
 
 
 @bp.route("/", methods=["POST"])
@@ -18,10 +18,18 @@ def create_reply():
 
     current_user_id = get_jwt_identity()
     reply = Reply(content=content, post_id=post_id, user_id=current_user_id)
+    parent_id_ = data.get("parant_id")
+    if parent_id_:
+        reply.parent_id = parent_id_
     db.session.add(reply)
-    db.session.commit()
-
-    return jsonify({"message": "댓글이 작성되었습니다.", "reply_id": reply.reply_id}), 201
+    try :
+        db.session.commit()
+    except:
+        db.session.rollback()
+    return (
+        jsonify({"message": "댓글이 작성되었습니다.", "reply_id": reply.reply_id}),
+        201,
+    )
 
 
 @bp.route("/<int:reply_id>", methods=["DELETE"])
@@ -33,7 +41,6 @@ def delete_reply(reply_id):
     if reply.user_id != current_user_id:
         return jsonify({"error": "본인의 댓글만 삭제할 수 있습니다."}), 403
 
-    
     db.session.delete(reply)
     db.session.commit()
 
@@ -61,18 +68,18 @@ def update_reply(reply_id):
     return jsonify({"message": "댓글이 수정되었습니다."}), 200
 
 
-@bp.route("/<int:post_id>/replies", methods=["GET"])
+@bp.route("/<int:post_id>", methods=["GET"])
 def get_root_replies(post_id):
     """
     루트 댓글 10개 단위로 페이지네이션
     """
     page = request.args.get("page", 1, type=int)
-    per_page = 10
+    PER_PAGE = 10
 
     pagination = (
         Reply.query.filter_by(post_id=post_id, parent_id=None)
         .order_by(Reply.created_at.desc())
-        .paginate(page=page, per_page=per_page, error_out=False)
+        .paginate(page=page, per_page=PER_PAGE, error_out=False)
     )
 
     root_replies = [
@@ -110,18 +117,18 @@ def get_root_replies(post_id):
     )
 
 
-@bp.route("/<int:parent_id>/children", methods=["GET"])
+@bp.route("/replies/<int:parent_id>", methods=["GET"])
 def get_child_replies(parent_id):
     """
-    ✅ 특정 댓글(parent_id)의 대댓글 30개 단위로 페이지네이션
+    특정 댓글(parent_id)의 대댓글 30개 단위로 페이지네이션
     """
     page = request.args.get("page", 1, type=int)
-    per_page = 30
+    PER_PAGE = 30
 
     pagination = (
         Reply.query.filter_by(parent_id=parent_id)
         .order_by(Reply.created_at.asc())
-        .paginate(page=page, per_page=per_page, error_out=False)
+        .paginate(page=page, per_page=PER_PAGE, error_out=False)
     )
 
     children = [
