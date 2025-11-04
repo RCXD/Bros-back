@@ -7,6 +7,10 @@ from flask_jwt_extended import jwt_required, create_access_token, get_current_us
 import requests
 from ..models.user import OauthType
 from ..utils.user_utils import token_provider, is_valid_phone
+import os
+import uuid
+from flask import current_app
+from datetime import datetime
 
 
 bp = Blueprint("auth", __name__)
