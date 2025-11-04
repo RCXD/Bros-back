@@ -4,9 +4,12 @@ from ..models import User
 import re
 
 
-def token_provider(user_id):
-    access = create_access_token(identity=str(user_id))
-    refresh = create_refresh_token(identity=str(user_id))
+def token_provider(user_id, **kwargs):
+    additional_claims = {}
+    for k, v in kwargs.items():
+        additional_claims[k] = v
+    access = create_access_token(identity=str(user_id), additional_claims=additional_claims)
+    refresh = create_refresh_token(identity=str(user_id), additional_claims=additional_claims)
 
     user = User.query.filter(User.user_id == user_id).first_or_404()
     response = jsonify(
@@ -41,7 +44,9 @@ def user_to_dict(user):
         "follower_count": user.follower_count,
     }
 
+
 PHONE_REGEX = re.compile(r"^0\d{1,2}-?\d{3,4}-?\d{4}$")
+
 
 def is_valid_phone(phone: str) -> bool:
     return bool(PHONE_REGEX.match(phone))

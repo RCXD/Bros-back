@@ -145,15 +145,17 @@ def login():
         return jsonify({"message": "아이디와 비밀번호를 입력하세요"}), 400
 
     user = User.query.filter_by(username=username).first_or_404()
+
     try:
         user.follower_count = User.calculate_follower(user)
+        user.last_login = User.renew_login(user)
         db.session.commit()
     except:
         db.session.rollback()
     if not user or not user.check_password(password):
         return jsonify({"message": "로그인 실패"}), 401
 
-    return token_provider(user.user_id)
+    return token_provider(user.user_id, user.username, user.email, user.nickname)
 
 
 GOOGLE_TOKEN_INFO_URL = "https://oauth2.googleapis.com/tokeninfo"
@@ -197,7 +199,7 @@ def google_login():
         #  Google 프로필 이미지 저장
         upload_profile(user, url=picture_url)
 
-    return token_provider(user.user_id)
+    return token_provider(user.user_id, user.username, user.email, user.nickname)
 
 
 #  Kakao 로그인
@@ -241,7 +243,7 @@ def kakao_login():
         #  카카오 프로필 이미지 업로드
         upload_profile(user, url=image_url)
 
-    return token_provider(user.user_id)
+    return token_provider(user.user_id, user.username, user.email, user.nickname)
 
 
 #  Naver 로그인
@@ -283,7 +285,7 @@ def naver_login():
         #  네이버 프로필 이미지 업로드
         upload_profile(user, url=image_url)
 
-    return token_provider(user.user_id)
+    return token_provider(user.user_id, user.username, user.email, user.nickname)
 
 
 @bp.route("/logout", methods=["DELETE"])
@@ -336,7 +338,6 @@ def get_users():
 @jwt_required()
 def get_user(user_id):
     user = User.query.get_or_404(user_id)
-    user_profile = user.profile_img
     return (
         jsonify(
             {
@@ -358,7 +359,7 @@ def get_user(user_id):
 @bp.route("/me", methods=["GET"])
 @jwt_required()
 def get_info():
-    current_user=get_current_user()
+    current_user = get_current_user()
     if not current_user:
         return jsonify({"error": "사용자를 찾을 수 없습니다."}), 404
     User.calculate_follower(current_user)

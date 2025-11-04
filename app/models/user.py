@@ -29,9 +29,7 @@ class User(db.Model):
     nickname = db.Column(db.String(50))
     phone = db.Column(db.String(20))
     created_at = db.Column(db.DateTime, default=datetime.now)
-    last_login = db.Column(
-        db.DateTime, nullable=True, default=datetime.now, onupdate=datetime.now
-    )
+    last_login = db.Column(db.DateTime, nullable=True, default=datetime.now)
     is_expired = db.Column(db.Boolean, nullable=False, default=False)
     oauth_type = db.Column(db.Enum(OauthType), nullable=False, default=OauthType.NONE)
     account_type = db.Column(
@@ -44,6 +42,9 @@ class User(db.Model):
 
     def check_password(self, password):
         return check_password_hash(self.password_hash, password)
+
+    def renew_login(self):
+        self.last_login = datetime.now()
 
     def calculate_follower(self):
         self.follower_count = (
