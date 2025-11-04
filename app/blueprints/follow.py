@@ -22,7 +22,7 @@ def follow_user(target_id):
     db.session.add(follow)
     db.session.commit()
 
-    return jsonify({"message": f"user {target_id} 팔로우 완료"}), 201
+    return jsonify({"message": "팔로우 완료"}), 201
 
 
 # 팔로우 취소
@@ -50,7 +50,7 @@ def get_following():
 
     result = []
     for f in followings:
-        user = User.query.get(f.following_id)
+        user = User.query.get_or_404(f.following_id)
         result.append({
             "user_id": user.user_id,
             "nickname": user.nickname,
@@ -69,7 +69,7 @@ def get_followers():
 
     result = []
     for f in followers:
-        user = User.query.get(f.follower_id)
+        user = User.query.get_or_404(f.follower_id)
         result.append({
             "user_id": user.user_id,
             "nickname": user.nickname,

@@ -280,3 +280,6 @@ secrets.json
 
 # vscode
 .vscode/
+
+# enviroments
+.env

@@ -5,6 +5,7 @@ from flask_jwt_extended import jwt_required, get_jwt_identity
 
 bp = Blueprint("post_like", __name__)
 
+
 # 좋아요 등록
 @bp.route("/", methods=["POST"])
 @jwt_required()
@@ -26,7 +27,12 @@ def add_like():
     db.session.add(like)
     db.session.commit()
 
-    return jsonify({"message": "좋아요 등록 완료", "post_id": post_id, "user_id": user_id}), 201
+    return (
+        jsonify(
+            {"message": "좋아요 등록 완료", "post_id": post_id, "user_id": user_id}
+        ),
+        201,
+    )
 
 
 # 좋아요 취소
@@ -47,7 +53,13 @@ def remove_like():
     db.session.delete(like)
     db.session.commit()
 
-    return jsonify({"message": "좋아요 취소 완료", "post_id": post_id, "user_id": user_id}), 200
+    return (
+        jsonify(
+            {"message": "좋아요 취소 완료", "post_id": post_id, "user_id": user_id}
+        ),
+        200,
+    )
+
 
 # 특정 게시글의 좋아요 수 조회
 @bp.route("/post/<int:post_id>", methods=["GET"])
@@ -59,16 +71,23 @@ def get_post_likes(post_id):
 # 특정 사용자가 좋아요한 게시글 목록 조회
 @bp.route("/user/<int:user_id>", methods=["GET"])
 def get_user_likes(user_id):
-    likes = PostLike.query.filter_by(user_id=user_id).all()
-
+    pagination = PostLike.query.filter_by(user_id=user_id).paginate(
+        page=request.args.get("page", 1, type=int), per_page=10
+    )
     result = []
-    for like in likes:
-        result.append({
-            "post_id": like.post_id,
-            "user_id": like.user_id
-        })
+    for like in pagination.items:
+        result.append({"post_id": like.post_id, "user_id": like.user_id})
+    response = {
+        "total": pagination.total,
+        "page": pagination.page,
+        "per_page": pagination.per_page,
+        "pages": pagination.pages,
+        "has_next": pagination.has_next,
+        "has_prev": pagination.has_prev,
+        "items": result,
+    }
 
-    return jsonify(result), 200
+    return jsonify(response), 200
 
 
 # 전체 좋아요 목록 조회 (테스트용)
@@ -78,9 +97,6 @@ def get_all_likes():
 
     result = []
     for like in likes:
-        result.append({
-            "post_id": like.post_id,
-            "user_id": like.user_id
-        })
+        result.append({"post_id": like.post_id, "user_id": like.user_id})
 
     return jsonify(result), 200
