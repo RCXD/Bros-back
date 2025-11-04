@@ -2,16 +2,22 @@ from flask_jwt_extended import create_access_token, create_refresh_token, get_cs
 from flask import jsonify
 from ..models import User
 import re
+from ..models.user import OauthType, AccountType
 
 
 def token_provider(user_id, **kwargs):
+
+    user = User.query.filter(User.user_id == user_id).first_or_404()
     additional_claims = {}
+    if user.oauth_type != OauthType.NONE:
+        additional_claims["oauth_type"] = OauthType(user.oauth_type).value
+    if user.account_type != AccountType.USER:
+        additional_claims["account_type"] = AccountType(user.account_type).value
     for k, v in kwargs.items():
         additional_claims[k] = v
     access = create_access_token(identity=str(user_id), additional_claims=additional_claims)
     refresh = create_refresh_token(identity=str(user_id), additional_claims=additional_claims)
 
-    user = User.query.filter(User.user_id == user_id).first_or_404()
     response = jsonify(
         {
             "message": "로그인 성공",
