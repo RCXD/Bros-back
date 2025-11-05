@@ -1,8 +1,6 @@
 from ..extensions import db
 from datetime import datetime
 
-# post, reply로 누가 멘션한건지 찾으면 됨
-
 class Mention(db.Model):
     __tablename__ = "mentions"
 
@@ -37,7 +35,7 @@ class Mention(db.Model):
 
     __table_args__ = (
         db.CheckConstraint(
-            "((post_id IS NOT NULL)::int + (reply_id IS NOT NULL)::int) = 1",
+            "(post_id IS NOT NULL AND reply_id IS NULL) OR (post_id IS NULL AND reply_id IS NOT NULL)",
             name="check_one_target",
         ),
         db.UniqueConstraint(

@@ -78,3 +78,24 @@ def upload_profile(user, file=None, url=None):
     db.session.commit()
 
     return relative_path
+
+def delete_image(image_obj):
+    """DB 객체와 실제 파일을 같이 삭제"""
+    try:
+        if not image_obj or not image_obj.directory:
+            print("[WARN] image_obj 또는 directory 없음")
+            return
+
+        # 경로 정규화
+        rel_path = image_obj.directory.lstrip("/\\")
+        abs_path = os.path.join(os.getcwd(), rel_path)
+
+        print(f"[삭제 시도] {abs_path}")  # 로그 찍기
+
+        if os.path.exists(abs_path):
+            os.remove(abs_path)
+            print(f"[삭제 완료] {abs_path}")
+        else:
+            print(f"[WARN] 파일 없음: {abs_path}")
+    except Exception as e:
+        print(f"[파일 삭제 실패] {getattr(image_obj, 'directory', None)}: {e}")
