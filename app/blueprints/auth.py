@@ -15,7 +15,7 @@ from datetime import datetime
 
 bp = Blueprint("auth", __name__)
 
-ALLOWED_EXTENSIONS = {"png", "jpg", "jpeg", "gif"}
+ALLOWED_EXTENSIONS = {"png", "jpg", "jpeg", "gif", "webp"}
 
 
 def allowed_file(filename):
