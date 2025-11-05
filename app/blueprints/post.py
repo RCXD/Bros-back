@@ -10,6 +10,7 @@ from ..utils.post_query import apply_order, paginate_posts, serialize_post
 
 bp = Blueprint("post", __name__)
 
+
 # ---------------- 1. 게시글 작성 ----------------
 @bp.route("/write", methods=["POST"])
 @jwt_required()
@@ -22,7 +23,9 @@ def write_post():
     if not content:
         return jsonify({"error": "게시글 내용은 필수입니다."}), 400
 
-    post = Post(user_id=user_id, category_id=category_id, content=content, location=location)
+    post = Post(
+        user_id=user_id, category_id=category_id, content=content, location=location
+    )
     db.session.add(post)
     db.session.flush()  # post_id 확보
 
@@ -40,21 +43,39 @@ def write_post():
             output, ext = compress_image(file, image_type="post")
             rel_path = save_to_disk(output, ext, category="post")
 
-            image = Image(post_id=post.post_id, user_id=user_id,
-                          directory=rel_path, original_image_name=file.filename, ext=ext)
+            image = Image(
+                post_id=post.post_id,
+                user_id=user_id,
+                directory=rel_path,
+                original_image_name=file.filename,
+                ext=ext,
+            )
             db.session.add(image)
             db.session.flush()
 
-            uploaded_images.append({"uuid": str(image.uuid), "path": image.directory,
-                                    "original_name": image.original_image_name})
+            uploaded_images.append(
+                {
+                    "uuid": str(image.uuid),
+                    "path": image.directory,
+                    "original_name": image.original_image_name,
+                }
+            )
         except Exception as e:
             db.session.rollback()
             return jsonify({"error": f"이미지 저장 실패: {e}"}), 400
 
     try:
         db.session.commit()
-        return jsonify({"message": "게시글 작성 완료", "post_id": post.post_id,
-                        "uploaded_images": uploaded_images}), 200
+        return (
+            jsonify(
+                {
+                    "message": "게시글 작성 완료",
+                    "post_id": post.post_id,
+                    "uploaded_images": uploaded_images,
+                }
+            ),
+            200,
+        )
     except Exception as e:
         db.session.rollback()
         return jsonify({"error": f"게시글 저장 실패: {e}"}), 400
@@ -116,20 +137,39 @@ def edit_post(post_id):
             output, ext = compress_image(file, image_type="post")
             rel_path = save_to_disk(output, ext, category="post")
 
-            image = Image(post_id=post.post_id, user_id=current_user.user_id,
-                          directory=rel_path, original_image_name=file.filename, ext=ext)
+            image = Image(
+                post_id=post.post_id,
+                user_id=current_user.user_id,
+                directory=rel_path,
+                original_image_name=file.filename,
+                ext=ext,
+            )
             db.session.add(image)
-            uploaded_images.append({"uuid": str(image.uuid), "path": image.directory,
-                                    "original_name": image.original_image_name})
+            uploaded_images.append(
+                {
+                    "uuid": str(image.uuid),
+                    "path": image.directory,
+                    "original_name": image.original_image_name,
+                }
+            )
         except Exception as e:
             db.session.rollback()
             return jsonify({"error": f"이미지 저장 실패: {e}"}), 400
 
     try:
         db.session.commit()
-        return jsonify({"message": "게시글 수정 완료", "post_id": post_id,
-                        "uploaded_images": uploaded_images, "deleted_images": deleted,
-                        "not_found_images": not_found}), 200
+        return (
+            jsonify(
+                {
+                    "message": "게시글 수정 완료",
+                    "post_id": post_id,
+                    "uploaded_images": uploaded_images,
+                    "deleted_images": deleted,
+                    "not_found_images": not_found,
+                }
+            ),
+            200,
+        )
     except Exception as e:
         db.session.rollback()
         return jsonify({"error": f"게시글 수정 실패: {e}"}), 400
@@ -162,8 +202,11 @@ def delete_post(post_id):
 # ---------------- 4. 전체 게시글 조회 ----------------
 @bp.route("/posts", methods=["GET"])
 def get_posts():
-    filters = {key: value for key, value in request.args.items()
-               if key not in ["page", "per_page", "order_by"] and value}
+    filters = {
+        key: value
+        for key, value in request.args.items()
+        if key not in ["page", "per_page", "order_by"] and value
+    }
     page = request.args.get("page", 1, type=int)
     per_page = request.args.get("per_page", 10, type=int)
     order_by = request.args.get("order_by", "latest")
@@ -199,6 +242,8 @@ def get_my_posts():
     per_page = request.args.get("per_page", 10, type=int)
     order_by = request.args.get("order_by", "latest")
 
-    query = Post.query.filter_by(user_id=current_user.user_id).options(selectinload(Post.images))
+    query = Post.query.filter_by(user_id=current_user.user_id).options(
+        selectinload(Post.images)
+    )
     query = apply_order(query, order_by)
     return paginate_posts(query, page, per_page)

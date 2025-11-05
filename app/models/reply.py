@@ -13,5 +13,7 @@ class Reply(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.now)
     updated_at = db.Column(db.DateTime, default=datetime.now, onupdate=datetime.now)
 
-    children = db.relationship("Reply", backref=db.backref("parent", remote_side=[reply_id]), lazy=True)
+    children = db.relationship(
+        "Reply", backref=db.backref("parent", remote_side=[reply_id]), lazy=True
+    )
     likes = db.relationship("ReplyLike", backref="reply", lazy=True)

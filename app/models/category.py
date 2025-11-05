@@ -2,6 +2,7 @@ from ..extensions import db
 
 # post의 카테고리
 
+
 class SubCategory(db.Model):
     __tablename__ = "sub_categories"
 

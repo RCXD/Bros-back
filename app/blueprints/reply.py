@@ -22,7 +22,7 @@ def create_reply():
         parent = Reply.query.get(parent_id_)
         if not parent:
             return jsonify({"error": "부모 댓글이 존재하지 않습니다."}), 404
-        
+
     # 부모가 이미 대댓글이라면 작성 금지
     if parent.parent_id is not None:
         return jsonify({"error": "대댓글에는 추가로 댓글을 달 수 없습니다."}), 400
@@ -41,7 +41,10 @@ def create_reply():
     db.session.add(reply)
     try:
         db.session.commit()
-        return jsonify({"message": "댓글이 작성되었습니다.", "reply_id": reply.reply_id}), 201
+        return (
+            jsonify({"message": "댓글이 작성되었습니다.", "reply_id": reply.reply_id}),
+            201,
+        )
     except Exception as e:
         db.session.rollback()
         return jsonify({"error": f"댓글 등록 실패: {str(e)}"}), 400
