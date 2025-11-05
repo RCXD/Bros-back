@@ -1,6 +1,7 @@
 from ..extensions import db
 from datetime import datetime
 
+
 class Mention(db.Model):
     __tablename__ = "mentions"
 
@@ -39,7 +40,6 @@ class Mention(db.Model):
             name="check_one_target",
         ),
         db.UniqueConstraint(
-            "mentioned_user_id", "post_id", "reply_id",
-            name="unique_mention_target"
+            "mentioned_user_id", "post_id", "reply_id", name="unique_mention_target"
         ),
     )

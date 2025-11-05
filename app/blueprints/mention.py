@@ -47,18 +47,14 @@ def create_mention():
         )
 
     existing = Mention.query.filter_by(
-        mentioned_user_id=mentioned_user_id,
-        post_id=post_id,
-        reply_id=reply_id
+        mentioned_user_id=mentioned_user_id, post_id=post_id, reply_id=reply_id
     ).first()
 
     if existing:
         return jsonify(success=False, message="이미 등록된 멘션입니다."), 409
 
     mention = Mention(
-        mentioned_user_id=mentioned_user_id,
-        post_id=post_id,
-        reply_id=reply_id
+        mentioned_user_id=mentioned_user_id, post_id=post_id, reply_id=reply_id
     )
 
     db.session.add(mention)

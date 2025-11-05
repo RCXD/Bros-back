@@ -4,7 +4,7 @@ from flask_jwt_extended import get_jwt
 from ..models import User
 from ..utils.image_utils import upload_profile
 from email_validator import validate_email, EmailNotValidError
-from flask_jwt_extended import jwt_required, create_access_token, get_current_user
+from flask_jwt_extended import jwt_required, get_current_user
 import requests
 from ..models.user import OauthType
 from ..utils.user_utils import token_provider, is_valid_phone
@@ -12,7 +12,6 @@ import os
 import uuid
 from flask import current_app
 from datetime import datetime
-
 
 
 bp = Blueprint("auth", __name__)
@@ -72,7 +71,10 @@ def sign_up():
 
         if files:
             if len(files) > 1:
-                return jsonify({"message": "프로필 이미지는 1장만 업로드 가능합니다."}), 400
+                return (
+                    jsonify({"message": "프로필 이미지는 1장만 업로드 가능합니다."}),
+                    400,
+                )
 
             file = files[0]
 
@@ -114,7 +116,9 @@ def sign_up():
         db.session.rollback()
         return jsonify({"message": "회원가입 실패"}), 400
 
+
 from flask_jwt_extended import jwt_required, get_jwt_identity
+
 
 # 회원 정보 수정
 @bp.route("/update", methods=["PUT"])
@@ -213,6 +217,7 @@ def update_profile():
         db.session.rollback()
         return jsonify({"message": "회원 정보 수정에 실패했습니다."}), 400
 
+
 @bp.route("/login", methods=["POST"])
 def login():
     data = request.get_json() or {}
@@ -222,7 +227,9 @@ def login():
     if not username or not password:
         return jsonify({"message": "아이디와 비밀번호를 입력하세요"}), 400
 
-    user = User.query.filter_by(username=username).first_or_404(description="아이디* 또는 비밀번호 오류입니다.")
+    user = User.query.filter_by(username=username).first_or_404(
+        description="아이디* 또는 비밀번호 오류입니다."
+    )
 
     try:
         user.follower_count = User.calculate_follower(user)
@@ -234,11 +241,8 @@ def login():
         return jsonify({"message": "아이디 또는 비밀번호* 오류입니다."}), 401
 
     return token_provider(
-    user.user_id,
-    username=user.username,
-    email=user.email,
-    nickname=user.nickname
-)
+        user.user_id, username=user.username, email=user.email, nickname=user.nickname
+    )
 
 
 GOOGLE_TOKEN_INFO_URL = "https://oauth2.googleapis.com/tokeninfo"
@@ -375,7 +379,7 @@ def naver_login():
 @jwt_required()
 def logout_access():
     jti = get_jwt()["jti"]  # 현재 토큰의 고유 ID
-    BLACKLIST.add(jti)       # 블랙리스트에 추가하여 무효화
+    BLACKLIST.add(jti)  # 블랙리스트에 추가하여 무효화
     return jsonify({"message": "로그아웃 되었습니다."}), 200
 
 
@@ -462,6 +466,7 @@ def get_info():
     }
     return jsonify(user_info), 200
 
+
 # 회원 탈퇴(회원이 직접 탈퇴)
 @bp.route("/", methods=["DELETE"])
 @jwt_required()
@@ -482,7 +487,8 @@ def delete_user():
     except Exception:
         db.session.rollback()
         return jsonify({"message": "회원 탈퇴에 실패했습니다."}), 400
-    
+
+
 # 회원 탈퇴(관리자 전용)
 @bp.route("/<int:user_id>", methods=["DELETE"])
 # @jwt_required()
@@ -492,7 +498,7 @@ def delete_user_by_admin(user_id):
     """
     # current_user = get_current_user()
     # if current_user.account_type.name != "ADMIN":
-        # return jsonify({"message": "권한이 없습니다."}), 403
+    # return jsonify({"message": "권한이 없습니다."}), 403
 
     target = User.query.get(user_id)
     if not target:

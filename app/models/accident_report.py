@@ -1,6 +1,7 @@
 from ..extensions import db
 from datetime import datetime
 
+
 class AccidentReport(db.Model):
     __tablename__ = "accident_reports"
 

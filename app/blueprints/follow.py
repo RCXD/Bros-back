@@ -5,6 +5,7 @@ from ..models import Follow, User
 
 bp = Blueprint("follow", __name__)
 
+
 # 팔로우 등록
 @bp.route("/<int:target_id>", methods=["POST"])
 @jwt_required()
@@ -14,7 +15,9 @@ def follow_user(target_id):
     if current_user_id == target_id:
         return jsonify({"message": "자신을 팔로우할 수 없습니다"}), 400
 
-    existing = Follow.query.filter_by(follower_id=current_user_id, following_id=target_id).first()
+    existing = Follow.query.filter_by(
+        follower_id=current_user_id, following_id=target_id
+    ).first()
     if existing:
         return jsonify({"message": "이미 팔로우 중입니다"}), 400
 
@@ -31,7 +34,9 @@ def follow_user(target_id):
 def unfollow_user(target_id):
     current_user_id = get_jwt_identity()
 
-    follow = Follow.query.filter_by(follower_id=current_user_id, following_id=target_id).first()
+    follow = Follow.query.filter_by(
+        follower_id=current_user_id, following_id=target_id
+    ).first()
     if not follow:
         return jsonify({"message": "팔로우 기록이 없습니다"}), 404
 
@@ -51,11 +56,9 @@ def get_following():
     result = []
     for f in followings:
         user = User.query.get_or_404(f.following_id)
-        result.append({
-            "user_id": user.user_id,
-            "nickname": user.nickname,
-            "email": user.email
-        })
+        result.append(
+            {"user_id": user.user_id, "nickname": user.nickname, "email": user.email}
+        )
 
     return jsonify(result), 200
 
@@ -70,10 +73,8 @@ def get_followers():
     result = []
     for f in followers:
         user = User.query.get_or_404(f.follower_id)
-        result.append({
-            "user_id": user.user_id,
-            "nickname": user.nickname,
-            "email": user.email
-        })
+        result.append(
+            {"user_id": user.user_id, "nickname": user.nickname, "email": user.email}
+        )
 
     return jsonify(result), 200

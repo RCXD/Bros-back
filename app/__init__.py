@@ -1,4 +1,4 @@
-from flask import Flask, jsonify
+from flask import Flask
 from .extensions import db, migrate, cors, jwt
 from .config import Config
 from .jwt_handlers import register_jwt_handlers
