@@ -11,72 +11,208 @@ import os
 bp = Blueprint("post", __name__)
 
 
-# 게시글 작성
+# 1. 게시글 작성 (내용 + 이미지 멀티파트)
 @bp.route("/write", methods=["POST"])
 @jwt_required()
-def write():
+def write_post():
     """
-    게시글 작성
-    - post_id 반환
-    - 이미지 업로드는 별도 엔드포인트에서 수행
+    게시글 작성 (내용 + 이미지 한 번에 업로드)
+    - multipart/form-data 기반
+    - text 필드는 form으로, 이미지는 file로 받음
     """
-    data = request.get_json()
     user_id = get_jwt_identity()
+
+    # --------------- 1️⃣ 게시글 데이터 추출 ---------------
+    content = request.form.get("content")
+    category_id = request.form.get("category_id")
+    location = request.form.get("location")
+
+    if not content:
+        return jsonify({"error": "게시글 내용은 필수입니다."}), 400
+
+    # --------------- 2️⃣ 게시글 생성 ---------------
     post = Post(
         user_id=user_id,
-        category_id=data.get("category_id"),
-        content=data.get("content"),
-        location=data.get("location"),
+        category_id=category_id,
+        content=content,
+        location=location,
     )
     db.session.add(post)
-    db.session.commit()
-    return jsonify({"message": "게시글 생성 완료", "post_id": post.post_id}), 200
+    db.session.flush()  # post_id 확보
+
+    # --------------- 3️⃣ 이미지 업로드 처리 ---------------
+    files = request.files.getlist("images")
+    uploaded_images = []
+
+    for file in files:
+        if not file.filename:
+            continue
+
+        ext = file.filename.rsplit(".", 1)[-1].lower()
+        if ext not in {"png", "jpg", "jpeg", "gif"}:
+            db.session.rollback()
+            return jsonify({"error": f"지원하지 않는 파일 형식: {file.filename}"}), 400
+
+        try:
+            output, ext = compress_image(file, image_type="post")
+            rel_path = save_to_disk(output, ext, category="post")
+
+            image = Image(
+                post_id=post.post_id,
+                user_id=user_id,
+                directory=rel_path,
+                original_image_name=file.filename,
+                ext=ext,
+            )
+            db.session.add(image)
+            db.session.flush()
+
+            uploaded_images.append(
+                {
+                    "uuid": image.uuid,
+                    "path": image.directory,
+                    "original_name": image.original_image_name,
+                }
+            )
+
+        except Exception as e:
+            db.session.rollback()
+            return jsonify({"error": f"이미지 저장 실패: {e}"}), 400
+
+    # --------------- 4️⃣ DB 커밋 ---------------
+    try:
+        db.session.commit()
+        return (
+            jsonify(
+                {
+                    "message": "게시글 작성 완료",
+                    "post_id": post.post_id,
+                    "uploaded_images": uploaded_images,
+                }
+            ),
+            200,
+        )
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"error": f"게시글 저장 실패: {e}"}), 400
 
 
-# 게시글 수정 (내용 + 이미지 삭제 통합)
+# 2. 게시글 수정 (내용 + 이미지 수정 통합)
 @bp.route("/edit/<int:post_id>", methods=["PUT"])
 @jwt_required()
 def edit_post(post_id):
     """
-    게시글 수정
-    - 내용, 카테고리, 위치 수정
-    - delete_images[] 포함 시 이미지 삭제
+    게시글 수정 (내용 + 이미지 추가/삭제)
+    multipart/form-data 기반
+    delete_images 로 여러 UUID 전달 (동일 key 반복)
     """
     post = Post.query.get_or_404(post_id)
     current_user = get_current_user()
+
     if post.user_id != current_user.user_id:
         return jsonify({"error": "권한 없음"}), 403
 
-    data = request.get_json() or {}
-    post.content = data.get("content", post.content)
-    post.category_id = data.get("category_id", post.category_id)
-    post.location = data.get("location", post.location)
+    # ✅ form 데이터 추출
+    content = request.form.get("content")
+    category_id = request.form.get("category_id")
+    location = request.form.get("location")
+    delete_uuids_raw = request.form.getlist("delete_images")
+    delete_uuids = [u.strip().lower() for u in delete_uuids_raw if u.strip()]
+    delete_set = set(delete_uuids)
 
-    delete_uuids = data.get("delete_images", [])
-    if delete_uuids:
-        images = Image.query.filter(
-            Image.uuid.in_(delete_uuids), Image.post_id == post_id
-        ).all()
-        for img in images:
-            delete_image(img)
-            db.session.delete(img)
+    # ✅ 게시글 기본 정보 수정
+    if content:
+        post.content = content
+    if category_id:
+        post.category_id = category_id
+    if location:
+        post.location = location
 
+    # ✅ 삭제 처리
+    deleted = []
+    not_found = []
+
+    if delete_set:
+        # 게시글의 모든 이미지 불러오기
+        post_images = Image.query.filter_by(post_id=post_id).all()
+        uuid_map = {str(img.uuid).lower(): img for img in post_images}
+
+        for u in delete_uuids:
+            img = uuid_map.get(u)
+            if img:
+                try:
+                    delete_image(img)
+                except Exception as e:
+                    print(f"[WARN] 파일 삭제 실패: {e}")
+
+                db.session.delete(img)
+                deleted.append(u)
+            else:
+                not_found.append(u)
+
+        # ✅ 여러 개 삭제 후 flush 강제
+        db.session.flush()
+
+    # ✅ 새 이미지 업로드
+    new_files = request.files.getlist("new_images")
+    uploaded_images = []
+
+    for file in new_files:
+        if not file.filename:
+            continue
+
+        ext = file.filename.rsplit(".", 1)[-1].lower()
+        if ext not in {"png", "jpg", "jpeg", "gif"}:
+            db.session.rollback()
+            return jsonify({"error": f"지원하지 않는 파일 형식: {file.filename}"}), 400
+
+        try:
+            output, ext = compress_image(file, image_type="post")
+            rel_path = save_to_disk(output, ext, category="post")
+
+            image = Image(
+                post_id=post.post_id,
+                user_id=current_user.user_id,
+                directory=rel_path,
+                original_image_name=file.filename,
+                ext=ext,
+            )
+            db.session.add(image)
+            uploaded_images.append(
+                {
+                    "uuid": image.uuid,
+                    "path": image.directory,
+                    "original_name": image.original_image_name,
+                }
+            )
+        except Exception as e:
+            db.session.rollback()
+            return jsonify({"error": f"이미지 저장 실패: {e}"}), 400
+
+    # ✅ 최종 커밋
     try:
         db.session.commit()
-        return jsonify({"message": "게시글 수정 완료", "post_id": post_id}), 200
-    except Exception:
+        return jsonify({
+            "message": "게시글 수정 완료",
+            "post_id": post_id,
+            "uploaded_images": uploaded_images,
+            "deleted_images": deleted,
+            "not_found_images": not_found
+        }), 200
+
+    except Exception as e:
         db.session.rollback()
-        return jsonify({"message": "게시글 수정 실패"}), 400
+        return jsonify({"error": f"게시글 수정 실패: {e}"}), 400
 
-
-# 게시글 삭제 (연결된 이미지 포함)
+# 3. 게시글 삭제 (이미지 포함)
 @bp.route("/<int:post_id>", methods=["DELETE"])
 @jwt_required()
-def delete_post_full(post_id):
+def delete_post(post_id):
     current_user = get_current_user()
     post = Post.query.get_or_404(post_id)
+
     if post.user_id != current_user.user_id:
-        return jsonify({"message": "권한 없음"}), 403
+        return jsonify({"error": "권한 없음"}), 403
 
     try:
         for img in post.images:
@@ -87,10 +223,10 @@ def delete_post_full(post_id):
         return jsonify({"message": "게시글 및 이미지 삭제 완료"}), 200
     except Exception:
         db.session.rollback()
-        return jsonify({"message": "삭제 실패"}), 400
+        return jsonify({"error": "삭제 실패"}), 400
 
 
-# 전체 게시글 조회
+# 4. 전체 게시글 조회
 @bp.route("/posts", methods=["GET"])
 def get_posts():
     filters = {
@@ -112,7 +248,7 @@ def get_posts():
     return paginate_posts(query, page, per_page)
 
 
-# 특정 게시글 조회
+# 5. 특정 게시글 조회
 @bp.route("/<int:post_id>", methods=["GET"])
 def get_post(post_id):
     post = Post.query.filter(Post.post_id == post_id).first_or_404()
@@ -124,7 +260,7 @@ def get_post(post_id):
     return jsonify(serialize_post(post))
 
 
-# 내 게시글 조회
+# 6. 내 게시글 조회
 @bp.route("/me", methods=["GET"])
 @jwt_required()
 def get_my_posts():
@@ -138,79 +274,3 @@ def get_my_posts():
     )
     query = apply_order(query, order_by)
     return paginate_posts(query, page, per_page)
-
-
-# 이미지 업로드
-@bp.route("/upload_post_image", methods=["POST"])
-@jwt_required()
-def upload_post_image():
-    """
-    게시글 이미지 업로드 (여러 장 지원)
-        - multipart/form-data로 여러 이미지 업로드 가능
-    """
-    user_id = get_jwt_identity()
-    post_id = request.form.get("post_id")
-    files = request.files.getlist("image")
-
-    if not files or not post_id:
-        return jsonify({"error": "필수 데이터 누락"}), 400
-
-    uploaded_images = []
-
-    for file in files:
-        try:
-            output, ext = compress_image(file, image_type="post")
-            rel_path = save_to_disk(output, ext, category="post")
-
-            image = Image(
-                post_id=post_id,
-                user_id=user_id,
-                directory=rel_path,
-                original_image_name=file.filename,
-                ext=os.path.splitext(file.filename)[1].lstrip("."),
-            )
-            db.session.add(image)
-            db.session.flush()  # commit 전 UUID 확보
-
-            uploaded_images.append(
-                {
-                    "uuid": image.uuid,
-                    "path": image.directory,
-                    "original_name": image.original_image_name,
-                }
-            )
-
-        except Exception as e:
-            db.session.rollback()
-            return jsonify({"error": f"이미지 저장 실패: {e}"}), 400
-
-    db.session.commit()
-
-    return (
-        jsonify(
-            {
-                "message": f"{len(uploaded_images)}개 이미지 업로드 완료",
-                "images": uploaded_images,
-            }
-        ),
-        200,
-    )
-
-
-# 게시글의 이미지 전체 조회
-@bp.route("/images/<int:post_id>", methods=["GET"])
-def get_post_images(post_id):
-    images = Image.query.filter_by(post_id=post_id).all()
-    return (
-        jsonify(
-            [
-                {
-                    "uuid": img.uuid,
-                    "path": img.directory,
-                    "original_name": img.original_image_name,
-                }
-                for img in images
-            ]
-        ),
-        200,
-    )
