@@ -1,5 +1,6 @@
 from flask import Blueprint, request, jsonify
-from ..extensions import db
+from ..extensions import db, BLACKLIST
+from flask_jwt_extended import get_jwt
 from ..models import User
 from ..utils.image_utils import upload_profile
 from email_validator import validate_email, EmailNotValidError
@@ -11,6 +12,7 @@ import os
 import uuid
 from flask import current_app
 from datetime import datetime
+
 
 
 bp = Blueprint("auth", __name__)
@@ -372,8 +374,9 @@ def naver_login():
 @bp.route("/logout", methods=["DELETE"])
 @jwt_required()
 def logout_access():
-    response = jsonify({"message": "로그아웃 되었습니다."}), 200
-    return response
+    jti = get_jwt()["jti"]  # 현재 토큰의 고유 ID
+    BLACKLIST.add(jti)       # 블랙리스트에 추가하여 무효화
+    return jsonify({"message": "로그아웃 되었습니다."}), 200
 
 
 # 모든 유저 조건부 조회(쿼리 들어오면 들어온걸로 조회, 안들어오면 전체조회)
