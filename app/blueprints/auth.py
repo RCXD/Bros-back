@@ -220,7 +220,7 @@ def login():
     if not username or not password:
         return jsonify({"message": "아이디와 비밀번호를 입력하세요"}), 400
 
-    user = User.query.filter_by(username=username).first_or_404()
+    user = User.query.filter_by(username=username).first_or_404(description="아이디* 또는 비밀번호 오류입니다.")
 
     try:
         user.follower_count = User.calculate_follower(user)
@@ -229,7 +229,7 @@ def login():
     except:
         db.session.rollback()
     if not user or not user.check_password(password):
-        return jsonify({"message": "로그인 실패"}), 401
+        return jsonify({"message": "아이디 또는 비밀번호* 오류입니다."}), 401
 
     return token_provider(
     user.user_id,
