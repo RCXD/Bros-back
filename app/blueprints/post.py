@@ -7,6 +7,8 @@ from ..utils.image_storage import save_to_disk
 from ..utils.image_utils import delete_image
 from ..utils.image_compressor import compress_image
 from ..utils.post_query import apply_order, paginate_posts, serialize_post
+import os
+from pathlib import Path
 
 bp = Blueprint("post", __name__)
 
@@ -21,7 +23,7 @@ def write_post():
     location = request.form.get("location")
 
     if not content:
-        return jsonify({"error": "게시글 내용은 필수입니다."}), 400
+        return jsonify({"message": "게시글 내용은 필수입니다."}), 400
 
     post = Post(
         user_id=user_id, category_id=category_id, content=content, location=location
@@ -33,15 +35,17 @@ def write_post():
     uploaded_images = []
 
     for file in files:
-        if not file.filename:
-            continue
+        if not hasattr(file, 'filename') and not hasattr(file, 'name'):
+            return jsonify({"message": "파일명이 없습니다."}), 400
+        if hasattr(file, 'name') and not hasattr(file, 'filename'):
+            setattr(file, 'filename', file.name)
         ext = file.filename.rsplit(".", 1)[-1].lower()
         if ext not in {"png", "jpg", "jpeg", "gif"}:
             db.session.rollback()
-            return jsonify({"error": f"지원하지 않는 파일 형식: {file.filename}"}), 400
+            return jsonify({"message": f"지원하지 않는 파일 형식: {file.filename}"}), 400
         try:
-            output, ext = compress_image(file, image_type="post")
-            rel_path = save_to_disk(output, ext, category="post")
+            output, ext, filename = compress_image(file, image_type="post")
+            rel_path = save_to_disk(output, ext, filename, category="post")
 
             image = Image(
                 post_id=post.post_id,
@@ -53,6 +57,16 @@ def write_post():
             db.session.add(image)
             db.session.flush()
 
+            # 파일명 = uuid + 확장자
+            filename = f"{image.uuid}.{ext}"
+
+            # 저장
+            rel_path = save_to_disk(file, ext, filename, category="post")
+
+            # DB 경로 갱신
+            image.directory = rel_path
+            db.session.flush()
+
             uploaded_images.append(
                 {
                     "uuid": str(image.uuid),
@@ -62,7 +76,7 @@ def write_post():
             )
         except Exception as e:
             db.session.rollback()
-            return jsonify({"error": f"이미지 저장 실패: {e}"}), 400
+            return jsonify({"message": f"이미지 저장 실패: {e}"}), 400
 
     try:
         db.session.commit()
@@ -78,7 +92,7 @@ def write_post():
         )
     except Exception as e:
         db.session.rollback()
-        return jsonify({"error": f"게시글 저장 실패: {e}"}), 400
+        return jsonify({"message": f"게시글 저장 실패: {e}"}), 400
 
 
 # ---------------- 2. 게시글 수정 ----------------
@@ -88,7 +102,7 @@ def edit_post(post_id):
     post = Post.query.get_or_404(post_id)
     current_user = get_current_user()
     if post.user_id != current_user.user_id:
-        return jsonify({"error": "권한 없음"}), 403
+        return jsonify({"message": "권한 없음"}), 403
 
     content = request.form.get("content")
     category_id = request.form.get("category_id")
@@ -132,10 +146,10 @@ def edit_post(post_id):
         ext = file.filename.rsplit(".", 1)[-1].lower()
         if ext not in {"png", "jpg", "jpeg", "gif"}:
             db.session.rollback()
-            return jsonify({"error": f"지원하지 않는 파일 형식: {file.filename}"}), 400
+            return jsonify({"message": f"지원하지 않는 파일 형식: {file.filename}"}), 400
         try:
-            output, ext = compress_image(file, image_type="post")
-            rel_path = save_to_disk(output, ext, category="post")
+            output, ext, filename = compress_image(file, image_type="post")
+            rel_path = save_to_disk(output, ext, filename, category="post")
 
             image = Image(
                 post_id=post.post_id,
@@ -154,7 +168,7 @@ def edit_post(post_id):
             )
         except Exception as e:
             db.session.rollback()
-            return jsonify({"error": f"이미지 저장 실패: {e}"}), 400
+            return jsonify({"message": f"이미지 저장 실패: {e}"}), 400
 
     try:
         db.session.commit()
@@ -172,7 +186,7 @@ def edit_post(post_id):
         )
     except Exception as e:
         db.session.rollback()
-        return jsonify({"error": f"게시글 수정 실패: {e}"}), 400
+        return jsonify({"message": f"게시글 수정 실패: {e}"}), 400
 
 
 # ---------------- 3. 게시글 삭제 ----------------
@@ -182,7 +196,7 @@ def delete_post(post_id):
     post = Post.query.get_or_404(post_id)
     current_user = get_current_user()
     if post.user_id != current_user.user_id:
-        return jsonify({"error": "권한 없음"}), 403
+        return jsonify({"message": "권한 없음"}), 403
 
     try:
         for img in post.images:
@@ -196,7 +210,7 @@ def delete_post(post_id):
         return jsonify({"message": "게시글 및 이미지 삭제 완료"}), 200
     except Exception as e:
         db.session.rollback()
-        return jsonify({"error": f"삭제 실패: {e}"}), 400
+        return jsonify({"message": f"삭제 실패: {e}"}), 400
 
 
 # ---------------- 4. 전체 게시글 조회 ----------------
@@ -253,7 +267,7 @@ def get_my_posts():
 def get_images(uuid):
     # uuid = request.get("uuid")
     image = Image.query.filter_by(uuid=uuid).first_or_404(description="이미지 없음")
-    return send_from_directory(current_app.static_folder, image.directory)
+    return send_from_directory('/'.join(image.directory.split('/')[:-1]), image.directory.split('/')[-1])
     # return app.send_static_file(image.directory)
 
     # return jsonify(

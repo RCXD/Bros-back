@@ -10,7 +10,7 @@ from datetime import datetime
 executor = ThreadPoolExecutor(max_workers=4)
 
 
-def save_to_disk(output_stream, ext, category="post"):
+def save_to_disk(output_stream, ext, filename, category="post"):
     """
      카테고리/날짜별로 이미지 저장
     - category: post / reply / profile
@@ -29,7 +29,7 @@ def save_to_disk(output_stream, ext, category="post"):
         os.makedirs(abs_folder, exist_ok=True)
 
     # 2️⃣ 파일명 UUID
-    filename = f"{uuid.uuid4()}.{ext.lower()}"
+    # filename = f"{uuid.uuid4()}.{ext.lower()}"
     abs_path = os.path.join(abs_folder, filename)
     rel_path = f"{base_folder}/{filename}"
 
@@ -43,29 +43,29 @@ def save_to_disk(output_stream, ext, category="post"):
 
 def delete_image(image, category="post"):
     """
-     이미지를 서버에서 삭제 (DB 처리는 Blueprint에서 수행)
-    - 실제 파일 삭제만 담당
-    - DB 세션 변경은 하지 않음
-    - 파일이 없어도 예외 없이 통과
+    이미지를 서버에서 삭제 (DB는 Blueprint에서 처리)
     """
     if not image:
-        current_app.logger.warning("존재하지 않는 이미지 경로입니다.")
+        current_app.logger.warning("존재하지 않는 이미지 객체입니다.")
         return False
 
     try:
-        # 실제 파일 절대 경로
-        date=image.created_at.strftime("%Y-%m-%d")
-        base_folder=f"static/{category}_images/{date}"
-        abs_path = os.path.join(current_app.root_path, base_folder, image.uuid, image.ext)
- 
-        # 파일 존재 여부 확인 후 삭제
+        # 날짜별 폴더 구조 계산
+        date = image.created_at.strftime("%Y-%m-%d")
+        base_folder = f"static/{category}_images/{date}"
+        abs_folder = os.path.join(current_app.root_path, base_folder)
+
+        # 파일 이름은 실제 저장된 것과 동일하게 사용
+        # save_to_disk에서 filename = f"{uuid4()}.{ext}" 형태로 저장했으므로
+        filename = os.path.basename(image.directory)
+        abs_path = os.path.join(abs_folder, filename)
+
+        # 파일 존재 시 삭제
         if os.path.exists(abs_path):
             os.remove(abs_path)
             current_app.logger.info(f"[✓] 이미지 파일 삭제 완료: {abs_path}")
         else:
-            current_app.logger.warning(
-                f"[!] 삭제 대상 이미지 파일이 존재하지 않음: {abs_path}"
-            )
+            current_app.logger.warning(f"[!] 삭제 대상 이미지 파일이 존재하지 않음: {abs_path}")
 
         return True
 

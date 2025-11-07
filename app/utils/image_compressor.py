@@ -39,4 +39,4 @@ def compress_image(file, image_type="default"):
         f"[✓] {image_type} 이미지 압축 완료 ({len(output.getvalue()) / 1024:.1f} KB, 품질={quality})"
     )
 
-    return output, fmt
+    return output, fmt, file.filename
