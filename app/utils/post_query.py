@@ -41,11 +41,10 @@ def serialize_post(post):
         {
             "image_id": img.image_id,
             "uuid": img.uuid,
-            "directory": img.directory,
             "original_image_name": img.original_image_name,
             "ext": img.ext,
         }
-        for img in post.images.all()
+        for img in post.images
     ]
     return {
         "post_id": post.post_id,

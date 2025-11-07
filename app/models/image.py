@@ -17,7 +17,7 @@ class Image(db.Model):
     ext = db.Column(db.String(10), nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.now)
 
-    post = db.relationship("Post", backref=db.backref("images", lazy="dynamic"))
+    post = db.relationship("Post", backref=db.backref("images", lazy="joined"))
     user = db.relationship(
         "User", backref=db.backref("uploaded_images", lazy="dynamic")
     )
