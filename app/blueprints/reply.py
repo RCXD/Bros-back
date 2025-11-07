@@ -15,17 +15,13 @@ def create_reply():
     parent_id_ = data.get("parent_id")
 
     if not content or not post_id:
-        return jsonify({"error": "내용과 게시글 ID는 필수입니다."}), 400
+        return jsonify({"message": "내용과 게시글 ID는 필수입니다."}), 400
 
     # 부모 댓글이 있다면 존재 여부 확인
     if parent_id_:
         parent = Reply.query.get(parent_id_)
-        if not parent:
-            return jsonify({"error": "부모 댓글이 존재하지 않습니다."}), 404
-
-    # 부모가 이미 대댓글이라면 작성 금지
-    if parent.parent_id is not None:
-        return jsonify({"error": "대댓글에는 추가로 댓글을 달 수 없습니다."}), 400
+        if parent.parent_id is not None:
+            return jsonify({"message": "대댓글에는 추가로 댓글을 달 수 없습니다."}), 400     
 
     # 현재 로그인 유저 ID 가져오기
     current_user_id = get_jwt_identity()
@@ -35,8 +31,9 @@ def create_reply():
         content=content,
         post_id=post_id,
         user_id=current_user_id,
-        parent_id=parent_id_ if parent_id_ else None,
     )
+    if parent_id_:
+        reply.parent_id = parent_id_
 
     db.session.add(reply)
     try:
@@ -47,7 +44,7 @@ def create_reply():
         )
     except Exception as e:
         db.session.rollback()
-        return jsonify({"error": f"댓글 등록 실패: {str(e)}"}), 400
+        return jsonify({"message": f"댓글 등록 실패: {str(e)}"}), 400
 
 
 @bp.route("/<int:reply_id>", methods=["DELETE"])
@@ -57,7 +54,7 @@ def delete_reply(reply_id):
     reply = Reply.query.get_or_404(reply_id)
 
     if reply.user_id != current_user_id:
-        return jsonify({"error": "본인의 댓글만 삭제할 수 있습니다."}), 403
+        return jsonify({"message": "본인의 댓글만 삭제할 수 있습니다."}), 403
 
     # 자식 댓글(대댓글)도 함께 삭제
     Reply.query.filter_by(parent_id=reply_id).delete()
@@ -75,13 +72,13 @@ def update_reply(reply_id):
     content = data.get("content")
 
     if not content:
-        return jsonify({"error": "내용은 필수입니다."}), 400
+        return jsonify({"message": "내용은 필수입니다."}), 400
 
     current_user_id = int(get_jwt_identity())
     reply = Reply.query.get_or_404(reply_id)
 
     if reply.user_id != current_user_id:
-        return jsonify({"error": "본인의 댓글만 수정할 수 있습니다."}), 403
+        return jsonify({"message": "본인의 댓글만 수정할 수 있습니다."}), 403
 
     reply.content = content
     db.session.commit()
@@ -100,7 +97,7 @@ def get_root_replies(post_id):
     pagination = (
         Reply.query.filter_by(post_id=post_id, parent_id=None)
         .order_by(Reply.created_at.desc())
-        .paginate(page=page, per_page=PER_PAGE, error_out=False)
+        .paginate(page=page, per_page=PER_PAGE, message_out=False)
     )
 
     root_replies = [
@@ -147,7 +144,7 @@ def get_child_replies(parent_id):
     pagination = (
         Reply.query.filter_by(parent_id=parent_id)
         .order_by(Reply.created_at.asc())
-        .paginate(page=page, per_page=PER_PAGE, error_out=False)
+        .paginate(page=page, per_page=PER_PAGE, message_out=False)
     )
 
     children = [

@@ -37,6 +37,7 @@ def apply_order(query, order_by):
 def serialize_post(post):
     """Post 객체를 JSON 응답 형태로 직렬화"""
     likes = Post.query.filter(PostLike.post_id == post.post_id).count()
+    replies = Reply.query.filter(Reply.post_id == post.post_id).count()
     images = [
         {
             "image_id": img.image_id,
@@ -57,6 +58,7 @@ def serialize_post(post):
         "updated_at": post.updated_at.isoformat() if post.updated_at else None,
         "images": images,
         "likes": likes,
+        "replies": replies,
     }
 
 
