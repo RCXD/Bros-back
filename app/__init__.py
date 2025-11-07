@@ -3,7 +3,6 @@ from .extensions import db, migrate, cors, jwt
 from .config import Config
 from .jwt_handlers import register_jwt_handlers
 
-
 def create_app():
     app = Flask(__name__)
     app.config.from_object(Config)
@@ -39,3 +38,5 @@ def create_app():
     app.register_blueprint(friend_bp, url_prefix="/friend")
 
     return app
+
+app = create_app()

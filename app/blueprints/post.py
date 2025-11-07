@@ -7,6 +7,7 @@ from ..utils.image_storage import save_to_disk
 from ..utils.image_utils import delete_image
 from ..utils.image_compressor import compress_image
 from ..utils.post_query import apply_order, paginate_posts, serialize_post
+from app import app
 
 bp = Blueprint("post", __name__)
 
@@ -247,3 +248,22 @@ def get_my_posts():
     )
     query = apply_order(query, order_by)
     return paginate_posts(query, page, per_page)
+
+# img태그에서 이미지 조회하기를 위한 엔드포인트
+@bp.route("/image/<string:uuid>", methods=["GET"])
+def get_images(uuid):
+    # uuid = request.get("uuid")
+    image = Image.query.filter_by(uuid=uuid).first_or_404(description="이미지 없음")
+
+    return app.send_static_file(image.directory)
+
+    # return jsonify(
+    #     {
+    #         "image_id": image.image_id,
+    #         "post_id": image.post_id,
+    #         "user_id": image.user_id,
+    #         "original_image_name": image.original_image_name,
+    #         "ext": image.ext,
+    #         "created_at": image.created_at.isoformat(),
+    #     }
+    # )
