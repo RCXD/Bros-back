@@ -222,8 +222,8 @@ def update_profile():
 @jwt_required(refresh=True)
 def refresh():
     identity = get_jwt_identity()
-    access_token = create_access_token(identity=identity)
-    return jsonify(access_token=access_token)
+    access_token = token_provider(user_id=identity, refresh_require=False)
+    return jsonify(access_token=access_token), 200
 
 
 @bp.route("/login", methods=["POST"])
