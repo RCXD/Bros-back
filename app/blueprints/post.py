@@ -1,4 +1,4 @@
-from flask import Blueprint, request, jsonify
+from flask import Blueprint, request, jsonify, current_app, send_from_directory
 from ..models import Post, Image
 from ..extensions import db
 from flask_jwt_extended import jwt_required, get_jwt_identity, get_current_user
@@ -7,7 +7,6 @@ from ..utils.image_storage import save_to_disk
 from ..utils.image_utils import delete_image
 from ..utils.image_compressor import compress_image
 from ..utils.post_query import apply_order, paginate_posts, serialize_post
-from app import app
 
 bp = Blueprint("post", __name__)
 
@@ -254,8 +253,8 @@ def get_my_posts():
 def get_images(uuid):
     # uuid = request.get("uuid")
     image = Image.query.filter_by(uuid=uuid).first_or_404(description="이미지 없음")
-
-    return app.send_static_file(image.directory)
+    return send_from_directory(current_app.static_folder, image.directory)
+    # return app.send_static_file(image.directory)
 
     # return jsonify(
     #     {

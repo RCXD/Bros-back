@@ -38,5 +38,3 @@ def create_app():
     app.register_blueprint(friend_bp, url_prefix="/friend")
 
     return app
-
-app = create_app()
