@@ -159,12 +159,11 @@ def edit_post(post_id):
             db.session.rollback()
             return jsonify({"message": f"지원하지 않는 파일 형식: {file.filename}"}), 400
         try:
-            output, ext, filename = compress_image(file, image_type="post")
-            rel_path = save_to_disk(output, ext, filename, category="post")
+            image_compressed, ext, filename = compress_image(file, image_type="post")
             image = Image(
                 post_id=post.post_id,
                 user_id=current_user.user_id,
-                directory=rel_path,
+                directory="",
                 original_image_name=file.filename,
                 ext=ext,
             )
@@ -175,9 +174,7 @@ def edit_post(post_id):
             filename = f"{image.uuid}.{ext}"
 
             # 3) 압축 및 저장
-            # compress_image은 (output_stream, ext, suggested_filename) 반환한다고 가정
-            output_stream, _, _ = compress_image(file, image_type="post")
-            rel_path = save_to_disk(output_stream, ext, filename, category="post")
+            rel_path = save_to_disk(image_compressed, ext, filename, category="post")
 
             # 4) DB 레코드의 directory 갱신
             image.directory = rel_path
