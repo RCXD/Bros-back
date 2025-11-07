@@ -12,6 +12,8 @@ from pathlib import Path
 
 bp = Blueprint("post", __name__)
 
+IMAGE_EXTENSIONS = {"png", "jpg", "jpeg", "gif", "jfif", "pjpeg", "pjp", "webp", "avif", "apng", "svg", }
+
 
 # ---------------- 1. 게시글 작성 ----------------
 @bp.route("/write", methods=["POST"])
@@ -35,25 +37,28 @@ def write_post():
     uploaded_images = []
 
     for file in files:
-        if not hasattr(file, 'filename') and not hasattr(file, 'name'):
+        if not hasattr(file, "filename") or not hasattr(file, "name"):
             return jsonify({"message": "파일명이 없습니다."}), 400
-        if hasattr(file, 'name') and not hasattr(file, 'filename'):
-            setattr(file, 'filename', file.name)
+        if hasattr(file, "name") and not hasattr(file, "filename"):
+            setattr(file, "filename", file.name)
         ext = file.filename.rsplit(".", 1)[-1].lower()
-        if ext not in {"png", "jpg", "jpeg", "gif"}:
+        if ext not in IMAGE_EXTENSIONS:
             db.session.rollback()
-            return jsonify({"message": f"지원하지 않는 파일 형식: {file.filename}"}), 400
+            return (
+                jsonify({"message": f"지원하지 않는 파일 형식: {file.filename}"}),
+                400,
+            )
         try:
-            output, ext, filename = compress_image(file, image_type="post")
-            rel_path = save_to_disk(output, ext, filename, category="post")
+            image_compressed, ext, filename = compress_image(file, image_type="post")
 
             image = Image(
                 post_id=post.post_id,
                 user_id=user_id,
-                directory=rel_path,
+                directory="",
                 original_image_name=file.filename,
                 ext=ext,
             )
+
             db.session.add(image)
             db.session.flush()
 
@@ -61,7 +66,7 @@ def write_post():
             filename = f"{image.uuid}.{ext}"
 
             # 저장
-            rel_path = save_to_disk(file, ext, filename, category="post")
+            rel_path = save_to_disk(image_compressed, ext, filename, category="post")
 
             # DB 경로 갱신
             image.directory = rel_path
@@ -126,9 +131,15 @@ def edit_post(post_id):
         for u in delete_uuids:
             img = uuid_map.get(u)
             if img:
+                # current_app.logger.info(
+                #     f"[DEBUG] 삭제 시도 uuid={u}, path={img.directory}"
+                # )
                 try:
+                    # result = delete_image(img, category="post")
+                    # current_app.logger.info(f"[DELETE RESULT] {result}")
                     delete_image(img)
                 except Exception as e:
+                    # current_app.logger.warning(f"[WARN] 파일 삭제 실패: {e}")
                     print(f"[WARN] 파일 삭제 실패: {e}")
                 db.session.delete(img)
                 deleted.append(u)
@@ -141,7 +152,7 @@ def edit_post(post_id):
     uploaded_images = []
 
     for file in new_files:
-        if not file.filename:
+        if not file or not hasattr(file, "filename"):
             continue
         ext = file.filename.rsplit(".", 1)[-1].lower()
         if ext not in {"png", "jpg", "jpeg", "gif"}:
@@ -150,7 +161,6 @@ def edit_post(post_id):
         try:
             output, ext, filename = compress_image(file, image_type="post")
             rel_path = save_to_disk(output, ext, filename, category="post")
-
             image = Image(
                 post_id=post.post_id,
                 user_id=current_user.user_id,
@@ -159,6 +169,20 @@ def edit_post(post_id):
                 ext=ext,
             )
             db.session.add(image)
+            db.session.flush()  # image.uuid 생성됨
+
+            # 2) 파일명은 DB의 uuid와 정확히 동일하게 (uuid + ext)
+            filename = f"{image.uuid}.{ext}"
+
+            # 3) 압축 및 저장
+            # compress_image은 (output_stream, ext, suggested_filename) 반환한다고 가정
+            output_stream, _, _ = compress_image(file, image_type="post")
+            rel_path = save_to_disk(output_stream, ext, filename, category="post")
+
+            # 4) DB 레코드의 directory 갱신
+            image.directory = rel_path
+            db.session.flush()
+
             uploaded_images.append(
                 {
                     "uuid": str(image.uuid),
@@ -262,12 +286,15 @@ def get_my_posts():
     query = apply_order(query, order_by)
     return paginate_posts(query, page, per_page)
 
+
 # img태그에서 이미지 조회하기를 위한 엔드포인트
 @bp.route("/image/<string:uuid>", methods=["GET"])
 def get_images(uuid):
     # uuid = request.get("uuid")
     image = Image.query.filter_by(uuid=uuid).first_or_404(description="이미지 없음")
-    return send_from_directory('/'.join(image.directory.split('/')[:-1]), image.directory.split('/')[-1])
+    return send_from_directory(
+        "/".join(image.directory.split("/")[:-1]), image.directory.split("/")[-1]
+    )
     # return app.send_static_file(image.directory)
 
     # return jsonify(
