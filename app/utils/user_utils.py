@@ -5,7 +5,7 @@ import re
 from ..models.user import OauthType, AccountType
 
 
-def token_provider(user_id, **kwargs):
+def token_provider(user_id, access_require=True, refresh_require=True, **kwargs):
 
     user = User.query.filter(User.user_id == user_id).first_or_404()
     additional_claims = {}
@@ -15,17 +15,19 @@ def token_provider(user_id, **kwargs):
         additional_claims["account_type"] = AccountType(user.account_type).value
     for k, v in kwargs.items():
         additional_claims[k] = v
-    access = create_access_token(identity=str(user_id), additional_claims=additional_claims)
-    refresh = create_refresh_token(identity=str(user_id), additional_claims=additional_claims)
+    if access_require :
+        access = create_access_token(identity=str(user_id), additional_claims=additional_claims)
+    if refresh_require:
+       refresh = create_refresh_token(identity=str(user_id), additional_claims=additional_claims)
 
     response = jsonify(
         {
             "message": "로그인 성공",
-            "csrf_access_token": get_csrf_token(access),
-            "csrf_refresh_token": get_csrf_token(refresh),
+            "csrf_access_token": get_csrf_token(encoded_token=access),
+            "csrf_refresh_token": get_csrf_token(encoded_token=refresh),
             "access_token": access,
             "refresh_token": refresh,
-            "user_data": user_to_dict(user),
+            "user_data": user_to_dict(user=user),
         }
     )
 
