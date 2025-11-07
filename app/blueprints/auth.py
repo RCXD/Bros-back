@@ -449,7 +449,7 @@ def get_user(user_id):
 def get_info():
     current_user = get_current_user()
     if not current_user:
-        return jsonify({"error": "사용자를 찾을 수 없습니다."}), 404
+        return jsonify({"message": "사용자를 찾을 수 없습니다."}), 404
     User.calculate_follower(current_user)
     db.session.add(current_user)
     db.session.commit()

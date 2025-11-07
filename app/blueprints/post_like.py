@@ -16,7 +16,7 @@ def add_like():
 
     # 필수 값 확인
     if not post_id or not user_id:
-        return jsonify({"error": "post_id와 user_id가 필요합니다"}), 400
+        return jsonify({"message": "post_id와 user_id가 필요합니다"}), 400
 
     # 중복 방지 (이미 좋아요 했는지 확인)
     existing_like = PostLike.query.filter_by(post_id=post_id, user_id=user_id).first()
@@ -44,7 +44,7 @@ def remove_like():
     user_id = data.get("user_id")
 
     if not post_id or not user_id:
-        return jsonify({"error": "post_id와 user_id가 필요합니다"}), 400
+        return jsonify({"message": "post_id와 user_id가 필요합니다"}), 400
 
     like = PostLike.query.filter_by(post_id=post_id, user_id=user_id).first()
     if not like:
