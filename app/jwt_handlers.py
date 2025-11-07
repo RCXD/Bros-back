@@ -59,3 +59,4 @@ def register_jwt_handlers(jwt):
             ),
             401,
         )
+    

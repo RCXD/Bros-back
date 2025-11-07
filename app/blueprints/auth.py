@@ -7,7 +7,7 @@ from email_validator import validate_email, EmailNotValidError
 from flask_jwt_extended import jwt_required, get_current_user
 import requests
 from ..models.user import OauthType
-from ..utils.user_utils import token_provider, is_valid_phone
+from ..utils.user_utils import token_provider, is_valid_phone, create_access_token
 import os
 import uuid
 from flask import current_app
@@ -216,6 +216,14 @@ def update_profile():
     except Exception:
         db.session.rollback()
         return jsonify({"message": "회원 정보 수정에 실패했습니다."}), 400
+
+
+@bp.route("/refresh", methods=["POST"])
+@jwt_required(refresh=True)
+def refresh():
+    identity = get_jwt_identity()
+    access_token = create_access_token(identity=identity)
+    return jsonify(access_token=access_token)
 
 
 @bp.route("/login", methods=["POST"])
