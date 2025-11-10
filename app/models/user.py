@@ -28,7 +28,8 @@ class User(db.Model):
     password_hash = db.Column(db.String(255), nullable=False)
     email = db.Column(db.String(255), unique=True, nullable=False)
     address = db.Column(db.String(255), nullable=False)
-    profile_img = db.Column(db.String(255))  # directory
+    profile_img = db.Column(db.String(255))  # directory #기본이미지가 들어가므로 nullable=False 추가 필요함
+    # profile_img = db.Column(db.String(255), nullable=False, default="static/default_profile.jpg")
     nickname = db.Column(db.String(50))
     phone = db.Column(db.String(20))
     created_at = db.Column(db.DateTime, default=datetime.now)
