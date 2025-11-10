@@ -194,6 +194,7 @@ def update_profile():
                 try:
                     os.remove(os.path.join(current_app.root_path, current_img))
                 except Exception:
+                    # return jsonify({"message": "기존 프로필 이미지 삭제에 실패했습니다."}), 500
                     pass
 
             # 새 이미지 저장 (기본이미지여도 새로 교체)
@@ -205,6 +206,7 @@ def update_profile():
                 try:
                     os.remove(os.path.join(current_app.root_path, current_img))
                 except Exception:
+                    # return jsonify({"message": "기존 프로필 이미지 삭제에 실패했습니다."}), 500
                     pass
             user.profile_img = default_img
 
@@ -468,9 +470,10 @@ def get_info():
         "nickname": current_user.nickname,
         "address": current_user.address,
         "profile_img": current_user.profile_img,
-        "created_at": current_user.created_at,
-        "last_login": current_user.last_login,
+        "created_at": current_user.created_at.isoformat() if current_user.created_at else None,
+        "last_login": current_user.last_login.isoformat() if current_user.last_login else None,
         "follower_count": current_user.follower_count,
+        "phone": current_user.phone,
     }
     return jsonify(user_info), 200
 
