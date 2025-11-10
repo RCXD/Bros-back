@@ -35,6 +35,7 @@ def save_profile_image(file):
 
 
 #  일반 회원가입 시 프로필 이미지 처리 추가
+# bp.post('/user')
 @bp.route("/sign_up", methods=["POST"])
 def sign_up():
     """
@@ -121,6 +122,7 @@ from flask_jwt_extended import jwt_required, get_jwt_identity
 
 
 # 회원 정보 수정
+# bp.put('/user')
 @bp.route("/update", methods=["PUT"])
 @jwt_required()
 def update_profile():
@@ -219,7 +221,7 @@ def update_profile():
         db.session.rollback()
         return jsonify({"message": "회원 정보 수정에 실패했습니다."}), 400
 
-
+# bp.post('/refresh')
 @bp.route("/refresh", methods=["POST"])
 @jwt_required(refresh=True)
 def refresh():
@@ -227,7 +229,7 @@ def refresh():
     access_token = token_provider(user_id=identity, refresh_require=False)
     return jsonify(access_token=access_token), 200
 
-
+# bp.post('/login')
 @bp.route("/login", methods=["POST"])
 def login():
     data = request.get_json() or {}
@@ -384,7 +386,7 @@ def naver_login():
 
     return token_provider(user.user_id, user.username, user.email, user.nickname)
 
-
+# bp.delete('/logout')
 @bp.route("/logout", methods=["DELETE"])
 @jwt_required()
 def logout_access():
@@ -396,6 +398,7 @@ def logout_access():
 # 모든 유저 조건부 조회(쿼리 들어오면 들어온걸로 조회, 안들어오면 전체조회)
 # 쿼리 = username, nickname
 # 쿼리 없으면 전체조회
+# bp.get('/users')
 @bp.route("/users", methods=["GET"])
 @jwt_required()
 def get_users():
@@ -432,6 +435,8 @@ def get_users():
 
 
 # id로 유저 조회(특정 회원 조회)
+# bp.get('/users/<int:user_id>')
+# 테스트 끝나고 jwt_required() 다시 살리기
 @bp.route("/users/<int:user_id>", methods=["GET"])
 # @jwt_required()
 def get_user(user_id):
@@ -454,6 +459,7 @@ def get_user(user_id):
 
 
 # 내 정보 조회
+# bp.get('/me')
 @bp.route("/me", methods=["GET"])
 @jwt_required()
 def get_info():
@@ -479,6 +485,7 @@ def get_info():
 
 
 # 회원 탈퇴(회원이 직접 탈퇴)
+# bp.delete('/user')
 @bp.route("/", methods=["DELETE"])
 @jwt_required()
 def delete_user():
@@ -501,6 +508,7 @@ def delete_user():
 
 
 # 회원 탈퇴(관리자 전용)
+#bp.delete('/<int:user_id>')
 @bp.route("/<int:user_id>", methods=["DELETE"])
 # @jwt_required()
 def delete_user_by_admin(user_id):
