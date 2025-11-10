@@ -1,4 +1,6 @@
 from flask import Blueprint, request, jsonify, current_app, send_from_directory
+
+from app.models.location import Location
 from ..models import Post, Image
 from ..extensions import db
 from flask_jwt_extended import jwt_required, get_jwt_identity, get_current_user
@@ -22,13 +24,39 @@ def write_post():
     user_id = get_jwt_identity()
     content = request.form.get("content")
     category_id = request.form.get("category_id")
-    location = request.form.get("location")
+    
+    latitude = request.form.get("latitude", type=float)
+    longitude = request.form.get("longitude", type=float)
+    location_name = request.form.get("location_name") # 선택
+    recommend_point = request.form.get("recommend_point", type=int, default=0)
+    risk_point = request.form.get("risk_point", type=int, default=0)
 
     if not content:
         return jsonify({"message": "게시글 내용은 필수입니다."}), 400
+    
+    if len(content) > 2000:
+        return jsonify({"error": "게시글 내용은 2000자 이하로 입력해야 합니다."}), 400
 
+    # 위치가 있으면 Location 객체 생성
+    location_id = None
+    if latitude is not None and longitude is not None:
+        location = Location(
+            latitude=latitude,
+            longitude=longitude,
+            name=location_name,
+            recommend_point=recommend_point,
+            risk_point=risk_point,
+        )
+        db.session.add(location)
+        db.session.flush()  # location_id 확보
+        location_id = location.location_id
+
+    # 게시글 생성
     post = Post(
-        user_id=user_id, category_id=category_id, content=content, location=location
+        user_id=user_id,
+        category_id=category_id,
+        content=content,
+        location=location_id
     )
     db.session.add(post)
     db.session.flush()  # post_id 확보

@@ -1,4 +1,5 @@
 from ..models.post import Post
+from ..models.user import User
 from ..models.reply import Reply
 from ..models.post_like import PostLike
 from ..extensions import db
@@ -38,6 +39,7 @@ def serialize_post(post):
     """Post 객체를 JSON 응답 형태로 직렬화"""
     likes = Post.query.filter(PostLike.post_id == post.post_id).count()
     replies = Reply.query.filter(Reply.post_id == post.post_id).count()
+    nickname = User.query.filter(User.user_id == post.user_id).first().nickname
     images = [
         {
             "image_id": img.image_id,
@@ -47,12 +49,28 @@ def serialize_post(post):
         }
         for img in post.images
     ]
+
+    location_data = None
+    if hasattr(post, "location_obj") and post.location_obj:
+        loc = post.location_obj
+        location_data = {
+            "location_id": loc.location_id,
+            "latitude": loc.latitude,
+            "longitude": loc.longitude,
+            "name": loc.name,
+            "recommend_point": loc.recommend_point,
+            "risk_point": loc.risk_point,
+            "created_at": loc.created_at.isoformat(),
+            "updated_at": loc.updated_at.isoformat() if loc.updated_at else None,
+        }
+
     return {
         "post_id": post.post_id,
         "user_id": post.user_id,
+        "nickname": nickname,
         "category_id": post.category_id,
         "content": post.content,
-        "location": post.location,
+        "location": location_data,
         "view_counts": post.view_counts,
         "created_at": post.created_at.isoformat(),
         "updated_at": post.updated_at.isoformat() if post.updated_at else None,

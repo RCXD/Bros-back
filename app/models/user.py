@@ -1,3 +1,6 @@
+# ============================
+# models/user.py
+# ============================
 import enum
 from ..extensions import db
 from werkzeug.security import check_password_hash, generate_password_hash
@@ -46,11 +49,17 @@ class User(db.Model):
     def renew_login(self):
         self.last_login = datetime.now()
 
+    # ============================
+    # 변경: join 오류 수정
+    # calculate_follower에서 BinaryExpression 직접 join 제거
+    # 올바른 join: 모델 + 조건
+    # ============================
     def calculate_follower(self):
         self.follower_count = (
             db.session.query(func.count())
             .select_from(Follow)
-            .join(Follow.following_id == User.user_id)
+            .join(User, Follow.follower_id == User.user_id)  # 수정: join(User, 조건)
+            .filter(Follow.following_id == self.user_id)     # 현재 사용자를 팔로우하는 수
             .scalar()
         )
 

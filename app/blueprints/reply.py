@@ -16,6 +16,9 @@ def create_reply():
 
     if not content or not post_id:
         return jsonify({"message": "내용과 게시글 ID는 필수입니다."}), 400
+    
+    if len(content) > 400:
+        return jsonify({"message": "댓글은 400자 이하로 입력해야 합니다."}), 400
 
     # 부모 댓글이 있다면 존재 여부 확인
     if parent_id_:
@@ -97,7 +100,7 @@ def get_root_replies(post_id):
     pagination = (
         Reply.query.filter_by(post_id=post_id, parent_id=None)
         .order_by(Reply.created_at.desc())
-        .paginate(page=page, per_page=PER_PAGE, message_out=False)
+        .paginate(page=page, per_page=PER_PAGE, error_out=False)
     )
 
     root_replies = [
@@ -133,18 +136,18 @@ def get_root_replies(post_id):
     )
 
 
-@bp.route("/replies/<int:parent_id>", methods=["GET"])
+@bp.route("/children/<int:parent_id>", methods=["GET"])
 def get_child_replies(parent_id):
     """
-    특정 댓글(parent_id)의 대댓글 30개 단위로 페이지네이션
+    특정 댓글(parent_id)의 대댓글 20개 단위로 페이지네이션
     """
     page = request.args.get("page", 1, type=int)
-    PER_PAGE = 30
+    PER_PAGE = 20
 
     pagination = (
         Reply.query.filter_by(parent_id=parent_id)
-        .order_by(Reply.created_at.asc())
-        .paginate(page=page, per_page=PER_PAGE, message_out=False)
+        .order_by(Reply.created_at.desc())
+        .paginate(page=page, per_page=PER_PAGE, error_out=False)
     )
 
     children = [
