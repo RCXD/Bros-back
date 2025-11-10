@@ -1,7 +1,7 @@
-from flask import Blueprint, request, jsonify
+from flask import Blueprint, request, jsonify, send_from_directory
 from ..extensions import db, BLACKLIST
 from flask_jwt_extended import get_jwt
-from ..models import User
+from ..models import User, Image
 from ..utils.image_utils import upload_profile
 from email_validator import validate_email, EmailNotValidError
 from flask_jwt_extended import jwt_required, get_current_user
@@ -182,6 +182,7 @@ def update_profile():
     # ------------------- 프로필 이미지 처리 -------------------
     current_img = user.profile_img
     default_img = "static/default_profile.jpg"
+    msg = "" # 프로필 이미지 관련해서 응답 메시지에 추가할 내용
 
     if "profile_img" in request.files:
         file = request.files["profile_img"]
@@ -204,6 +205,7 @@ def update_profile():
 
         # 파일이 비어있거나 선택 안 됨 → 기본이미지로 변경
         else:
+            msg = "프로필 이미지가 선택되지 않았습니다. 기본 이미지로 변경합니다."
             if current_img and current_img != default_img:
                 try:
                     os.remove(os.path.join(current_app.root_path, current_img))
@@ -216,7 +218,7 @@ def update_profile():
 
     try:
         db.session.commit()
-        return jsonify({"message": "회원 정보가 수정되었습니다."}), 200
+        return jsonify({"message": "회원 정보가 수정되었습니다. " + msg}), 200
     except Exception:
         db.session.rollback()
         return jsonify({"message": "회원 정보 수정에 실패했습니다."}), 400
@@ -475,7 +477,7 @@ def get_info():
         "email": current_user.email,
         "nickname": current_user.nickname,
         "address": current_user.address,
-        "profile_img": current_user.profile_img,
+        "profile_img": current_user.profile_img.split('/')[-1].split('.')[0],
         "created_at": current_user.created_at.isoformat() if current_user.created_at else None,
         "last_login": current_user.last_login.isoformat() if current_user.last_login else None,
         "follower_count": current_user.follower_count,
@@ -530,3 +532,17 @@ def delete_user_by_admin(user_id):
     except Exception:
         db.session.rollback()
         return jsonify({"message": "회원 삭제에 실패했습니다."}), 400
+
+#프로필 이미지 조회
+@bp.route("/image/<string:uuid>", methods=["GET"])
+def get_images(uuid):
+    if uuid=="default_profile":
+        path = "static/default_profile.jpg"
+        return send_from_directory(
+            "/".join(path.split("/")[:-1]), path.split("/")[-1]
+        )
+    else:
+        image = Image.query.filter_by(uuid=uuid).first_or_404(description="이미지 없음")
+        return send_from_directory(
+            "/".join(image.directory.split("/")[:-1]), image.directory.split("/")[-1]
+        )
