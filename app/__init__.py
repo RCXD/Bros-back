@@ -28,6 +28,7 @@ def create_app():
     from .blueprints.reply_like import bp as reply_like_bp
     from .blueprints.follow import bp as follow_bp
     from .blueprints.friend import bp as friend_bp
+    from .blueprints.osrm import bp as osrm_bp
 
     app.register_blueprint(auth_bp, url_prefix="/auth")
     app.register_blueprint(post_bp, url_prefix="/post")
@@ -38,5 +39,6 @@ def create_app():
     app.register_blueprint(reply_like_bp, url_prefix="/reply_like")
     app.register_blueprint(follow_bp, url_prefix="/follow")
     app.register_blueprint(friend_bp, url_prefix="/friend")
+    app.register_blueprint(osrm_bp, url_prefix="/osrm")
 
     return app
