@@ -206,10 +206,17 @@ def parse_tile(response):
     '''
     return response, 200
 
-@bp.route("/test", methods=['GET'])
+def coordinates_to_string(coords):
+    '''좌표 리스트를 OSRM 형식의 문자열로 변환 (위도-경도 순서를 경도-위도 스트링으로 변경)
+    - coords: [(lon, lat), (lon, lat), ...]
+    - 반환값: "lat,lon;lat,lon;..."
+    '''
+    return ';'.join([f"{lat},{lon}" for lon, lat in coords])
+
+@bp.get("/test")
 def test():
     import polyline
-    url = f'{Config.OPENSTREET_URL}/route/v1/driving/126.9904227,37.5421042;126.9899975,37.5399670'
+    url = f'{Config.OPENSTREET_URL}/route/v1/driving/{coordinates_to_string([(37.5421042, 126.9904227), (37.5399670, 126.9899975)])}'
     print(url)
     response = requests.get(url)
     print(response.json())
@@ -235,4 +242,4 @@ def navigate(service, profile, coordinates):
     elif service == "tile":
         return parse_tile(response)
     else:
-        return {"error": "Invalid service"}, 400
+        return {"message": "Invalid service"}, 400
