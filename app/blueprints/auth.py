@@ -133,14 +133,11 @@ from flask_jwt_extended import jwt_required, get_jwt_identity
 def update_profile():
     """
     회원 정보 수정 (멀티파트 지원)
-      - email (선택)
-      - password (선택)
-      - nickname (선택)
-      - address (선택)
-      - phone (선택)
-      - profile_img (선택): 업로드 시 기존 이미지 삭제 후 새 이미지 적용
-        → 기존 이미지가 기본이미지일 경우 삭제하지 않고 새 이미지로 교체
-        → 파일이 없으면 기존 이미지 삭제 후 기본이미지로 변경
+      - email, password, nickname, address, phone (선택)
+      - profile_img (선택)
+        • 새 파일 업로드 → 기존 이미지 삭제 후 적용
+        • 빈 값('' or null) → 기존 이미지 삭제 후 기본이미지 적용
+        • profile_img 키가 없으면 기존 이미지 유지
     """
     user_id = get_jwt_identity()
     user = User.query.get(user_id)
@@ -154,11 +151,10 @@ def update_profile():
     address = data.get("address")
     phone = data.get("phone")
 
-    # 전화번호 형식 검사
-    if phone and not is_valid_phone(phone):
-        return jsonify({"message": "전화번호 형식이 잘못되었습니다."}), 400
+    default_img = "static/default_profile.jpg"
+    current_img = user.profile_img
 
-    # 이메일 유효성 및 중복 검사
+    # ------------------- 이메일 유효성 및 중복 체크 -------------------
     if email:
         try:
             validate_email(email)
@@ -172,71 +168,58 @@ def update_profile():
             return jsonify({"message": "이미 사용중인 이메일입니다."}), 409
         user.email = email
 
-    # 비밀번호 변경
+    # ------------------- 비밀번호, 닉네임, 주소, 전화번호 -------------------
     if password:
         user.set_password(password)
-
-    # 닉네임, 주소, 전화번호 수정
     if nickname:
         user.nickname = nickname
     if address:
         user.address = address
     if phone:
+        from ..utils.user_utils import is_valid_phone
+
+        if not is_valid_phone(phone):
+            return jsonify({"message": "전화번호 형식이 잘못되었습니다."}), 400
         user.phone = phone
 
     # ------------------- 프로필 이미지 처리 -------------------
-    current_img = user.profile_img
-    default_img = "static/default_profile.jpg"
-    msg = ""  # 프로필 이미지 관련해서 응답 메시지에 추가할 내용
+    file = request.files.get("profile_img")
+    force_default = request.form.get("profile_img") in ["", None]
 
-    if "profile_img" in request.files:
-        file = request.files["profile_img"]
+    if file and file.filename:
+        # 새 파일 업로드 → 기존 이미지 삭제
+        if current_img and current_img != default_img:
+            old_image = Image.query.filter_by(directory=current_img).first()
+            if old_image:
+                try:
+                    os.remove(os.path.join(current_app.root_path, old_image.directory))
+                except Exception:
+                    pass
+                db.session.delete(old_image)
+        # 새 이미지 저장
+        user.profile_img = save_profile_image(file, user_id=user.user_id)
 
-        # 파일이 들어온 경우 → 형식 체크 + 기존 이미지 삭제 후 새 이미지 적용
-        if file and file.filename:
-            if not allowed_file(file.filename):
-                return jsonify({"message": "지원하지 않는 이미지 형식입니다."}), 400
+    elif force_default or (file and not file.filename):
+        # 기본 이미지로 변경 → 기존 이미지 삭제
+        if current_img and current_img != default_img:
+            old_image = Image.query.filter_by(directory=current_img).first()
+            if old_image:
+                try:
+                    os.remove(os.path.join(current_app.root_path, old_image.directory))
+                except Exception:
+                    pass
+                db.session.delete(old_image)
+        user.profile_img = default_img
+    # profile_img 키가 없으면 기존 이미지 그대로
 
-            # 기존 이미지 삭제 (단, 기본이미지가 아닐 때만)
-            if current_img and current_img != default_img:
-                old_image = Image.query.filter_by(directory=current_img).first()
-                if old_image:
-                    try:
-                        os.remove(os.path.join(current_app.root_path, old_image.directory))
-                    except Exception:
-                        pass
-                    db.session.delete(old_image)
-                    db.session.commit()
-
-            # 새 이미지 저장 (기본이미지여도 새로 교체)
-            user.profile_img = save_profile_image(file, user_id=user.user_id)
-
-        # 파일이 비어있거나 선택 안 됨 → 기본이미지로 변경
-        else:
-            if current_img and current_img != default_img:
-                old_image = Image.query.filter_by(directory=current_img).first()
-                if old_image:
-                    try:
-                        os.remove(os.path.join(current_app.root_path, old_image.directory))
-                    except Exception:
-                        pass
-                    db.session.delete(old_image)
-                    db.session.commit()
-
-            user.profile_img = default_img
-
-    # profile_img 키 자체가 없으면 기존 이미지 유지
-    else:
-        pass
-
-    # ------------------- 프로필 이미지 처리 끝 -------------------
-
+    # ------------------- DB 반영 -------------------
     try:
         db.session.commit()
-        return jsonify({"message": "회원 정보가 수정되었습니다. " + msg}), 200
+        return jsonify({"message": "회원 정보가 수정되었습니다."}), 200
     except Exception:
         db.session.rollback()
         return jsonify({"message": "회원 정보 수정에 실패했습니다."}), 400
+
 
 
 # bp.post('/refresh')
