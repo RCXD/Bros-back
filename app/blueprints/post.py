@@ -35,26 +35,22 @@ def write_post():
     if len(content) > 2000:
         return jsonify({"error": "게시글 내용은 2000자 이하로 입력해야 합니다."}), 400
 
-    # 위치가 있으면 Location 객체 생성
-    location_id = None
+    # 1) 게시글 생성 먼저
+    post = Post(user_id=user_id, category_id=category_id, content=content)
+    db.session.add(post)
+    db.session.flush()  # post_id 확보
+
+    # 2) 위치가 있으면 Location 생성, post_id 포함
     if latitude is not None and longitude is not None:
         location = Location(
+            post_id=post.post_id,  # FK 연결
             latitude=latitude,
             longitude=longitude,
-            name=location_name,
+            location_name=location_name,
             recommend_point=recommend_point,
             risk_point=risk_point,
         )
         db.session.add(location)
-        db.session.flush()  # location_id 확보
-        location_id = location.location_id
-
-    # 게시글 생성
-    post = Post(
-        user_id=user_id, category_id=category_id, content=content, location=location_id
-    )
-    db.session.add(post)
-    db.session.flush()  # post_id 확보
 
     files = request.files.getlist("images")
     uploaded_images = []
