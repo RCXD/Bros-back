@@ -284,3 +284,4 @@ secrets.json
 
 # enviroments
 .env
+config.py
