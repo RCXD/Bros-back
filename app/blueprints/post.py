@@ -19,19 +19,30 @@ bp = Blueprint("post", __name__)
 @bp.route("/write", methods=["POST"])
 @jwt_required()
 def write_post():
+    import json  # [수정] JSON 파싱용
+
     user_id = get_jwt_identity()
     content = request.form.get("content")
     category_id = request.form.get("category_id")
 
+    # [수정] 단일 위경도 필드도 받을 수 있음
     latitude = request.form.get("latitude", type=float)
     longitude = request.form.get("longitude", type=float)
     location_name = request.form.get("location_name")  # 선택
     recommend_point = request.form.get("recommend_point", type=int, default=0)
     risk_point = request.form.get("risk_point", type=int, default=0)
 
+    # [수정] points 배열(JSON 문자열)
+    points_raw = request.form.get("points")
+    points = []
+    if points_raw:
+        try:
+            points = json.loads(points_raw)  # [{"lat":..,"lng":..}, ...]
+        except json.JSONDecodeError:
+            return jsonify({"message": "points 형식이 올바르지 않습니다."}), 400
+
     if not content:
         return jsonify({"message": "게시글 내용은 필수입니다."}), 400
-
     if len(content) > 2000:
         return jsonify({"error": "게시글 내용은 2000자 이하로 입력해야 합니다."}), 400
 
@@ -40,18 +51,39 @@ def write_post():
     db.session.add(post)
     db.session.flush()  # post_id 확보
 
-    # 2) 위치가 있으면 Location 생성, post_id 포함
+    # 2) Location 생성
+    locations_to_add = []
+
+    # 단일 위경도
     if latitude is not None and longitude is not None:
+        locations_to_add.append(
+            {"lat": latitude, "lng": longitude, "name": location_name}
+        )
+
+    # points 배열
+    for idx, point in enumerate(points):
+        locations_to_add.append(
+            {
+                "lat": point.get("lat"),
+                "lng": point.get("lng"),
+                "name": point.get("name"),
+                "order_index": idx,
+            }
+        )
+
+    for idx, loc in enumerate(locations_to_add):
         location = Location(
-            post_id=post.post_id,  # FK 연결
-            latitude=latitude,
-            longitude=longitude,
-            location_name=location_name,
+            post_id=post.post_id,
+            latitude=loc["lat"],
+            longitude=loc["lng"],
+            location_name=loc.get("name") or location_name,
             recommend_point=recommend_point,
             risk_point=risk_point,
+            order_index=loc.get("order_index", idx),  # [수정] 순서
         )
         db.session.add(location)
 
+    # 3) 이미지 처리 (기존 코드)
     files = request.files.getlist("images")
     uploaded_images = []
 
@@ -102,6 +134,7 @@ def write_post():
             db.session.rollback()
             return jsonify({"message": f"이미지 저장 실패: {e}"}), 400
 
+    # 4) 커밋
     try:
         db.session.commit()
         return (
