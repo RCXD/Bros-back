@@ -283,12 +283,13 @@ GOOGLE_TOKEN_INFO_URL = "https://oauth2.googleapis.com/tokeninfo"
 @bp.route("/login/google", methods=["POST"])
 def google_login():
     google_token = request.json.get("token")
+    print('google_token: ', google_token)
     if not google_token:
-        return jsonify({"message": "Token required"}), 400
+        return jsonify({"message": "토큰이 누락되었습니다."}), 400
 
     resp = requests.get(GOOGLE_TOKEN_INFO_URL, params={"id_token": google_token})
     if resp.status_code != 200:
-        return jsonify({"message": "잘못된 요청입니다."}), 401
+        return jsonify({"message": "토큰 처리에 실패하였습니다."}), 401
 
     data = resp.json()
     email = data.get("email")
@@ -297,7 +298,7 @@ def google_login():
     picture_url = data.get("picture")  #  Google 프로필 이미지 URL
 
     if not email or not social_id:
-        return jsonify({"message": "잘못된 요청입니다."}), 401
+        return jsonify({"message": "수신된 정보에 오류가 있습니다."}), 401
 
     user = User.query.filter_by(username=social_id, oauth_type=OauthType.GOOGLE).first()
     if not user:
