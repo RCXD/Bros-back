@@ -10,6 +10,7 @@ from .image_storage import save_to_disk  # 기존 저장 함수 사용
 
 DEFAULT_PROFILE_PATH = "static/default_profile.jpg"
 
+IMAGE_EXTENSIONS = {"png", "jpg", "jpeg", "gif", "jfif", "pjpeg", "pjp", "webp", "avif", "apng", "svg", }
 
 def upload_profile(user, file=None, url=None):
     """프로필 이미지 업로드 및 DB 반영"""

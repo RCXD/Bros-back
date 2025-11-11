@@ -6,15 +6,13 @@ from ..extensions import db
 from flask_jwt_extended import jwt_required, get_jwt_identity, get_current_user
 from sqlalchemy.orm import selectinload
 from ..utils.image_storage import save_to_disk
-from ..utils.image_utils import delete_image
+from ..utils.image_utils import delete_image, IMAGE_EXTENSIONS
 from ..utils.image_compressor import compress_image
 from ..utils.post_query import apply_order, paginate_posts, serialize_post
 import os
 from pathlib import Path
 
 bp = Blueprint("post", __name__)
-
-IMAGE_EXTENSIONS = {"png", "jpg", "jpeg", "gif", "jfif", "pjpeg", "pjp", "webp", "avif", "apng", "svg", }
 
 
 # ---------------- 1. 게시글 작성 ----------------
@@ -24,16 +22,16 @@ def write_post():
     user_id = get_jwt_identity()
     content = request.form.get("content")
     category_id = request.form.get("category_id")
-    
+
     latitude = request.form.get("latitude", type=float)
     longitude = request.form.get("longitude", type=float)
-    location_name = request.form.get("location_name") # 선택
+    location_name = request.form.get("location_name")  # 선택
     recommend_point = request.form.get("recommend_point", type=int, default=0)
     risk_point = request.form.get("risk_point", type=int, default=0)
 
     if not content:
         return jsonify({"message": "게시글 내용은 필수입니다."}), 400
-    
+
     if len(content) > 2000:
         return jsonify({"error": "게시글 내용은 2000자 이하로 입력해야 합니다."}), 400
 
@@ -53,10 +51,7 @@ def write_post():
 
     # 게시글 생성
     post = Post(
-        user_id=user_id,
-        category_id=category_id,
-        content=content,
-        location=location_id
+        user_id=user_id, category_id=category_id, content=content, location=location_id
     )
     db.session.add(post)
     db.session.flush()  # post_id 확보
@@ -185,7 +180,10 @@ def edit_post(post_id):
         ext = file.filename.rsplit(".", 1)[-1].lower()
         if ext not in {"png", "jpg", "jpeg", "gif"}:
             db.session.rollback()
-            return jsonify({"message": f"지원하지 않는 파일 형식: {file.filename}"}), 400
+            return (
+                jsonify({"message": f"지원하지 않는 파일 형식: {file.filename}"}),
+                400,
+            )
         try:
             image_compressed, ext, filename = compress_image(file, image_type="post")
             image = Image(

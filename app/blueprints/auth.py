@@ -2,7 +2,7 @@ from flask import Blueprint, request, jsonify, send_from_directory
 from ..extensions import db, BLACKLIST
 from flask_jwt_extended import get_jwt
 from ..models import User, Image
-from ..utils.image_utils import upload_profile
+from ..utils.image_utils import upload_profile, IMAGE_EXTENSIONS
 from email_validator import validate_email, EmailNotValidError
 from flask_jwt_extended import jwt_required, get_current_user
 import requests
@@ -16,22 +16,36 @@ from datetime import datetime
 
 bp = Blueprint("auth", __name__)
 
-ALLOWED_EXTENSIONS = {"png", "jpg", "jpeg", "gif", "webp"}
-
-
 def allowed_file(filename):
-    return "." in filename and filename.rsplit(".", 1)[1].lower() in ALLOWED_EXTENSIONS
+    return "." in filename and filename.rsplit(".", 1)[1].lower() in IMAGE_EXTENSIONS
 
 
-def save_profile_image(file):
+def save_profile_image(file, user_id=None):  # utils쪽에 post이미지 save_to_disk 함수랑 통합 예정
+    original_name = file.filename
     ext = file.filename.rsplit(".", 1)[1].lower()
     today = datetime.now().strftime("%Y-%m-%d")
     folder_path = os.path.join(current_app.root_path, "static/profile_images", today)
     os.makedirs(folder_path, exist_ok=True)
-    filename = f"{uuid.uuid4()}.{ext}"
+    uuid_val = uuid.uuid4()
+    filename = f"{uuid_val}.{ext}"
     file_path = os.path.join(folder_path, filename)
     file.save(file_path)
-    return f"static/profile_images/{today}/{filename}"  # DB에 저장할 경로
+    relative_path = f"static/profile_images/{today}/{filename}"
+
+    if user_id:
+        new_image = Image(
+            uuid=str(uuid_val),
+            user_id=user_id,
+            directory=relative_path,
+            original_image_name=original_name,
+            updated_at=datetime.now(),
+            post_id=None,
+            ext=ext,
+        )
+        db.session.add(new_image)
+        db.session.commit()
+
+    return relative_path  # DB에 저장할 경로
 
 
 #  일반 회원가입 시 프로필 이미지 처리 추가
@@ -62,60 +76,51 @@ def sign_up():
     if User.query.filter_by(email=email).first():
         return jsonify({"message": "이미 사용중인 이메일입니다."}), 409
 
-    # ------------------- 프로필 이미지 처리 -------------------
-    default_img = "static/default_profile.jpg"
-    profile_img_path = default_img  # 기본값 미리 지정
-
-    # 파일이 실제로 들어왔을 때만 처리
-    if "profile_img" in request.files:
-        files = request.files.getlist("profile_img")
-
-        if files:
-            if len(files) > 1:
-                return (
-                    jsonify({"message": "프로필 이미지는 1장만 업로드 가능합니다."}),
-                    400,
-                )
-
-            file = files[0]
-
-            # 파일이 실제로 선택된 경우 (이름이 있고 내용이 있는 경우)
-            if file and file.filename:
-                if not allowed_file(file.filename):
-                    return jsonify({"message": "지원하지 않는 이미지 형식입니다."}), 400
-                profile_img_path = save_profile_image(file)
-            else:
-                # 파일이 비어 있으면 기본 이미지 유지
-                profile_img_path = default_img
-        else:
-            # files 리스트 자체가 비었으면 기본 이미지 유지
-            profile_img_path = default_img
-    else:
-        # profile_img 키 자체가 없으면 기본 이미지 유지
-        profile_img_path = default_img
-    # ------------------- 프로필 이미지 처리 끝 -------------------
-
     if not nickname:
         nickname = username
 
+    # ------------------- 1. 유저 생성 -------------------
     user = User(
         username=username,
         email=email,
         nickname=nickname,
         address=address,
         phone=phone,
-        profile_img=profile_img_path,
+        profile_img="",  # 나중에 이미지 저장 후 업데이트
     )
     user.set_password(password)
-
     db.session.add(user)
 
     try:
-        db.session.commit()
-        return jsonify({"message": "회원가입 완료", "user_id": user.user_id}), 200
+        db.session.commit()  # user_id 생성
     except Exception:
         db.session.rollback()
         return jsonify({"message": "회원가입 실패"}), 400
+
+    # ------------------- 2. 프로필 이미지 처리 -------------------
+    default_img = "static/default_profile.jpg"
+    profile_img_path = default_img  # 기본값
+
+    if "profile_img" in request.files:
+        files = request.files.getlist("profile_img")
+
+        if files:
+            if len(files) > 1:
+                return jsonify({"message": "프로필 이미지는 1장만 업로드 가능합니다."}), 400
+
+            file = files[0]
+            if file and file.filename:
+                if not allowed_file(file.filename):
+                    return jsonify({"message": "지원하지 않는 이미지 형식입니다."}), 400
+                # user_id 전달해서 DB 저장 가능
+                profile_img_path = save_profile_image(file, user_id=user.user_id)
+
+    # DB에 profile_img 경로 업데이트
+    user.profile_img = profile_img_path
+    db.session.commit()
+    # ------------------- 프로필 이미지 처리 끝 -------------------
+
+    return jsonify({"message": "회원가입 완료", "user_id": user.user_id}), 200
 
 
 from flask_jwt_extended import jwt_required, get_jwt_identity
@@ -182,7 +187,7 @@ def update_profile():
     # ------------------- 프로필 이미지 처리 -------------------
     current_img = user.profile_img
     default_img = "static/default_profile.jpg"
-    msg = "" # 프로필 이미지 관련해서 응답 메시지에 추가할 내용
+    msg = ""  # 프로필 이미지 관련해서 응답 메시지에 추가할 내용
 
     if "profile_img" in request.files:
         file = request.files["profile_img"]
@@ -194,25 +199,35 @@ def update_profile():
 
             # 기존 이미지 삭제 (단, 기본이미지가 아닐 때만)
             if current_img and current_img != default_img:
-                try:
-                    os.remove(os.path.join(current_app.root_path, current_img))
-                except Exception:
-                    # return jsonify({"message": "기존 프로필 이미지 삭제에 실패했습니다."}), 500
-                    pass
+                old_image = Image.query.filter_by(directory=current_img).first()
+                if old_image:
+                    try:
+                        os.remove(os.path.join(current_app.root_path, old_image.directory))
+                    except Exception:
+                        pass
+                    db.session.delete(old_image)
+                    db.session.commit()
 
             # 새 이미지 저장 (기본이미지여도 새로 교체)
-            user.profile_img = save_profile_image(file)
+            user.profile_img = save_profile_image(file, user_id=user.user_id)
 
         # 파일이 비어있거나 선택 안 됨 → 기본이미지로 변경
         else:
-            msg = "프로필 이미지가 선택되지 않았습니다. 기본 이미지로 변경합니다."
             if current_img and current_img != default_img:
-                try:
-                    os.remove(os.path.join(current_app.root_path, current_img))
-                except Exception:
-                    # return jsonify({"message": "기존 프로필 이미지 삭제에 실패했습니다."}), 500
-                    pass
+                old_image = Image.query.filter_by(directory=current_img).first()
+                if old_image:
+                    try:
+                        os.remove(os.path.join(current_app.root_path, old_image.directory))
+                    except Exception:
+                        pass
+                    db.session.delete(old_image)
+                    db.session.commit()
+
             user.profile_img = default_img
+
+    # profile_img 키 자체가 없으면 기존 이미지 유지
+    else:
+        pass
 
     # ------------------- 프로필 이미지 처리 끝 -------------------
 
@@ -223,6 +238,7 @@ def update_profile():
         db.session.rollback()
         return jsonify({"message": "회원 정보 수정에 실패했습니다."}), 400
 
+
 # bp.post('/refresh')
 @bp.route("/refresh", methods=["POST"])
 @jwt_required(refresh=True)
@@ -230,6 +246,7 @@ def refresh():
     identity = get_jwt_identity()
     access_token = token_provider(user_id=identity, refresh_require=False)
     return jsonify(access_token=access_token), 200
+
 
 # bp.post('/login')
 @bp.route("/login", methods=["POST"])
@@ -388,6 +405,7 @@ def naver_login():
 
     return token_provider(user.user_id, user.username, user.email, user.nickname)
 
+
 # bp.delete('/logout')
 @bp.route("/logout", methods=["DELETE"])
 @jwt_required()
@@ -477,9 +495,13 @@ def get_info():
         "email": current_user.email,
         "nickname": current_user.nickname,
         "address": current_user.address,
-        "profile_img": current_user.profile_img.split('/')[-1].split('.')[0],
-        "created_at": current_user.created_at.isoformat() if current_user.created_at else None,
-        "last_login": current_user.last_login.isoformat() if current_user.last_login else None,
+        "profile_img": current_user.profile_img.split("/")[-1].split(".")[0],
+        "created_at": (
+            current_user.created_at.isoformat() if current_user.created_at else None
+        ),
+        "last_login": (
+            current_user.last_login.isoformat() if current_user.last_login else None
+        ),
         "follower_count": current_user.follower_count,
         "phone": current_user.phone,
     }
@@ -510,7 +532,7 @@ def delete_user():
 
 
 # 회원 탈퇴(관리자 전용)
-#bp.delete('/<int:user_id>')
+# bp.delete('/<int:user_id>')
 @bp.route("/<int:user_id>", methods=["DELETE"])
 # @jwt_required()
 def delete_user_by_admin(user_id):
@@ -533,14 +555,13 @@ def delete_user_by_admin(user_id):
         db.session.rollback()
         return jsonify({"message": "회원 삭제에 실패했습니다."}), 400
 
-#프로필 이미지 조회
+
+# 프로필 이미지 조회
 @bp.route("/image/<string:uuid>", methods=["GET"])
 def get_images(uuid):
-    if uuid=="default_profile":
+    if uuid == "default_profile":
         path = "static/default_profile.jpg"
-        return send_from_directory(
-            "/".join(path.split("/")[:-1]), path.split("/")[-1]
-        )
+        return send_from_directory("/".join(path.split("/")[:-1]), path.split("/")[-1])
     else:
         image = Image.query.filter_by(uuid=uuid).first_or_404(description="이미지 없음")
         return send_from_directory(
