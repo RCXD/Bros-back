@@ -1,0 +1,60 @@
+"""
+모든 테스트 데이터를 한 번에 생성하는 마스터 스크립트
+테스트 데이터베이스를 사용자, 게시글, 댓글로 채우려면 이것을 실행하세요
+"""
+import pytest
+from app.extensions import db
+from app.models.user import User, AccountType
+from app.models.post import Post
+from app.models.reply import Reply
+from app.models.category import Category
+
+
+@pytest.mark.no_cleanup
+def test_generate_all_data(fixture_app):
+    """모든 테스트 데이터 생성: 사용자, 게시글, 댓글"""
+    import sys
+    import os
+    
+    # 임포트를 위해 테스트 디렉토리를 경로에 추가
+    test_dir = os.path.dirname(os.path.abspath(__file__))
+    if test_dir not in sys.path:
+        sys.path.insert(0, test_dir)
+    
+    from gen_user import test_generate_users
+    from gen_post import test_generate_posts
+    from gen_reply import test_generate_replies
+    
+    with fixture_app.app_context():
+        print("\n" + "="*60)
+        print("테스트 데이터 생성 중")
+        print("="*60)
+        
+        # 사용자 생성
+        print("\n[1/3] 사용자 생성 중...")
+        test_generate_users(fixture_app)
+        
+        # 게시글 생성
+        print("\n[2/3] 게시글 생성 중...")
+        test_generate_posts(fixture_app)
+        
+        # 댓글 생성
+        print("\n[3/3] 댓글 생성 중...")
+        test_generate_replies(fixture_app)
+        
+        # 요약
+        print("\n" + "="*60)
+        print("요약")
+        print("="*60)
+        
+        total_users = User.query.count()
+        total_posts = Post.query.count()
+        total_replies = Reply.query.count()
+        total_categories = Category.query.count()
+        
+        print(f"✓ 총 사용자: {total_users}")
+        print(f"✓ 총 게시글: {total_posts}")
+        print(f"✓ 총 댓글: {total_replies}")
+        print(f"✓ 총 카테고리: {total_categories}")
+        print("\n✅ 모든 테스트 데이터 생성 완료!")
+        print("="*60 + "\n")

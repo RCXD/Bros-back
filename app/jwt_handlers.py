@@ -1,3 +1,4 @@
+from app.extensions import BLACKLIST
 from .models import User
 from flask import jsonify
 
@@ -59,3 +60,8 @@ def register_jwt_handlers(jwt):
             ),
             401,
         )
+
+    @jwt.token_in_blocklist_loader
+    def check_if_token_in_blocklist(jwt_header, jwt_payload):
+        jti = jwt_payload["jti"]
+        return jti in BLACKLIST

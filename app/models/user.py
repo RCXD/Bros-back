@@ -1,3 +1,6 @@
+# ============================
+# models/user.py
+# ============================
 import enum
 from ..extensions import db
 from werkzeug.security import check_password_hash, generate_password_hash
@@ -25,7 +28,8 @@ class User(db.Model):
     password_hash = db.Column(db.String(255), nullable=False)
     email = db.Column(db.String(255), unique=True, nullable=False)
     address = db.Column(db.String(255), nullable=False)
-    profile_img = db.Column(db.String(255))  # directory
+    profile_img = db.Column(db.String(255))  # directory #기본이미지가 들어가므로 nullable=False 추가 필요함
+    # profile_img = db.Column(db.String(255), nullable=False, default="static/default_profile.jpg")
     nickname = db.Column(db.String(50))
     phone = db.Column(db.String(20))
     created_at = db.Column(db.DateTime, default=datetime.now)
@@ -46,11 +50,17 @@ class User(db.Model):
     def renew_login(self):
         self.last_login = datetime.now()
 
+    # ============================
+    # 변경: join 오류 수정
+    # calculate_follower에서 BinaryExpression 직접 join 제거
+    # 올바른 join: 모델 + 조건
+    # ============================
     def calculate_follower(self):
         self.follower_count = (
             db.session.query(func.count())
             .select_from(Follow)
-            .join(Follow.following_id == User.user_id)
+            .join(User, Follow.follower_id == User.user_id)  # 수정: join(User, 조건)
+            .filter(Follow.following_id == self.user_id)     # 현재 사용자를 팔로우하는 수
             .scalar()
         )
 
