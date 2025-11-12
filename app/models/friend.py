@@ -11,7 +11,7 @@ class Friend(db.Model):
     - 유저 삭제 시 CASCADE
     """
 
-    __tablename__ = "friend"
+    __tablename__ = "friends"
 
     # ondelete='CASCADE'로 User 삭제 시 Friend 자동 삭제
     # 복합 기본키
