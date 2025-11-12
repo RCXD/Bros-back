@@ -30,6 +30,7 @@ def create_app():
     from .blueprints.friend import bp as friend_bp
     from .blueprints.osrm import bp as osrm_bp
     from .blueprints.my_path import bp as my_path_bp
+    from .blueprints.notification import bp as notification_bp
 
     app.register_blueprint(auth_bp, url_prefix="/auth")
     app.register_blueprint(post_bp, url_prefix="/post")
@@ -42,5 +43,6 @@ def create_app():
     app.register_blueprint(friend_bp, url_prefix="/friend")
     app.register_blueprint(osrm_bp, url_prefix="/osrm")
     app.register_blueprint(my_path_bp, url_prefix="/my_path")
+    app.register_blueprint(notification_bp, url_prefix="/notification")
 
     return app

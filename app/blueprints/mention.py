@@ -1,114 +1,144 @@
 from flask import Blueprint, jsonify, request
 from flask_jwt_extended import jwt_required, get_jwt_identity
-from ..models import Mention
+from sqlalchemy.exc import IntegrityError
 from ..extensions import db
+from ..models import Mention, User, Post, Reply, Notification
 from ..utils.mention_utils import serialize_mention
-
 
 bp = Blueprint("mention", __name__)
 
 
-# 멘션 등록
+# 1. 멘션 등록 + 알림 자동 생성
 @bp.route("/", methods=["POST"])
 @jwt_required()
 def create_mention():
-
     data = request.get_json() or {}
-    current_user_id = get_jwt_identity()
+    mentioner_id = int(get_jwt_identity())
 
     post_id = data.get("post_id")
     reply_id = data.get("reply_id")
-    mentioned_user_id = data.get("user_id")
-    post_id = data.get("post_id")
+    mentioned_user_id = data.get("mentioned_user_id")
 
+    # 필수값 체크
+    if not mentioned_user_id:
+        return jsonify(success=False, message="mentioned_user_id는 필수입니다."), 400
+
+    # 자기 자신 멘션 방지
+    if mentioner_id == mentioned_user_id:
+        return jsonify(success=False, message="자기 자신을 멘션할 수 없습니다."), 400
+
+    # 멘션 대상 유저 존재 확인
+    mentioned_user = User.query.get(mentioned_user_id)
+    if not mentioned_user:
+        return jsonify(success=False, message="해당 유저가 존재하지 않습니다."), 404
+
+    # post_id / reply_id 동시 입력 방지
     filled_targets = [t for t in (post_id, reply_id) if t is not None]
     if len(filled_targets) != 1:
         return (
             jsonify(
-                success=False,
-                message="post_id, reply_id 중 하나만 전달해야 합니다.",
+                success=False, message="post_id, reply_id 중 하나만 전달해야 합니다."
             ),
             400,
         )
-    from ..models import Post, Reply
 
-    if post_id:
-        target = Post.query.get_or_404(post_id)
-    elif reply_id:
-        target = Reply.query.get_or_404(reply_id)
+    # 대상 객체 확인
+    target = Post.query.get(post_id) if post_id else Reply.query.get(reply_id)
     if not target:
         return jsonify(success=False, message="대상 객체를 찾을 수 없습니다."), 404
 
-    # 내가 작성한 글/댓글이 맞는지 확인
-    if target.user_id != current_user_id:
-        return (
-            jsonify(success=False, message="내 게시글/댓글에만 멘션할 수 있습니다."),
-            403,
-        )
-
+    # 중복 멘션 체크
     existing = Mention.query.filter_by(
-        mentioned_user_id=mentioned_user_id, post_id=post_id, reply_id=reply_id
+        mentioner_id=mentioner_id,
+        mentioned_user_id=mentioned_user_id,
+        post_id=post_id,
+        reply_id=reply_id,
     ).first()
-
     if existing:
         return jsonify(success=False, message="이미 등록된 멘션입니다."), 409
 
+    # 멘션 생성
     mention = Mention(
-        mentioned_user_id=mentioned_user_id, post_id=post_id, reply_id=reply_id
+        mentioner_id=mentioner_id,
+        mentioned_user_id=mentioned_user_id,
+        post_id=post_id,
+        reply_id=reply_id,
     )
-
     db.session.add(mention)
+    db.session.flush()  # mention_id 확보
+
+    # 알림 생성
+    notification = Notification(
+        type="MENTION",
+        from_user_id=mentioner_id,
+        to_user_id=mentioned_user_id,
+        post_id=post_id,
+        reply_id=reply_id,
+        mention_id=mention.mention_id,
+    )
+    db.session.add(notification)
+
+    # DB 커밋
     try:
         db.session.commit()
-    except Exception:
+    except IntegrityError as e:
         db.session.rollback()
-        return jsonify({"message": "멘션 등록 실패"}), 400
+        return jsonify(success=False, message=f"중복 또는 DB 제약조건 오류: {e}"), 400
+    except Exception as e:
+        db.session.rollback()
+        return jsonify(success=False, message=f"멘션 등록 실패: {e}"), 400
 
-    return serialize_mention(mention), 201
+    # 1정상 등록 시
+    return jsonify(success=True, data=serialize_mention(mention)), 201
 
 
-# 내 맨션 조회
+# 2. 내가 받은 멘션 조회
 @bp.route("/mine", methods=["GET"])
 @jwt_required()
 def get_mentions_for_user():
-    current_user_id = int(get_jwt_identity())  # JWT에서 현재 유저 ID 가져오기
-
-    mentions = Mention.query.filter_by(user_id=current_user_id).all()
-    result = []
-    for m in mentions:
-        result.append(serialize_mention(m))
-    return jsonify(result), 200
+    current_user_id = int(get_jwt_identity())
+    mentions = Mention.query.filter_by(mentioned_user_id=current_user_id).all()
+    result = [serialize_mention(m) for m in mentions]
+    return jsonify(success=True, data=result), 200
 
 
-# ㅡㅡㅡㅡㅡㅡㅡㅡ아래는 관리자용ㅡㅡㅡㅡㅡㅡㅡㅡ
-
-
-# 전체 멘션 조회 (관리자용)
-@bp.route("/mentions", methods=["GET"])
+# 3. 내가 보낸 멘션 조회
+@bp.route("/sent", methods=["GET"])
 @jwt_required()
-def get_all_mentions():
-    mentions = Mention.query.all()
-    result = []
-    for m in mentions:
-        result.append(serialize_mention(m))
-    return jsonify(result), 200
+def get_mentions_sent_by_user():
+    current_user_id = int(get_jwt_identity())
+    mentions = Mention.query.filter_by(mentioner_id=current_user_id).all()
+    result = [serialize_mention(m) for m in mentions]
+    return jsonify(success=True, data=result), 200
 
 
-# 게시글 id로 특정 게시글 내 멘션 조회
+# 4. 게시글 내 멘션 조회
 @bp.route("/post/<int:post_id>", methods=["GET"])
 def get_mentions_in_post(post_id):
     mentions = Mention.query.filter_by(post_id=post_id).all()
-    result = []
-    for m in mentions:
-        result.append(serialize_mention(m))
-    return jsonify(result), 200
+    result = [serialize_mention(m) for m in mentions]
+    return jsonify(success=True, data=result), 200
 
 
-# 멘션 타입별 조회(POST, REPLY, SUBREPLY)
+# 5. 관리자용 전체 멘션 조회
+@bp.route("/all", methods=["GET"])
+@jwt_required()
+def get_all_mentions():
+    mentions = Mention.query.all()
+    result = [serialize_mention(m) for m in mentions]
+    return jsonify(success=True, data=result), 200
+
+
+# 6. 멘션 타입별 조회 (POST / REPLY)
 @bp.route("/type/<mention_type>", methods=["GET"])
 def get_mentions_by_type(mention_type):
-    mentions = Mention.query.filter_by(content_type=mention_type.upper()).all()
-    result = []
-    for m in mentions:
-        result.append(serialize_mention(m))
-    return jsonify(result), 200
+    mention_type = mention_type.upper()
+    if mention_type == "POST":
+        mentions = Mention.query.filter(Mention.post_id.isnot(None)).all()
+    elif mention_type == "REPLY":
+        mentions = Mention.query.filter(Mention.reply_id.isnot(None)).all()
+    else:
+        return jsonify(success=False, message="잘못된 멘션 타입"), 400
+
+    result = [serialize_mention(m) for m in mentions]
+    return jsonify(success=True, data=result), 200

@@ -9,8 +9,6 @@ from ..utils.image_storage import save_to_disk
 from ..utils.image_utils import delete_image, IMAGE_EXTENSIONS
 from ..utils.image_compressor import compress_image
 from ..utils.post_query import apply_order, paginate_posts, serialize_post
-import os
-from pathlib import Path
 
 bp = Blueprint("post", __name__)
 

@@ -15,3 +15,4 @@ from .reply import Reply
 from .report import Report
 from .sight import Sight
 from .user import User
+from .notification import Notification
