@@ -1,0 +1,263 @@
+{
+  "category_id": 1,
+  "posts": [
+    {
+      "content": "신촌에서 홍대 경의선 숲길 거쳐 연남동까지 가는 낭만 산책 코스입니다. 총 2.5km, 도보 30분 정도 소요됩니다.",
+      "category_id": 1,
+      "review_score": 0,
+      "danger_score": 0,
+      "start_location": [37.5550, 126.9370],
+      "dest_location": [37.5620, 126.9250],
+      "waypoints": [
+        [37.5568, 126.9235],
+        [37.5600, 126.9260]
+      ],
+      "username": "user3"
+    },
+    {
+      "content": "강남역에서 출발해서 신논현역, 논현역을 거쳐 학동역까지. 지하철보다 버스가 빠른 구간입니다. 3km 정도입니다.",
+      "category_id": 1,
+      "review_score": 0,
+      "danger_score": 0,
+      "start_location": [37.4980, 127.0280],
+      "dest_location": [37.5160, 127.0380],
+      "waypoints": [
+        [37.5040, 127.0350],
+        [37.5100, 127.0360]
+      ],
+      "username": "user1"
+    },
+    {
+      "content": "북한산 우이동 코스로 백운대 정상까지. 왕복 4시간 소요, 난이도 중상입니다. 체력 준비 필수!",
+      "category_id": 1,
+      "review_score": 0,
+      "danger_score": 1,
+      "start_location": [37.6590, 126.9490],
+      "dest_location": [37.6590, 126.9790],
+      "waypoints": [
+        [37.6595, 126.9600],
+        [37.6595, 126.9700]
+      ],
+      "username": "user5"
+    },
+    {
+      "content": "잠실역에서 석촌호수 한 바퀴 도는 코스. 호수 둘레길 2.5km, 40분이면 충분합니다. 롯데타워 뷰가 멋집니다.",
+      "category_id": 1,
+      "review_score": 0,
+      "danger_score": 0,
+      "start_location": [37.5090, 127.1020],
+      "dest_location": [37.5090, 127.1020],
+      "waypoints": [
+        [37.5080, 127.1050],
+        [37.5100, 127.1040]
+      ],
+      "username": "user8"
+    },
+    {
+      "content": "광화문에서 경복궁, 삼청동 거쳐 북촌 한옥마을까지. 서울 고궁 투어 코스, 2시간 정도 걸립니다.",
+      "category_id": 1,
+      "review_score": 0,
+      "danger_score": 0,
+      "start_location": [37.5750, 126.9770],
+      "dest_location": [37.5830, 126.9850],
+      "waypoints": [
+        [37.5760, 126.9740],
+        [37.5790, 126.9830]
+      ],
+      "username": "user2"
+    },
+    {
+      "content": "이촌한강공원에서 여의도 한강공원까지 자전거 라이딩 코스. 편도 5km, 한강변 따라 쾌적합니다.",
+      "category_id": 1,
+      "review_score": 0,
+      "danger_score": 0,
+      "start_location": [37.5205, 126.9805],
+      "dest_location": [37.5270, 126.9300],
+      "waypoints": [
+        [37.5240, 126.9600],
+        [37.5260, 126.9450]
+      ],
+      "username": "user7"
+    },
+    {
+      "content": "혜화역에서 대학로 거쳐 낙산공원 정상까지. 서울 야경 명소 코스, 1.5km 도보 25분 소요됩니다.",
+      "category_id": 1,
+      "review_score": 0,
+      "danger_score": 0,
+      "start_location": [37.5820, 127.0020],
+      "dest_location": [37.5800, 127.0070],
+      "waypoints": [
+        [37.5825, 127.0025],
+        [37.5790, 127.0050]
+      ],
+      "username": "user4"
+    },
+    {
+      "content": "성수역에서 뚝섬유원지까지 한강변 산책로. 자벌레 지나서 음악 분수까지, 2km 30분 코스입니다.",
+      "category_id": 1,
+      "review_score": 0,
+      "danger_score": 0,
+      "start_location": [37.5430, 127.0560],
+      "dest_location": [37.5290, 127.0660],
+      "waypoints": [
+        [37.5350, 127.0610],
+        [37.5280, 127.0690]
+      ],
+      "username": "user10"
+    },
+    {
+      "content": "용산역에서 전쟁기념관, 국립중앙박물관 거쳐 용산가족공원까지. 역사 문화 투어 코스, 3시간 추천합니다.",
+      "category_id": 1,
+      "review_score": 0,
+      "danger_score": 0,
+      "start_location": [37.5299, 126.9647],
+      "dest_location": [37.5260, 126.9780],
+      "waypoints": [
+        [37.5350, 126.9770],
+        [37.5239, 126.9803]
+      ],
+      "username": "user6"
+    },
+    {
+      "content": "가산디지털단지역에서 구로디지털단지역까지. 출근길 지름길, 도보 15분이면 도착합니다.",
+      "category_id": 1,
+      "review_score": 0,
+      "danger_score": 0,
+      "start_location": [37.4770, 126.8880],
+      "dest_location": [37.4850, 126.9010],
+      "waypoints": [
+        [37.4810, 126.8940]
+      ],
+      "username": "user9"
+    },
+    {
+      "content": "여의도 IFC몰에서 63빌딩까지 한강 따라 걷는 코스. 2.5km 도보 35분, 데이트 코스로 좋습니다.",
+      "category_id": 1,
+      "review_score": 0,
+      "danger_score": 0,
+      "start_location": [37.5250, 126.9250],
+      "dest_location": [37.5195, 126.9400],
+      "waypoints": [
+        [37.5230, 126.9310],
+        [37.5210, 126.9360]
+      ],
+      "username": "user1"
+    },
+    {
+      "content": "삼청공원에서 인왕산 정상 거쳐 독립문까지. 서울성곽길 코스, 3시간 소요. 등산화 필수입니다.",
+      "category_id": 1,
+      "review_score": 0,
+      "danger_score": 1,
+      "start_location": [37.5890, 126.9810],
+      "dest_location": [37.5730, 126.9560],
+      "waypoints": [
+        [37.5830, 126.9630],
+        [37.5800, 126.9650]
+      ],
+      "username": "user3"
+    },
+    {
+      "content": "망원역에서 망원시장 구경하고 망리단길 거쳐 합정역까지. 맛집 투어 코스, 1.5km 걸으며 먹방하기 좋습니다.",
+      "category_id": 1,
+      "review_score": 0,
+      "danger_score": 0,
+      "start_location": [37.5550, 126.9060],
+      "dest_location": [37.5500, 126.9140],
+      "waypoints": [
+        [37.5565, 126.9065],
+        [37.5530, 126.9100]
+      ],
+      "username": "user5"
+    },
+    {
+      "content": "동대문역사문화공원에서 청계천 따라 광화문까지. 서울 도심 힐링 워킹 코스, 3km 45분 소요됩니다.",
+      "category_id": 1,
+      "review_score": 0,
+      "danger_score": 0,
+      "start_location": [37.5658, 127.0079],
+      "dest_location": [37.5690, 126.9770],
+      "waypoints": [
+        [37.5675, 126.9980],
+        [37.5700, 126.9920]
+      ],
+      "username": "user7"
+    },
+    {
+      "content": "서울역에서 덕수궁 돌담길, 정동길 거쳐 시청까지. 근대 건축물 탐방 코스, 1시간 반 정도 걸립니다.",
+      "category_id": 1,
+      "review_score": 0,
+      "danger_score": 0,
+      "start_location": [37.5550, 126.9720],
+      "dest_location": [37.5660, 126.9740],
+      "waypoints": [
+        [37.5658, 126.9730],
+        [37.5655, 126.9710]
+      ],
+      "username": "user2"
+    },
+    {
+      "content": "압구정 로데오거리에서 청담역 거쳐 영동대교까지. 강남 럭셔리 쇼핑 코스, 2km 느긋하게 구경하면 1시간입니다.",
+      "category_id": 1,
+      "review_score": 0,
+      "danger_score": 0,
+      "start_location": [37.5270, 127.0420],
+      "dest_location": [37.5180, 127.0540],
+      "waypoints": [
+        [37.5260, 127.0450],
+        [37.5220, 127.0490]
+      ],
+      "username": "user9"
+    },
+    {
+      "content": "노량진역에서 수산시장 구경하고 노들섬 거쳐 한강대교 건너기. 2.5km, 회 먹고 산책하는 코스입니다.",
+      "category_id": 1,
+      "review_score": 0,
+      "danger_score": 0,
+      "start_location": [37.5140, 126.9420],
+      "dest_location": [37.5270, 126.9560],
+      "waypoints": [
+        [37.5150, 126.9400],
+        [37.5200, 126.9480]
+      ],
+      "username": "user6"
+    },
+    {
+      "content": "건대입구역에서 어린이대공원까지. 지하철 한 정거장이지만 걸어도 20분, 산책하기 좋은 구간입니다.",
+      "category_id": 1,
+      "review_score": 0,
+      "danger_score": 0,
+      "start_location": [37.5400, 127.0700],
+      "dest_location": [37.5480, 127.0730],
+      "waypoints": [
+        [37.5440, 127.0715]
+      ],
+      "username": "user10"
+    },
+    {
+      "content": "이태원역에서 경리단길, 해방촌 거쳐 남산 팔각정까지. 이국적 감성 코스, 2시간 소요됩니다.",
+      "category_id": 1,
+      "review_score": 0,
+      "danger_score": 0,
+      "start_location": [37.5345, 126.9945],
+      "dest_location": [37.5510, 126.9930],
+      "waypoints": [
+        [37.5390, 126.9930],
+        [37.5450, 126.9890]
+      ],
+      "username": "user4"
+    },
+    {
+      "content": "서울대입구역에서 관악산 연주대 정상까지. 편도 2시간 반, 서울 남부의 명산 등반 코스입니다.",
+      "category_id": 1,
+      "review_score": 0,
+      "danger_score": 1,
+      "start_location": [37.4812, 126.9527],
+      "dest_location": [37.4430, 126.9630],
+      "waypoints": [
+        [37.4620, 126.9570],
+        [37.4520, 126.9600]
+      ],
+      "username": "user8"
+    }
+  ]
+}

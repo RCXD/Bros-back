@@ -1,0 +1,2405 @@
+{
+  "category_id": 3,
+  "posts": [
+    {
+      "content": "강남역 사거리 방향 극심한 정체. 평소보다 30분 이상 지연 예상됩니다.",
+      "category_id": 3,
+      "review_score": 0,
+      "danger_score": 0,
+      "locations": [
+        37.498,
+        127.028
+      ],
+      "username": "user10",
+      "type": "TRAFFIC_JAM"
+    },
+    {
+      "content": "올림픽대로 상행선 잠실대교 부근 정체. 차량 정체로 출근길 어렵습니다.",
+      "category_id": 3,
+      "review_score": 0,
+      "danger_score": 0,
+      "locations": [
+        37.518,
+        127.09
+      ],
+      "username": "user3",
+      "type": "TRAFFIC_JAM"
+    },
+    {
+      "content": "여의도 국회의사당 앞 도로 극심한 정체 중입니다.",
+      "category_id": 3,
+      "review_score": 0,
+      "danger_score": 0,
+      "locations": [
+        37.532,
+        126.914
+      ],
+      "username": "user7",
+      "type": "TRAFFIC_JAM"
+    },
+    {
+      "content": "강변북로 동부간선도로 합류 지점 극심한 정체입니다.",
+      "category_id": 3,
+      "review_score": 0,
+      "danger_score": 0,
+      "locations": [
+        37.558,
+        127.053
+      ],
+      "username": "user8",
+      "type": "TRAFFIC_JAM"
+    },
+    {
+      "content": "내부순환로 미아삼거리 방향 차량 정체가 계속되고 있습니다.",
+      "category_id": 3,
+      "review_score": 0,
+      "danger_score": 0,
+      "locations": [
+        37.613,
+        127.025
+      ],
+      "username": "user2",
+      "type": "TRAFFIC_JAM"
+    },
+    {
+      "content": "동부간선도로 강일IC 방향 서행 중입니다. 30분 지연.",
+      "category_id": 3,
+      "review_score": 0,
+      "danger_score": 0,
+      "locations": [
+        37.562,
+        127.158
+      ],
+      "username": "user3",
+      "type": "TRAFFIC_JAM"
+    },
+    {
+      "content": "서부간선도로 목동 방향 극심한 정체 중입니다.",
+      "category_id": 3,
+      "review_score": 0,
+      "danger_score": 0,
+      "locations": [
+        37.536,
+        126.875
+      ],
+      "username": "user5",
+      "type": "TRAFFIC_JAM"
+    },
+    {
+      "content": "북부간선도로 월계IC 부근 차량 정체입니다.",
+      "category_id": 3,
+      "review_score": 0,
+      "danger_score": 0,
+      "locations": [
+        37.618,
+        127.058
+      ],
+      "username": "user8",
+      "type": "TRAFFIC_JAM"
+    },
+    {
+      "content": "남부순환로 사당역 부근 출근 시간 정체가 심합니다.",
+      "category_id": 3,
+      "review_score": 0,
+      "danger_score": 0,
+      "locations": [
+        37.4768,
+        126.9817
+      ],
+      "username": "user10",
+      "type": "TRAFFIC_JAM"
+    },
+    {
+      "content": "테헤란로 역삼역 방향 차량이 몰려 극심한 정체입니다.",
+      "category_id": 3,
+      "review_score": 0,
+      "danger_score": 0,
+      "locations": [
+        37.5,
+        127.036
+      ],
+      "username": "user5",
+      "type": "TRAFFIC_JAM"
+    },
+    {
+      "content": "청담대교 남단 진입로 극심한 정체 중입니다.",
+      "category_id": 3,
+      "review_score": 0,
+      "danger_score": 0,
+      "locations": [
+        37.52,
+        127.048
+      ],
+      "username": "user6",
+      "type": "TRAFFIC_JAM"
+    },
+    {
+      "content": "마포대교 북단 여의도 방향 차량 서행 중입니다.",
+      "category_id": 3,
+      "review_score": 0,
+      "danger_score": 0,
+      "locations": [
+        37.543,
+        126.942
+      ],
+      "username": "user3",
+      "type": "TRAFFIC_JAM"
+    },
+    {
+      "content": "동작대교 북단 정체로 한강 횡단 어렵습니다.",
+      "category_id": 3,
+      "review_score": 0,
+      "danger_score": 0,
+      "locations": [
+        37.507,
+        126.952
+      ],
+      "username": "user9",
+      "type": "TRAFFIC_JAM"
+    },
+    {
+      "content": "성산대교 남단 정체 중. 우회 추천합니다.",
+      "category_id": 3,
+      "review_score": 0,
+      "danger_score": 0,
+      "locations": [
+        37.566,
+        126.895
+      ],
+      "username": "user7",
+      "type": "TRAFFIC_JAM"
+    },
+    {
+      "content": "천호대로 천호역 부근 정체가 계속되고 있습니다.",
+      "category_id": 3,
+      "review_score": 0,
+      "danger_score": 0,
+      "locations": [
+        37.538,
+        127.124
+      ],
+      "username": "user1",
+      "type": "TRAFFIC_JAM"
+    },
+    {
+      "content": "왕십리역 사거리 극심한 정체 중입니다.",
+      "category_id": 3,
+      "review_score": 0,
+      "danger_score": 0,
+      "locations": [
+        37.561,
+        127.037
+      ],
+      "username": "user6",
+      "type": "TRAFFIC_JAM"
+    },
+    {
+      "content": "종로 광화문 사거리 방향 차량이 꽉 막혔습니다.",
+      "category_id": 3,
+      "review_score": 0,
+      "danger_score": 0,
+      "locations": [
+        37.575,
+        126.977
+      ],
+      "username": "user10",
+      "type": "TRAFFIC_JAM"
+    },
+    {
+      "content": "신촌역 부근 차량 정체로 이동이 느립니다.",
+      "category_id": 3,
+      "review_score": 0,
+      "danger_score": 0,
+      "locations": [
+        37.555,
+        126.937
+      ],
+      "username": "user10",
+      "type": "TRAFFIC_JAM"
+    },
+    {
+      "content": "홍대입구역 앞 도로 차량이 몰려 정체 중입니다.",
+      "category_id": 3,
+      "review_score": 0,
+      "danger_score": 0,
+      "locations": [
+        37.5568,
+        126.9235
+      ],
+      "username": "user3",
+      "type": "TRAFFIC_JAM"
+    },
+    {
+      "content": "이태원역 사거리 극심한 정체입니다.",
+      "category_id": 3,
+      "review_score": 0,
+      "danger_score": 0,
+      "locations": [
+        37.5345,
+        126.9945
+      ],
+      "username": "user3",
+      "type": "TRAFFIC_JAM"
+    },
+    {
+      "content": "용산역 부근 도로 정체가 심각합니다.",
+      "category_id": 3,
+      "review_score": 0,
+      "danger_score": 0,
+      "locations": [
+        37.5299,
+        126.9647
+      ],
+      "username": "user3",
+      "type": "TRAFFIC_JAM"
+    },
+    {
+      "content": "서울역 버스 환승센터 앞 정체 중입니다.",
+      "category_id": 3,
+      "review_score": 0,
+      "danger_score": 0,
+      "locations": [
+        37.555,
+        126.972
+      ],
+      "username": "user3",
+      "type": "TRAFFIC_JAM"
+    },
+    {
+      "content": "잠실역 롯데타워 방향 극심한 정체입니다.",
+      "category_id": 3,
+      "review_score": 0,
+      "danger_score": 0,
+      "locations": [
+        37.511,
+        127.098
+      ],
+      "username": "user2",
+      "type": "TRAFFIC_JAM"
+    },
+    {
+      "content": "건대입구역 사거리 차량 정체 중입니다.",
+      "category_id": 3,
+      "review_score": 0,
+      "danger_score": 0,
+      "locations": [
+        37.54,
+        127.07
+      ],
+      "username": "user4",
+      "type": "TRAFFIC_JAM"
+    },
+    {
+      "content": "노원역 사거리 방향 정체가 심합니다.",
+      "category_id": 3,
+      "review_score": 0,
+      "danger_score": 0,
+      "locations": [
+        37.655,
+        127.061
+      ],
+      "username": "user4",
+      "type": "TRAFFIC_JAM"
+    },
+    {
+      "content": "수유역 부근 도로 극심한 정체 중입니다.",
+      "category_id": 3,
+      "review_score": 0,
+      "danger_score": 0,
+      "locations": [
+        37.639,
+        127.026
+      ],
+      "username": "user5",
+      "type": "TRAFFIC_JAM"
+    },
+    {
+      "content": "신림역 사거리 차량 정체입니다.",
+      "category_id": 3,
+      "review_score": 0,
+      "danger_score": 0,
+      "locations": [
+        37.484,
+        126.929
+      ],
+      "username": "user1",
+      "type": "TRAFFIC_JAM"
+    },
+    {
+      "content": "구로디지털단지역 방향 극심한 정체 중입니다.",
+      "category_id": 3,
+      "review_score": 0,
+      "danger_score": 0,
+      "locations": [
+        37.485,
+        126.901
+      ],
+      "username": "user6",
+      "type": "TRAFFIC_JAM"
+    },
+    {
+      "content": "가산디지털단지역 출구 정체가 계속됩니다.",
+      "category_id": 3,
+      "review_score": 0,
+      "danger_score": 0,
+      "locations": [
+        37.477,
+        126.888
+      ],
+      "username": "user1",
+      "type": "TRAFFIC_JAM"
+    },
+    {
+      "content": "경부고속도로 서울 톨게이트 진입로 정체가 심각합니다.",
+      "category_id": 3,
+      "review_score": 0,
+      "danger_score": 0,
+      "locations": [
+        37.435,
+        127.12
+      ],
+      "username": "user6",
+      "type": "TRAFFIC_JAM"
+    },
+    {
+      "content": "강남역 4번 출구 앞, 택시와 승용차 간의 2중 추돌 사고 발생. 1개 차로 통제 중입니다.",
+      "category_id": 3,
+      "review_score": 0,
+      "danger_score": 3,
+      "locations": [
+        37.4979,
+        127.0276
+      ],
+      "username": "user7",
+      "type": "ACCIDENT"
+    },
+    {
+      "content": "올림픽대로 잠실 방향, 한남대교 남단 부근에서 3중 추돌사고. 출근길 정체가 매우 심각합니다.",
+      "category_id": 3,
+      "review_score": 0,
+      "danger_score": 4,
+      "locations": [
+        37.513,
+        127.0095
+      ],
+      "username": "user4",
+      "type": "ACCIDENT"
+    },
+    {
+      "content": "내부순환로 홍지문터널 내부, 화물차 고장으로 2차로가 막혔습니다. 후방 추돌 주의.",
+      "category_id": 3,
+      "review_score": 0,
+      "danger_score": 3,
+      "locations": [
+        37.596,
+        126.949
+      ],
+      "username": "user6",
+      "type": "ACCIDENT"
+    },
+    {
+      "content": "마포대교 공덕 방면, 1차로에서 승용차 단독 사고. 가드레일을 들이받았습니다. 서행하세요.",
+      "category_id": 3,
+      "review_score": 0,
+      "danger_score": 2,
+      "locations": [
+        37.533,
+        126.936
+      ],
+      "username": "user7",
+      "type": "ACCIDENT"
+    },
+    {
+      "content": "종로3가역 버스전용차로, 버스와 오토바이 간의 접촉 사고. 구급차 출동했습니다.",
+      "category_id": 3,
+      "review_score": 0,
+      "danger_score": 4,
+      "locations": [
+        37.57,
+        126.992
+      ],
+      "username": "user6",
+      "type": "ACCIDENT"
+    },
+    {
+      "content": "여의도 IFC몰 앞, 주차장 진입로에서 경미한 접촉사고. 차량 통행에 큰 지장은 없습니다.",
+      "category_id": 3,
+      "review_score": 0,
+      "danger_score": 1,
+      "locations": [
+        37.525,
+        126.925
+      ],
+      "username": "user7",
+      "type": "ACCIDENT"
+    },
+    {
+      "content": "강변북로 구리 방향, 성수대교 인근에서 화물차 전복 사고. 2개 차로가 완전히 통제되었습니다. 극심한 정체.",
+      "category_id": 3,
+      "review_score": 0,
+      "danger_score": 5,
+      "locations": [
+        37.541,
+        127.039
+      ],
+      "username": "user6",
+      "type": "ACCIDENT"
+    },
+    {
+      "content": "한남동 순천향대학병원 응급실 입구, 구급차와 승용차 접촉 사고. 주의가 필요합니다.",
+      "category_id": 3,
+      "review_score": 0,
+      "danger_score": 3,
+      "locations": [
+        37.536,
+        127.006
+      ],
+      "username": "user10",
+      "type": "ACCIDENT"
+    },
+    {
+      "content": "잠실역 롯데타워 앞 사거리, 신호 위반 차량으로 인한 3중 추돌. 횡단보도 근처라 매우 혼잡합니다.",
+      "category_id": 3,
+      "review_score": 0,
+      "danger_score": 4,
+      "locations": [
+        37.5126,
+        127.1025
+      ],
+      "username": "user1",
+      "type": "ACCIDENT"
+    },
+    {
+      "content": "성수동 카페거리 좁은 골목길, 배달 오토바이와 보행자 충돌 사고. 보행자 부상.",
+      "category_id": 3,
+      "review_score": 0,
+      "danger_score": 3,
+      "locations": [
+        37.5447,
+        127.0559
+      ],
+      "username": "user9",
+      "type": "ACCIDENT"
+    },
+    {
+      "content": "신촌로터리 연세대 방향, 우회전 차량이 횡단보도 신호를 보지 못해 사고 발생. 경찰 출동.",
+      "category_id": 3,
+      "review_score": 0,
+      "danger_score": 3,
+      "locations": [
+        37.559,
+        126.9368
+      ],
+      "username": "user10",
+      "type": "ACCIDENT"
+    },
+    {
+      "content": "강남대로 버스전용차로, 광역버스와 승용차 간의 차선 변경 중 충돌. 버스 승객 부상은 없는 듯.",
+      "category_id": 3,
+      "review_score": 0,
+      "danger_score": 2,
+      "locations": [
+        37.5017,
+        127.0263
+      ],
+      "username": "user4",
+      "type": "ACCIDENT"
+    },
+    {
+      "content": "올림픽대교 북단, 빗길에 미끄러진 차량이 중앙분리대를 충돌했습니다. 2차 사고 주의.",
+      "category_id": 3,
+      "review_score": 0,
+      "danger_score": 4,
+      "locations": [
+        37.531,
+        127.105
+      ],
+      "username": "user9",
+      "type": "ACCIDENT"
+    },
+    {
+      "content": "광화문 사거리, 좌회전 차량과 직진 차량 충돌. 차량 파편이 흩어져 있어 위험합니다.",
+      "category_id": 3,
+      "review_score": 0,
+      "danger_score": 3,
+      "locations": [
+        37.575,
+        126.977
+      ],
+      "username": "user4",
+      "type": "ACCIDENT"
+    },
+    {
+      "content": "동대문 시장 앞, 불법 유턴 차량으로 인한 오토바이 사고. 운전자 부상. 현재 구호 조치 중.",
+      "category_id": 3,
+      "review_score": 0,
+      "danger_score": 4,
+      "locations": [
+        37.571,
+        127.009
+      ],
+      "username": "user4",
+      "type": "ACCIDENT"
+    },
+    {
+      "content": "남산 3호 터널 요금소 부근, 하이패스 차로에서 급정거로 인한 후방 추돌. 정체 시작.",
+      "category_id": 3,
+      "review_score": 0,
+      "danger_score": 2,
+      "locations": [
+        37.551,
+        126.993
+      ],
+      "username": "user1",
+      "type": "ACCIDENT"
+    },
+    {
+      "content": "테헤란로 선릉역 방면, 4중 추돌 사고로 3개 차로 통제. 퇴근길 정체가 극심할 것으로 예상됩니다.",
+      "category_id": 3,
+      "review_score": 0,
+      "danger_score": 5,
+      "locations": [
+        37.504,
+        127.049
+      ],
+      "username": "user7",
+      "type": "ACCIDENT"
+    },
+    {
+      "content": "양화대교 중간 지점, 차량 고장으로 1개 차로 정체. 견인차 대기 중.",
+      "category_id": 3,
+      "review_score": 0,
+      "danger_score": 1,
+      "locations": [
+        37.545,
+        126.904
+      ],
+      "username": "user10",
+      "type": "ACCIDENT"
+    },
+    {
+      "content": "사당역 사거리, 과천 방면으로 꼬리물기 중이던 차량들 간의 경미한 접촉 사고. 혼잡.",
+      "category_id": 3,
+      "review_score": 0,
+      "danger_score": 2,
+      "locations": [
+        37.4768,
+        126.9817
+      ],
+      "username": "user9",
+      "type": "ACCIDENT"
+    },
+    {
+      "content": "서울역 버스 환승센터, 시내버스가 급정거하며 승객이 넘어져 부상을 입었습니다. 구급차 도착.",
+      "category_id": 3,
+      "review_score": 0,
+      "danger_score": 3,
+      "locations": [
+        37.555,
+        126.972
+      ],
+      "username": "user1",
+      "type": "ACCIDENT"
+    },
+    {
+      "content": "동부간선도로 군자역 부근, 2중 추돌 사고로 2차로 통제 중입니다.",
+      "category_id": 3,
+      "review_score": 0,
+      "danger_score": 3,
+      "locations": [
+        37.557,
+        127.073
+      ],
+      "username": "user1",
+      "type": "ACCIDENT"
+    },
+    {
+      "content": "서부간선도로 양천향교역 부근, 승용차 단독 사고. 중앙분리대 파손.",
+      "category_id": 3,
+      "review_score": 0,
+      "danger_score": 2,
+      "locations": [
+        37.517,
+        126.866
+      ],
+      "username": "user3",
+      "type": "ACCIDENT"
+    },
+    {
+      "content": "북부간선도로 석계역 부근, 화물차 적재물 낙하 사고. 도로 위험.",
+      "category_id": 3,
+      "review_score": 0,
+      "danger_score": 4,
+      "locations": [
+        37.614,
+        127.067
+      ],
+      "username": "user6",
+      "type": "ACCIDENT"
+    },
+    {
+      "content": "남부순환로 봉천역 부근, 오토바이 넘어짐 사고. 경찰 교통정리 중.",
+      "category_id": 3,
+      "review_score": 0,
+      "danger_score": 2,
+      "locations": [
+        37.482,
+        126.952
+      ],
+      "username": "user8",
+      "type": "ACCIDENT"
+    },
+    {
+      "content": "천호대로 암사역 부근, 버스 정류장에서 버스 접촉사고.",
+      "category_id": 3,
+      "review_score": 0,
+      "danger_score": 2,
+      "locations": [
+        37.5508,
+        127.135
+      ],
+      "username": "user3",
+      "type": "ACCIDENT"
+    },
+    {
+      "content": "왕십리 로터리, 차량 5대 연쇄 추돌 사고. 극심한 정체.",
+      "category_id": 3,
+      "review_score": 0,
+      "danger_score": 5,
+      "locations": [
+        37.561,
+        127.037
+      ],
+      "username": "user8",
+      "type": "ACCIDENT"
+    },
+    {
+      "content": "이태원 해밀턴호텔 앞, 택시와 승용차 충돌 사고.",
+      "category_id": 3,
+      "review_score": 0,
+      "danger_score": 2,
+      "locations": [
+        37.534,
+        126.994
+      ],
+      "username": "user1",
+      "type": "ACCIDENT"
+    },
+    {
+      "content": "용산 전자상가 앞 도로, 배달 오토바이 넘어짐 사고.",
+      "category_id": 3,
+      "review_score": 0,
+      "danger_score": 2,
+      "locations": [
+        37.529,
+        126.965
+      ],
+      "username": "user6",
+      "type": "ACCIDENT"
+    },
+    {
+      "content": "명동 롯데백화점 앞 횡단보도, 차량이 보행자와 접촉 사고.",
+      "category_id": 3,
+      "review_score": 0,
+      "danger_score": 4,
+      "locations": [
+        37.5636,
+        126.986
+      ],
+      "username": "user6",
+      "type": "ACCIDENT"
+    },
+    {
+      "content": "동대문 디자인플라자 앞, 택시 2대 추돌 사고.",
+      "category_id": 3,
+      "review_score": 0,
+      "danger_score": 2,
+      "locations": [
+        37.5658,
+        127.0079
+      ],
+      "username": "user6",
+      "type": "ACCIDENT"
+    },
+    {
+      "content": "잠실 종합운동장 사거리, 신호 대기 중 후방 추돌.",
+      "category_id": 3,
+      "review_score": 0,
+      "danger_score": 2,
+      "locations": [
+        37.512,
+        127.072
+      ],
+      "username": "user5",
+      "type": "ACCIDENT"
+    },
+    {
+      "content": "건대 스타시티 앞, 승용차와 오토바이 충돌 사고.",
+      "category_id": 3,
+      "review_score": 0,
+      "danger_score": 3,
+      "locations": [
+        37.5405,
+        127.0695
+      ],
+      "username": "user4",
+      "type": "ACCIDENT"
+    },
+    {
+      "content": "신림 고시촌 입구, 좁은 길에서 차량 2대 접촉사고.",
+      "category_id": 3,
+      "review_score": 0,
+      "danger_score": 1,
+      "locations": [
+        37.484,
+        126.929
+      ],
+      "username": "user1",
+      "type": "ACCIDENT"
+    },
+    {
+      "content": "구로 디지털단지 사거리, 3중 추돌 사고 발생.",
+      "category_id": 3,
+      "review_score": 0,
+      "danger_score": 3,
+      "locations": [
+        37.485,
+        126.901
+      ],
+      "username": "user3",
+      "type": "ACCIDENT"
+    },
+    {
+      "content": "가산디지털단지 W타워 앞, 버스와 승용차 충돌.",
+      "category_id": 3,
+      "review_score": 0,
+      "danger_score": 3,
+      "locations": [
+        37.479,
+        126.89
+      ],
+      "username": "user7",
+      "type": "ACCIDENT"
+    },
+    {
+      "content": "상봉 터미널 앞 사거리, 택시 급정거로 후방 추돌.",
+      "category_id": 3,
+      "review_score": 0,
+      "danger_score": 2,
+      "locations": [
+        37.596,
+        127.088
+      ],
+      "username": "user10",
+      "type": "ACCIDENT"
+    },
+    {
+      "content": "공덕역 로터리, 좌회전 차량 충돌 사고.",
+      "category_id": 3,
+      "review_score": 0,
+      "danger_score": 2,
+      "locations": [
+        37.544,
+        126.951
+      ],
+      "username": "user9",
+      "type": "ACCIDENT"
+    },
+    {
+      "content": "망원역 사거리, 오토바이 2대 충돌 사고.",
+      "category_id": 3,
+      "review_score": 0,
+      "danger_score": 2,
+      "locations": [
+        37.555,
+        126.906
+      ],
+      "username": "user1",
+      "type": "ACCIDENT"
+    },
+    {
+      "content": "압구정 로데오거리, 주차 중이던 차량 추돌당함.",
+      "category_id": 3,
+      "review_score": 0,
+      "danger_score": 2,
+      "locations": [
+        37.527,
+        127.042
+      ],
+      "username": "user5",
+      "type": "ACCIDENT"
+    },
+    {
+      "content": "청담동 사거리, 신호 위반 차량으로 인한 사고.",
+      "category_id": 3,
+      "review_score": 0,
+      "danger_score": 3,
+      "locations": [
+        37.522,
+        127.047
+      ],
+      "username": "user1",
+      "type": "ACCIDENT"
+    },
+    {
+      "content": "강남대로 논현역 부근, 1차로에 큰 포트홀 발견. 타이어 펑크 위험 있습니다.",
+      "category_id": 3,
+      "review_score": 0,
+      "danger_score": 4,
+      "locations": [
+        37.51,
+        127.023
+      ],
+      "username": "user4",
+      "type": "POTHOLE"
+    },
+    {
+      "content": "올림픽대로 하행선 잠실대교 진입 전, 포트홀 여러 개 있습니다. 주의 운전 필요.",
+      "category_id": 3,
+      "review_score": 0,
+      "danger_score": 3,
+      "locations": [
+        37.515,
+        127.085
+      ],
+      "username": "user8",
+      "type": "POTHOLE"
+    },
+    {
+      "content": "강변북로 성수대교 남단 2차로, 깊은 포트홀 발생. 차량 파손 우려.",
+      "category_id": 3,
+      "review_score": 0,
+      "danger_score": 4,
+      "locations": [
+        37.54,
+        127.038
+      ],
+      "username": "user9",
+      "type": "POTHOLE"
+    },
+    {
+      "content": "마포대로 공덕역 앞, 좌회전 차로에 포트홀 있습니다. 서행하세요.",
+      "category_id": 3,
+      "review_score": 0,
+      "danger_score": 3,
+      "locations": [
+        37.544,
+        126.951
+      ],
+      "username": "user6",
+      "type": "POTHOLE"
+    },
+    {
+      "content": "테헤란로 역삼역 사거리, 우측 차로 포트홀 주의.",
+      "category_id": 3,
+      "review_score": 0,
+      "danger_score": 3,
+      "locations": [
+        37.5,
+        127.036
+      ],
+      "username": "user8",
+      "type": "POTHOLE"
+    },
+    {
+      "content": "여의대로 여의도역 부근, 버스전용차로에 포트홀 발견.",
+      "category_id": 3,
+      "review_score": 0,
+      "danger_score": 3,
+      "locations": [
+        37.522,
+        126.924
+      ],
+      "username": "user8",
+      "type": "POTHOLE"
+    },
+    {
+      "content": "내부순환로 미아리고개, 1차로 포트홀로 차량 2대 타이어 펑크.",
+      "category_id": 3,
+      "review_score": 0,
+      "danger_score": 4,
+      "locations": [
+        37.609,
+        127.025
+      ],
+      "username": "user7",
+      "type": "POTHOLE"
+    },
+    {
+      "content": "동부간선도로 광진구청 부근, 2차로에 큰 포트홀 있습니다.",
+      "category_id": 3,
+      "review_score": 0,
+      "danger_score": 3,
+      "locations": [
+        37.545,
+        127.085
+      ],
+      "username": "user4",
+      "type": "POTHOLE"
+    },
+    {
+      "content": "서부간선도로 등촌동 구간, 3차로 포트홀 주의 필요.",
+      "category_id": 3,
+      "review_score": 0,
+      "danger_score": 3,
+      "locations": [
+        37.548,
+        126.852
+      ],
+      "username": "user3",
+      "type": "POTHOLE"
+    },
+    {
+      "content": "북부간선도로 월계동 구간, 우측 차로에 포트홀 여러 개.",
+      "category_id": 3,
+      "review_score": 0,
+      "danger_score": 3,
+      "locations": [
+        37.618,
+        127.058
+      ],
+      "username": "user4",
+      "type": "POTHOLE"
+    },
+    {
+      "content": "남부순환로 사당역 부근, 교차로 진입 전 포트홀 있습니다.",
+      "category_id": 3,
+      "review_score": 0,
+      "danger_score": 3,
+      "locations": [
+        37.477,
+        126.982
+      ],
+      "username": "user6",
+      "type": "POTHOLE"
+    },
+    {
+      "content": "천호대로 천호역 사거리, 직진 차로 포트홀 발견.",
+      "category_id": 3,
+      "review_score": 0,
+      "danger_score": 3,
+      "locations": [
+        37.538,
+        127.124
+      ],
+      "username": "user1",
+      "type": "POTHOLE"
+    },
+    {
+      "content": "왕십리로 한양대 앞, 2차로 중간 부분에 포트홀.",
+      "category_id": 3,
+      "review_score": 0,
+      "danger_score": 3,
+      "locations": [
+        37.555,
+        127.042
+      ],
+      "username": "user2",
+      "type": "POTHOLE"
+    },
+    {
+      "content": "종로 종로3가역 부근, 우회전 차로에 포트홀 주의.",
+      "category_id": 3,
+      "review_score": 0,
+      "danger_score": 2,
+      "locations": [
+        37.57,
+        126.992
+      ],
+      "username": "user9",
+      "type": "POTHOLE"
+    },
+    {
+      "content": "신촌로 신촌역 사거리, 좌회전 대기선에 포트홀.",
+      "category_id": 3,
+      "review_score": 0,
+      "danger_score": 2,
+      "locations": [
+        37.555,
+        126.937
+      ],
+      "username": "user8",
+      "type": "POTHOLE"
+    },
+    {
+      "content": "이태원로 녹사평역 부근, 오르막 구간 포트홀 있습니다.",
+      "category_id": 3,
+      "review_score": 0,
+      "danger_score": 3,
+      "locations": [
+        37.534,
+        126.989
+      ],
+      "username": "user3",
+      "type": "POTHOLE"
+    },
+    {
+      "content": "용산역 앞 도로, 1차로에 작은 포트홀 여러 개.",
+      "category_id": 3,
+      "review_score": 0,
+      "danger_score": 2,
+      "locations": [
+        37.5299,
+        126.9647
+      ],
+      "username": "user1",
+      "type": "POTHOLE"
+    },
+    {
+      "content": "동대문역 부근, 2차로 포트홀로 오토바이 넘어질 뻔.",
+      "category_id": 3,
+      "review_score": 0,
+      "danger_score": 4,
+      "locations": [
+        37.571,
+        127.009
+      ],
+      "username": "user2",
+      "type": "POTHOLE"
+    },
+    {
+      "content": "잠실대교 남단 진입로, 우측 차로 포트홀 주의.",
+      "category_id": 3,
+      "review_score": 0,
+      "danger_score": 3,
+      "locations": [
+        37.518,
+        127.09
+      ],
+      "username": "user7",
+      "type": "POTHOLE"
+    },
+    {
+      "content": "건대입구역 사거리, 횡단보도 앞 포트홀 발견.",
+      "category_id": 3,
+      "review_score": 0,
+      "danger_score": 2,
+      "locations": [
+        37.54,
+        127.07
+      ],
+      "username": "user3",
+      "type": "POTHOLE"
+    },
+    {
+      "content": "노원역 부근 도로, 버스 정류장 앞 포트홀.",
+      "category_id": 3,
+      "review_score": 0,
+      "danger_score": 2,
+      "locations": [
+        37.655,
+        127.061
+      ],
+      "username": "user10",
+      "type": "POTHOLE"
+    },
+    {
+      "content": "신림역 사거리, 좌회전 차로 포트홀 있습니다.",
+      "category_id": 3,
+      "review_score": 0,
+      "danger_score": 3,
+      "locations": [
+        37.484,
+        126.929
+      ],
+      "username": "user4",
+      "type": "POTHOLE"
+    },
+    {
+      "content": "구로디지털단지역 앞 도로, 2차로 포트홀 주의.",
+      "category_id": 3,
+      "review_score": 0,
+      "danger_score": 3,
+      "locations": [
+        37.485,
+        126.901
+      ],
+      "username": "user1",
+      "type": "POTHOLE"
+    },
+    {
+      "content": "압구정동 갤러리아 백화점 앞, 포트홀 발견.",
+      "category_id": 3,
+      "review_score": 0,
+      "danger_score": 2,
+      "locations": [
+        37.527,
+        127.042
+      ],
+      "username": "user7",
+      "type": "POTHOLE"
+    },
+    {
+      "content": "청담동 사거리, 우회전 차로에 작은 포트홀.",
+      "category_id": 3,
+      "review_score": 0,
+      "danger_score": 2,
+      "locations": [
+        37.522,
+        127.047
+      ],
+      "username": "user2",
+      "type": "POTHOLE"
+    },
+    {
+      "content": "강남역 11번 출구 앞, 도로에 큰 박스가 떨어져 있습니다. 차량 통행 방해.",
+      "category_id": 3,
+      "review_score": 0,
+      "danger_score": 3,
+      "locations": [
+        37.498,
+        127.028
+      ],
+      "username": "user4",
+      "type": "OBSTACLE"
+    },
+    {
+      "content": "올림픽대로 잠실 방향 2차로, 타이어가 떨어져 있어 위험합니다.",
+      "category_id": 3,
+      "review_score": 0,
+      "danger_score": 4,
+      "locations": [
+        37.518,
+        127.09
+      ],
+      "username": "user2",
+      "type": "OBSTACLE"
+    },
+    {
+      "content": "여의도 IFC몰 앞 도로, 쓰레기봉투가 차로 한가운데 있습니다.",
+      "category_id": 3,
+      "review_score": 0,
+      "danger_score": 2,
+      "locations": [
+        37.525,
+        126.925
+      ],
+      "username": "user6",
+      "type": "OBSTACLE"
+    },
+    {
+      "content": "강변북로 성수대교 부근, 적재물 낙하로 도로 위험합니다.",
+      "category_id": 3,
+      "review_score": 0,
+      "danger_score": 4,
+      "locations": [
+        37.541,
+        127.039
+      ],
+      "username": "user7",
+      "type": "OBSTACLE"
+    },
+    {
+      "content": "내부순환로 홍제역 부근, 공사 철제 바리케이드가 쓰러져 있습니다.",
+      "category_id": 3,
+      "review_score": 0,
+      "danger_score": 3,
+      "locations": [
+        37.589,
+        126.952
+      ],
+      "username": "user9",
+      "type": "OBSTACLE"
+    },
+    {
+      "content": "테헤란로 역삼역 앞, 전동킥보드가 차도에 넘어져 있습니다.",
+      "category_id": 3,
+      "review_score": 0,
+      "danger_score": 2,
+      "locations": [
+        37.5,
+        127.036
+      ],
+      "username": "user9",
+      "type": "OBSTACLE"
+    },
+    {
+      "content": "마포대로 공덕역 사거리, 쇼핑카트가 도로 위에 있습니다.",
+      "category_id": 3,
+      "review_score": 0,
+      "danger_score": 2,
+      "locations": [
+        37.544,
+        126.951
+      ],
+      "username": "user6",
+      "type": "OBSTACLE"
+    },
+    {
+      "content": "동부간선도로 군자역 부근, 팔레트가 도로에 떨어져 있습니다.",
+      "category_id": 3,
+      "review_score": 0,
+      "danger_score": 4,
+      "locations": [
+        37.557,
+        127.073
+      ],
+      "username": "user2",
+      "type": "OBSTACLE"
+    },
+    {
+      "content": "서부간선도로 목동 구간, 나무 가지가 차로를 막고 있습니다.",
+      "category_id": 3,
+      "review_score": 0,
+      "danger_score": 3,
+      "locations": [
+        37.536,
+        126.875
+      ],
+      "username": "user5",
+      "type": "OBSTACLE"
+    },
+    {
+      "content": "북부간선도로 석계역 부근, 화물차 적재물(플라스틱 통)이 흩어져 있습니다.",
+      "category_id": 3,
+      "review_score": 0,
+      "danger_score": 3,
+      "locations": [
+        37.614,
+        127.067
+      ],
+      "username": "user7",
+      "type": "OBSTACLE"
+    },
+    {
+      "content": "남부순환로 사당역 앞, 오토바이 부품이 도로에 떨어져 있습니다.",
+      "category_id": 3,
+      "review_score": 0,
+      "danger_score": 2,
+      "locations": [
+        37.4768,
+        126.9817
+      ],
+      "username": "user8",
+      "type": "OBSTACLE"
+    },
+    {
+      "content": "천호대로 천호역 부근, 스티로폼 박스들이 바람에 날려 차도에 있습니다.",
+      "category_id": 3,
+      "review_score": 0,
+      "danger_score": 2,
+      "locations": [
+        37.538,
+        127.124
+      ],
+      "username": "user6",
+      "type": "OBSTACLE"
+    },
+    {
+      "content": "왕십리 로터리, 자전거가 도로 한가운데 넘어져 있습니다.",
+      "category_id": 3,
+      "review_score": 0,
+      "danger_score": 3,
+      "locations": [
+        37.561,
+        127.037
+      ],
+      "username": "user5",
+      "type": "OBSTACLE"
+    },
+    {
+      "content": "종로 광화문 사거리, 플래카드가 떨어져 차량 시야 방해.",
+      "category_id": 3,
+      "review_score": 0,
+      "danger_score": 2,
+      "locations": [
+        37.575,
+        126.977
+      ],
+      "username": "user1",
+      "type": "OBSTACLE"
+    },
+    {
+      "content": "신촌역 앞 도로, 쓰레기통이 쓰러져 도로로 나왔습니다.",
+      "category_id": 3,
+      "review_score": 0,
+      "danger_score": 2,
+      "locations": [
+        37.555,
+        126.937
+      ],
+      "username": "user8",
+      "type": "OBSTACLE"
+    },
+    {
+      "content": "홍대입구역 앞, 노점상 물건이 도로로 떨어졌습니다.",
+      "category_id": 3,
+      "review_score": 0,
+      "danger_score": 2,
+      "locations": [
+        37.5568,
+        126.9235
+      ],
+      "username": "user2",
+      "type": "OBSTACLE"
+    },
+    {
+      "content": "이태원역 부근, 간판이 떨어져 도로를 막고 있습니다.",
+      "category_id": 3,
+      "review_score": 0,
+      "danger_score": 4,
+      "locations": [
+        37.5345,
+        126.9945
+      ],
+      "username": "user9",
+      "type": "OBSTACLE"
+    },
+    {
+      "content": "용산역 부근, 공사장 삼각대가 쓰러져 있습니다.",
+      "category_id": 3,
+      "review_score": 0,
+      "danger_score": 2,
+      "locations": [
+        37.5299,
+        126.9647
+      ],
+      "username": "user1",
+      "type": "OBSTACLE"
+    },
+    {
+      "content": "동대문 시장 앞, 리어카가 도로에 방치되어 있습니다.",
+      "category_id": 3,
+      "review_score": 0,
+      "danger_score": 3,
+      "locations": [
+        37.571,
+        127.009
+      ],
+      "username": "user9",
+      "type": "OBSTACLE"
+    },
+    {
+      "content": "잠실역 롯데타워 앞, 우산이 차도 위에 떨어져 있습니다.",
+      "category_id": 3,
+      "review_score": 0,
+      "danger_score": 1,
+      "locations": [
+        37.511,
+        127.098
+      ],
+      "username": "user1",
+      "type": "OBSTACLE"
+    },
+    {
+      "content": "건대입구역 사거리, 맥주병이 깨져서 도로에 흩어져 있습니다.",
+      "category_id": 3,
+      "review_score": 0,
+      "danger_score": 3,
+      "locations": [
+        37.54,
+        127.07
+      ],
+      "username": "user1",
+      "type": "OBSTACLE"
+    },
+    {
+      "content": "노원역 부근, 플라스틱 의자가 차로에 있습니다.",
+      "category_id": 3,
+      "review_score": 0,
+      "danger_score": 2,
+      "locations": [
+        37.655,
+        127.061
+      ],
+      "username": "user3",
+      "type": "OBSTACLE"
+    },
+    {
+      "content": "수유역 사거리, 과일 상자가 도로에 떨어져 있습니다.",
+      "category_id": 3,
+      "review_score": 0,
+      "danger_score": 2,
+      "locations": [
+        37.639,
+        127.026
+      ],
+      "username": "user6",
+      "type": "OBSTACLE"
+    },
+    {
+      "content": "신림역 고시촌 앞, 소화기가 도로에 떨어져 있습니다.",
+      "category_id": 3,
+      "review_score": 0,
+      "danger_score": 2,
+      "locations": [
+        37.484,
+        126.929
+      ],
+      "username": "user1",
+      "type": "OBSTACLE"
+    },
+    {
+      "content": "구로디지털단지역 앞, 나무 팔레트 여러 개가 차로를 막고 있습니다.",
+      "category_id": 3,
+      "review_score": 0,
+      "danger_score": 3,
+      "locations": [
+        37.485,
+        126.901
+      ],
+      "username": "user1",
+      "type": "OBSTACLE"
+    },
+    {
+      "content": "가산디지털단지역 부근, 택배 박스가 흩어져 있습니다.",
+      "category_id": 3,
+      "review_score": 0,
+      "danger_score": 2,
+      "locations": [
+        37.477,
+        126.888
+      ],
+      "username": "user4",
+      "type": "OBSTACLE"
+    },
+    {
+      "content": "상봉 터미널 앞, 쇼핑백이 바람에 날려 도로 위에 있습니다.",
+      "category_id": 3,
+      "review_score": 0,
+      "danger_score": 1,
+      "locations": [
+        37.596,
+        127.088
+      ],
+      "username": "user7",
+      "type": "OBSTACLE"
+    },
+    {
+      "content": "망원역 사거리, 오토바이 헬멧이 도로에 떨어져 있습니다.",
+      "category_id": 3,
+      "review_score": 0,
+      "danger_score": 2,
+      "locations": [
+        37.555,
+        126.906
+      ],
+      "username": "user5",
+      "type": "OBSTACLE"
+    },
+    {
+      "content": "압구정 로데오거리, 광고 현수막이 떨어져 시야 방해.",
+      "category_id": 3,
+      "review_score": 0,
+      "danger_score": 2,
+      "locations": [
+        37.527,
+        127.042
+      ],
+      "username": "user3",
+      "type": "OBSTACLE"
+    },
+    {
+      "content": "청담동 사거리, 유리병이 깨져 있어 타이어 펑크 위험.",
+      "category_id": 3,
+      "review_score": 0,
+      "danger_score": 3,
+      "locations": [
+        37.522,
+        127.047
+      ],
+      "username": "user5",
+      "type": "OBSTACLE"
+    },
+    {
+      "content": "광화문 광장, 대규모 집회로 인해 세종대로 전면 통제 중입니다. 우회 필요.",
+      "category_id": 3,
+      "review_score": 0,
+      "danger_score": 0,
+      "locations": [
+        37.572,
+        126.977
+      ],
+      "username": "user8",
+      "type": "PROTEST"
+    },
+    {
+      "content": "청와대 앞 도로, 집회로 인한 전면 통제. 효자로 이용 불가.",
+      "category_id": 3,
+      "review_score": 0,
+      "danger_score": 0,
+      "locations": [
+        37.586,
+        126.976
+      ],
+      "username": "user8",
+      "type": "PROTEST"
+    },
+    {
+      "content": "여의도 국회의사당 앞, 집회 진행 중으로 2개 차로 통제 중입니다.",
+      "category_id": 3,
+      "review_score": 0,
+      "danger_score": 0,
+      "locations": [
+        37.532,
+        126.914
+      ],
+      "username": "user1",
+      "type": "PROTEST"
+    },
+    {
+      "content": "서울역 광장, 시위 진행 중. 주변 도로 정체 예상됩니다.",
+      "category_id": 3,
+      "review_score": 0,
+      "danger_score": 0,
+      "locations": [
+        37.555,
+        126.972
+      ],
+      "username": "user8",
+      "type": "PROTEST"
+    },
+    {
+      "content": "시청역 서울광장, 대규모 집회로 인근 도로 통제 중.",
+      "category_id": 3,
+      "review_score": 0,
+      "danger_score": 0,
+      "locations": [
+        37.566,
+        126.974
+      ],
+      "username": "user4",
+      "type": "PROTEST"
+    },
+    {
+      "content": "종로 보신각 앞, 소규모 시위로 1개 차로 통제.",
+      "category_id": 3,
+      "review_score": 0,
+      "danger_score": 0,
+      "locations": [
+        37.57,
+        126.985
+      ],
+      "username": "user6",
+      "type": "PROTEST"
+    },
+    {
+      "content": "서초동 법원 앞, 집회로 서초대로 일부 통제 중입니다.",
+      "category_id": 3,
+      "review_score": 0,
+      "danger_score": 0,
+      "locations": [
+        37.494,
+        127.012
+      ],
+      "username": "user2",
+      "type": "PROTEST"
+    },
+    {
+      "content": "대학로 마로니에 공원, 집회로 인근 도로 정체.",
+      "category_id": 3,
+      "review_score": 0,
+      "danger_score": 0,
+      "locations": [
+        37.582,
+        127.002
+      ],
+      "username": "user5",
+      "type": "PROTEST"
+    },
+    {
+      "content": "홍대입구역 앞, 문화 행사로 차량 통제 중입니다.",
+      "category_id": 3,
+      "review_score": 0,
+      "danger_score": 0,
+      "locations": [
+        37.5568,
+        126.9235
+      ],
+      "username": "user3",
+      "type": "PROTEST"
+    },
+    {
+      "content": "신촌 연세로, 대학생 집회로 차 없는 거리 운영 중.",
+      "category_id": 3,
+      "review_score": 0,
+      "danger_score": 0,
+      "locations": [
+        37.559,
+        126.937
+      ],
+      "username": "user5",
+      "type": "PROTEST"
+    },
+    {
+      "content": "이태원 해밀턴호텔 앞, 행진 중으로 도로 일시 통제.",
+      "category_id": 3,
+      "review_score": 0,
+      "danger_score": 0,
+      "locations": [
+        37.534,
+        126.994
+      ],
+      "username": "user3",
+      "type": "PROTEST"
+    },
+    {
+      "content": "명동 롯데백화점 앞, 문화제로 차량 통행 제한.",
+      "category_id": 3,
+      "review_score": 0,
+      "danger_score": 0,
+      "locations": [
+        37.5636,
+        126.986
+      ],
+      "username": "user10",
+      "type": "PROTEST"
+    },
+    {
+      "content": "강남역 11번 출구, 집회로 1개 차로 통제 중.",
+      "category_id": 3,
+      "review_score": 0,
+      "danger_score": 0,
+      "locations": [
+        37.498,
+        127.028
+      ],
+      "username": "user4",
+      "type": "PROTEST"
+    },
+    {
+      "content": "압구정 현대백화점 앞, 캠페인 행사로 보도 및 차로 일부 통제.",
+      "category_id": 3,
+      "review_score": 0,
+      "danger_score": 0,
+      "locations": [
+        37.527,
+        127.042
+      ],
+      "username": "user3",
+      "type": "PROTEST"
+    },
+    {
+      "content": "용산역 앞 광장, 소규모 집회 진행 중.",
+      "category_id": 3,
+      "review_score": 0,
+      "danger_score": 0,
+      "locations": [
+        37.5299,
+        126.9647
+      ],
+      "username": "user8",
+      "type": "PROTEST"
+    },
+    {
+      "content": "강남대로 역삼역 부근, 맨홀 뚜껑이 파손되어 움푹 들어가 있습니다. 위험!",
+      "category_id": 3,
+      "review_score": 0,
+      "danger_score": 4,
+      "locations": [
+        37.5,
+        127.036
+      ],
+      "username": "user9",
+      "type": "MANHOLE"
+    },
+    {
+      "content": "올림픽대로 잠실대교 부근, 맨홀 뚜껑이 없어져 있습니다. 매우 위험!",
+      "category_id": 3,
+      "review_score": 0,
+      "danger_score": 5,
+      "locations": [
+        37.518,
+        127.09
+      ],
+      "username": "user1",
+      "type": "MANHOLE"
+    },
+    {
+      "content": "여의대로 여의도역 앞, 맨홀 뚜껑이 깨져서 차량 통행 위험합니다.",
+      "category_id": 3,
+      "review_score": 0,
+      "danger_score": 4,
+      "locations": [
+        37.522,
+        126.924
+      ],
+      "username": "user3",
+      "type": "MANHOLE"
+    },
+    {
+      "content": "강변북로 구리 방향, 맨홀 뚜껑이 튀어나와 있어 차량 파손 우려.",
+      "category_id": 3,
+      "review_score": 0,
+      "danger_score": 3,
+      "locations": [
+        37.558,
+        127.053
+      ],
+      "username": "user2",
+      "type": "MANHOLE"
+    },
+    {
+      "content": "내부순환로 미아삼거리, 맨홀에서 물이 분출되고 있습니다.",
+      "category_id": 3,
+      "review_score": 0,
+      "danger_score": 3,
+      "locations": [
+        37.613,
+        127.025
+      ],
+      "username": "user1",
+      "type": "MANHOLE"
+    },
+    {
+      "content": "동부간선도로 군자역 부근, 맨홀 뚜껑 파손으로 타이어 펑크 위험.",
+      "category_id": 3,
+      "review_score": 0,
+      "danger_score": 4,
+      "locations": [
+        37.557,
+        127.073
+      ],
+      "username": "user8",
+      "type": "MANHOLE"
+    },
+    {
+      "content": "서부간선도로 등촌동, 맨홀 뚜껑이 움직여서 소음과 위험 발생.",
+      "category_id": 3,
+      "review_score": 0,
+      "danger_score": 3,
+      "locations": [
+        37.548,
+        126.852
+      ],
+      "username": "user2",
+      "type": "MANHOLE"
+    },
+    {
+      "content": "북부간선도로 월계동, 맨홀 뚜껑이 깨져 있습니다.",
+      "category_id": 3,
+      "review_score": 0,
+      "danger_score": 3,
+      "locations": [
+        37.618,
+        127.058
+      ],
+      "username": "user5",
+      "type": "MANHOLE"
+    },
+    {
+      "content": "남부순환로 사당역 부근, 맨홀에서 증기가 나오고 있습니다.",
+      "category_id": 3,
+      "review_score": 0,
+      "danger_score": 2,
+      "locations": [
+        37.477,
+        126.982
+      ],
+      "username": "user10",
+      "type": "MANHOLE"
+    },
+    {
+      "content": "천호대로 천호역 사거리, 맨홀 뚜껑이 파손된 상태입니다.",
+      "category_id": 3,
+      "review_score": 0,
+      "danger_score": 3,
+      "locations": [
+        37.538,
+        127.124
+      ],
+      "username": "user4",
+      "type": "MANHOLE"
+    },
+    {
+      "content": "왕십리로 한양대 앞, 맨홀 뚜껑이 반쯤 열려 있어 위험합니다.",
+      "category_id": 3,
+      "review_score": 0,
+      "danger_score": 4,
+      "locations": [
+        37.555,
+        127.042
+      ],
+      "username": "user7",
+      "type": "MANHOLE"
+    },
+    {
+      "content": "종로 종로3가역 부근, 맨홀 뚜껑 없음. 바리케이드 설치 필요.",
+      "category_id": 3,
+      "review_score": 0,
+      "danger_score": 5,
+      "locations": [
+        37.57,
+        126.992
+      ],
+      "username": "user1",
+      "type": "MANHOLE"
+    },
+    {
+      "content": "신촌로 신촌역 앞, 맨홀 뚜껑이 깨져서 움푹 패였습니다.",
+      "category_id": 3,
+      "review_score": 0,
+      "danger_score": 3,
+      "locations": [
+        37.555,
+        126.937
+      ],
+      "username": "user5",
+      "type": "MANHOLE"
+    },
+    {
+      "content": "이태원로 녹사평역 부근, 맨홀에서 악취와 증기 발생.",
+      "category_id": 3,
+      "review_score": 0,
+      "danger_score": 2,
+      "locations": [
+        37.534,
+        126.989
+      ],
+      "username": "user1",
+      "type": "MANHOLE"
+    },
+    {
+      "content": "용산역 앞 도로, 맨홀 뚜껑이 튀어나와 차량 하부 손상 위험.",
+      "category_id": 3,
+      "review_score": 0,
+      "danger_score": 3,
+      "locations": [
+        37.5299,
+        126.9647
+      ],
+      "username": "user4",
+      "type": "MANHOLE"
+    },
+    {
+      "content": "강남대로 논현역 부근 포트홀 보수 완료되었습니다. 통행 안전합니다.",
+      "category_id": 3,
+      "review_score": 0,
+      "danger_score": 0,
+      "locations": [
+        37.51,
+        127.023
+      ],
+      "username": "user10",
+      "type": "FILLED_POTHOLE"
+    },
+    {
+      "content": "올림픽대로 하행선 잠실대교 진입 전 포트홀 보수 완료.",
+      "category_id": 3,
+      "review_score": 0,
+      "danger_score": 0,
+      "locations": [
+        37.515,
+        127.085
+      ],
+      "username": "user1",
+      "type": "FILLED_POTHOLE"
+    },
+    {
+      "content": "마포대로 공덕역 앞 포트홀 보수 작업 완료. 정상 통행 가능.",
+      "category_id": 3,
+      "review_score": 0,
+      "danger_score": 0,
+      "locations": [
+        37.544,
+        126.951
+      ],
+      "username": "user1",
+      "type": "FILLED_POTHOLE"
+    },
+    {
+      "content": "테헤란로 역삼역 사거리 포트홀 복구 완료했습니다.",
+      "category_id": 3,
+      "review_score": 0,
+      "danger_score": 0,
+      "locations": [
+        37.5,
+        127.036
+      ],
+      "username": "user5",
+      "type": "FILLED_POTHOLE"
+    },
+    {
+      "content": "내부순환로 미아리고개 포트홀 전부 보수 완료.",
+      "category_id": 3,
+      "review_score": 0,
+      "danger_score": 0,
+      "locations": [
+        37.609,
+        127.025
+      ],
+      "username": "user10",
+      "type": "FILLED_POTHOLE"
+    },
+    {
+      "content": "동부간선도로 광진구청 부근 포트홀 복구 완료.",
+      "category_id": 3,
+      "review_score": 0,
+      "danger_score": 0,
+      "locations": [
+        37.545,
+        127.085
+      ],
+      "username": "user6",
+      "type": "FILLED_POTHOLE"
+    },
+    {
+      "content": "남부순환로 사당역 부근 포트홀 보수 작업 끝났습니다.",
+      "category_id": 3,
+      "review_score": 0,
+      "danger_score": 0,
+      "locations": [
+        37.477,
+        126.982
+      ],
+      "username": "user6",
+      "type": "FILLED_POTHOLE"
+    },
+    {
+      "content": "왕십리로 한양대 앞 포트홀 보수 완료. 안전 운행 가능.",
+      "category_id": 3,
+      "review_score": 0,
+      "danger_score": 0,
+      "locations": [
+        37.555,
+        127.042
+      ],
+      "username": "user3",
+      "type": "FILLED_POTHOLE"
+    },
+    {
+      "content": "종로 종로3가역 부근 포트홀 복구 완료되었습니다.",
+      "category_id": 3,
+      "review_score": 0,
+      "danger_score": 0,
+      "locations": [
+        37.57,
+        126.992
+      ],
+      "username": "user8",
+      "type": "FILLED_POTHOLE"
+    },
+    {
+      "content": "신림역 사거리 포트홀 보수 작업 완료.",
+      "category_id": 3,
+      "review_score": 0,
+      "danger_score": 0,
+      "locations": [
+        37.484,
+        126.929
+      ],
+      "username": "user3",
+      "type": "FILLED_POTHOLE"
+    },
+    {
+      "content": "강남대로 신논현역 부근, 도로에 큰 균열 발생. 확대 우려됩니다.",
+      "category_id": 3,
+      "review_score": 0,
+      "danger_score": 3,
+      "locations": [
+        37.504,
+        127.035
+      ],
+      "username": "user3",
+      "type": "ROAD_CRACK"
+    },
+    {
+      "content": "올림픽대로 하행선 동호대교 부근, 도로 균열 심각. 보수 필요.",
+      "category_id": 3,
+      "review_score": 0,
+      "danger_score": 3,
+      "locations": [
+        37.515,
+        127.04
+      ],
+      "username": "user9",
+      "type": "ROAD_CRACK"
+    },
+    {
+      "content": "여의대로 IFC몰 앞, 아스팔트 균열이 길게 나 있습니다.",
+      "category_id": 3,
+      "review_score": 0,
+      "danger_score": 2,
+      "locations": [
+        37.525,
+        126.925
+      ],
+      "username": "user4",
+      "type": "ROAD_CRACK"
+    },
+    {
+      "content": "강변북로 성수대교 남단, 도로 균열로 차량 진동 심함.",
+      "category_id": 3,
+      "review_score": 0,
+      "danger_score": 3,
+      "locations": [
+        37.54,
+        127.038
+      ],
+      "username": "user10",
+      "type": "ROAD_CRACK"
+    },
+    {
+      "content": "내부순환로 정릉터널 입구, 도로 균열 발견. 점검 필요.",
+      "category_id": 3,
+      "review_score": 0,
+      "danger_score": 3,
+      "locations": [
+        37.605,
+        127.01
+      ],
+      "username": "user1",
+      "type": "ROAD_CRACK"
+    },
+    {
+      "content": "동부간선도로 광장동 구간, 도로 표면 갈라짐 심각.",
+      "category_id": 3,
+      "review_score": 0,
+      "danger_score": 3,
+      "locations": [
+        37.548,
+        127.125
+      ],
+      "username": "user1",
+      "type": "ROAD_CRACK"
+    },
+    {
+      "content": "서부간선도로 목동 구간, 아스팔트 균열 확대 중.",
+      "category_id": 3,
+      "review_score": 0,
+      "danger_score": 2,
+      "locations": [
+        37.536,
+        126.875
+      ],
+      "username": "user2",
+      "type": "ROAD_CRACK"
+    },
+    {
+      "content": "북부간선도로 석계역 부근, 도로 균열로 요철 발생.",
+      "category_id": 3,
+      "review_score": 0,
+      "danger_score": 2,
+      "locations": [
+        37.614,
+        127.067
+      ],
+      "username": "user5",
+      "type": "ROAD_CRACK"
+    },
+    {
+      "content": "남부순환로 봉천역 부근, 도로 표면 균열 확인.",
+      "category_id": 3,
+      "review_score": 0,
+      "danger_score": 2,
+      "locations": [
+        37.482,
+        126.952
+      ],
+      "username": "user3",
+      "type": "ROAD_CRACK"
+    },
+    {
+      "content": "천호대로 암사역 부근, 도로 균열이 점점 커지고 있습니다.",
+      "category_id": 3,
+      "review_score": 0,
+      "danger_score": 3,
+      "locations": [
+        37.5508,
+        127.135
+      ],
+      "username": "user2",
+      "type": "ROAD_CRACK"
+    },
+    {
+      "content": "왕십리로 왕십리역 앞, 도로 균열과 침하 현상.",
+      "category_id": 3,
+      "review_score": 0,
+      "danger_score": 3,
+      "locations": [
+        37.561,
+        127.037
+      ],
+      "username": "user1",
+      "type": "ROAD_CRACK"
+    },
+    {
+      "content": "종로 종각역 부근, 도로 균열 발견. 조치 필요.",
+      "category_id": 3,
+      "review_score": 0,
+      "danger_score": 2,
+      "locations": [
+        37.57,
+        126.985
+      ],
+      "username": "user10",
+      "type": "ROAD_CRACK"
+    },
+    {
+      "content": "신촌로 연세대 앞, 아스팔트 균열 심각.",
+      "category_id": 3,
+      "review_score": 0,
+      "danger_score": 2,
+      "locations": [
+        37.559,
+        126.937
+      ],
+      "username": "user4",
+      "type": "ROAD_CRACK"
+    },
+    {
+      "content": "이태원로 한남동 구간, 도로 균열 확대 중.",
+      "category_id": 3,
+      "review_score": 0,
+      "danger_score": 3,
+      "locations": [
+        37.535,
+        127.002
+      ],
+      "username": "user3",
+      "type": "ROAD_CRACK"
+    },
+    {
+      "content": "동대문역 부근, 도로 표면 균열 및 침하.",
+      "category_id": 3,
+      "review_score": 0,
+      "danger_score": 3,
+      "locations": [
+        37.571,
+        127.009
+      ],
+      "username": "user8",
+      "type": "ROAD_CRACK"
+    },
+    {
+      "content": "강남역 11번 출구 앞, 지하철 공사로 2개 차로 통제 중입니다. 12월까지 예정.",
+      "category_id": 3,
+      "review_score": 0,
+      "danger_score": 0,
+      "locations": [
+        37.498,
+        127.028
+      ],
+      "username": "user3",
+      "type": "CONSTRUCTION"
+    },
+    {
+      "content": "올림픽대로 잠실대교 남단, 도로 보수 공사 중. 1개 차로만 이용 가능.",
+      "category_id": 3,
+      "review_score": 0,
+      "danger_score": 0,
+      "locations": [
+        37.518,
+        127.09
+      ],
+      "username": "user9",
+      "type": "CONSTRUCTION"
+    },
+    {
+      "content": "여의도 국회의사당 앞, 지하 공사로 인한 차로 축소 운영 중.",
+      "category_id": 3,
+      "review_score": 0,
+      "danger_score": 0,
+      "locations": [
+        37.532,
+        126.914
+      ],
+      "username": "user7",
+      "type": "CONSTRUCTION"
+    },
+    {
+      "content": "강변북로 동호대교 부근, 도로 재포장 공사 진행 중. 야간 작업.",
+      "category_id": 3,
+      "review_score": 0,
+      "danger_score": 0,
+      "locations": [
+        37.525,
+        127.035
+      ],
+      "username": "user5",
+      "type": "CONSTRUCTION"
+    },
+    {
+      "content": "내부순환로 정릉터널, 터널 보수 공사로 1개 차로 통제.",
+      "category_id": 3,
+      "review_score": 0,
+      "danger_score": 0,
+      "locations": [
+        37.605,
+        127.01
+      ],
+      "username": "user7",
+      "type": "CONSTRUCTION"
+    },
+    {
+      "content": "동부간선도로 군자역 부근, 도로 확장 공사 중. 정체 예상.",
+      "category_id": 3,
+      "review_score": 0,
+      "danger_score": 0,
+      "locations": [
+        37.557,
+        127.073
+      ],
+      "username": "user8",
+      "type": "CONSTRUCTION"
+    },
+    {
+      "content": "서부간선도로 목동 구간, 배수로 공사로 차로 축소.",
+      "category_id": 3,
+      "review_score": 0,
+      "danger_score": 0,
+      "locations": [
+        37.536,
+        126.875
+      ],
+      "username": "user4",
+      "type": "CONSTRUCTION"
+    },
+    {
+      "content": "북부간선도로 월계IC, 고가도로 보수 공사 진행 중.",
+      "category_id": 3,
+      "review_score": 0,
+      "danger_score": 0,
+      "locations": [
+        37.618,
+        127.058
+      ],
+      "username": "user2",
+      "type": "CONSTRUCTION"
+    },
+    {
+      "content": "남부순환로 사당역 부근, 지하철 환승센터 공사로 도로 좁아짐.",
+      "category_id": 3,
+      "review_score": 0,
+      "danger_score": 0,
+      "locations": [
+        37.4768,
+        126.9817
+      ],
+      "username": "user4",
+      "type": "CONSTRUCTION"
+    },
+    {
+      "content": "테헤란로 역삼역 앞, 보도 확장 공사로 차로 1개 통제.",
+      "category_id": 3,
+      "review_score": 0,
+      "danger_score": 0,
+      "locations": [
+        37.5,
+        127.036
+      ],
+      "username": "user3",
+      "type": "CONSTRUCTION"
+    },
+    {
+      "content": "청담대교 북단, 교량 보수 공사로 야간 통제.",
+      "category_id": 3,
+      "review_score": 0,
+      "danger_score": 0,
+      "locations": [
+        37.52,
+        127.048
+      ],
+      "username": "user7",
+      "type": "CONSTRUCTION"
+    },
+    {
+      "content": "마포대교 중앙, 교량 점검 및 보수 공사 중.",
+      "category_id": 3,
+      "review_score": 0,
+      "danger_score": 0,
+      "locations": [
+        37.538,
+        126.938
+      ],
+      "username": "user9",
+      "type": "CONSTRUCTION"
+    },
+    {
+      "content": "천호대로 천호역 사거리, 지하 상수도 공사 중.",
+      "category_id": 3,
+      "review_score": 0,
+      "danger_score": 0,
+      "locations": [
+        37.538,
+        127.124
+      ],
+      "username": "user6",
+      "type": "CONSTRUCTION"
+    },
+    {
+      "content": "왕십리 로터리, 지하 전력구 공사로 차로 통제.",
+      "category_id": 3,
+      "review_score": 0,
+      "danger_score": 0,
+      "locations": [
+        37.561,
+        127.037
+      ],
+      "username": "user10",
+      "type": "CONSTRUCTION"
+    },
+    {
+      "content": "종로 광화문 사거리, 보행 환경 개선 공사 진행 중.",
+      "category_id": 3,
+      "review_score": 0,
+      "danger_score": 0,
+      "locations": [
+        37.575,
+        126.977
+      ],
+      "username": "user10",
+      "type": "CONSTRUCTION"
+    },
+    {
+      "content": "신촌 연세로, 차 없는 거리 조성 공사 중.",
+      "category_id": 3,
+      "review_score": 0,
+      "danger_score": 0,
+      "locations": [
+        37.559,
+        126.937
+      ],
+      "username": "user5",
+      "type": "CONSTRUCTION"
+    },
+    {
+      "content": "홍대입구역 9번 출구, 지하철 환기구 공사로 보도 통제.",
+      "category_id": 3,
+      "review_score": 0,
+      "danger_score": 0,
+      "locations": [
+        37.5568,
+        126.9235
+      ],
+      "username": "user5",
+      "type": "CONSTRUCTION"
+    },
+    {
+      "content": "이태원역 앞, 도로 재포장 공사 진행 중. 우회 권장.",
+      "category_id": 3,
+      "review_score": 0,
+      "danger_score": 0,
+      "locations": [
+        37.5345,
+        126.9945
+      ],
+      "username": "user8",
+      "type": "CONSTRUCTION"
+    },
+    {
+      "content": "용산역 광장, 역사 리모델링 공사로 차량 진입 제한.",
+      "category_id": 3,
+      "review_score": 0,
+      "danger_score": 0,
+      "locations": [
+        37.5299,
+        126.9647
+      ],
+      "username": "user2",
+      "type": "CONSTRUCTION"
+    },
+    {
+      "content": "서울역 서부역 광장, 도로 확장 공사 진행 중.",
+      "category_id": 3,
+      "review_score": 0,
+      "danger_score": 0,
+      "locations": [
+        37.555,
+        126.972
+      ],
+      "username": "user9",
+      "type": "CONSTRUCTION"
+    }
+  ]
+}
