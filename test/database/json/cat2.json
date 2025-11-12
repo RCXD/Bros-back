@@ -1,0 +1,445 @@
+{
+    "category_id": 2,
+    "posts": [
+        {
+            "username": "user3",
+            "content": "암사동 선사유적지 - 신석기 시대의 대규모 집터 유적을 직접 볼 수 있는 역사적인 공원입니다. 아이들 교육에도 좋습니다.",
+            "category_id": 2,
+            "review_score": 5,
+            "danger_score": 0,
+            "locations": [37.5605, 127.1302]
+        },
+        {
+            "username": "user7",
+            "content": "강풀 만화거리 - 유명 만화가 강풀의 작품들이 성내동 골목 곳곳에 벽화로 그려져 있는 테마 거리입니다. 사진 찍기 좋습니다.",
+            "category_id": 2,
+            "review_score": 4,
+            "danger_score": 0,
+            "locations": [37.5357, 127.1308]
+        },
+        {
+            "username": "user2",
+            "content": "일자산 허브천문공원 - 다양한 허브 향기를 맡으며 밤하늘의 별을 관측할 수 있는 도심 속 힐링 공간입니다. 야경이 특히 아름답습니다.",
+            "category_id": 2,
+            "review_score": 5,
+            "danger_score": 0,
+            "locations": [37.5373, 127.1544]
+        },
+        {
+            "username": "user5",
+            "content": "광나루 한강공원 - 자전거 도로, 암벽 등반장, 드론 공원 등 다양한 레저 시설을 갖춘 한강 공원입니다. 광진교 8번가와도 연결됩니다.",
+            "category_id": 2,
+            "review_score": 5,
+            "danger_score": 0,
+            "locations": [37.5487, 127.1200]
+        },
+        {
+            "username": "user9",
+            "content": "성내동 쭈꾸미 골목 - 매콤한 쭈꾸미 볶음 맛집들이 모여있는 강동구의 대표적인 먹자골목입니다. 저녁 시간에 활기가 넘칩니다.",
+            "category_id": 2,
+            "review_score": 4,
+            "danger_score": 0,
+            "locations": [37.5368, 127.1263]
+        },
+        {
+            "username": "user1",
+            "content": "길동생태공원 - 도심에서 보기 드문 반딧불이 서식지 등 자연 생태를 관찰할 수 있는 공원입니다. 사전 예약이 필요한 프로그램도 있습니다.",
+            "category_id": 2,
+            "review_score": 5,
+            "danger_score": 0,
+            "locations": [37.5385, 127.1611]
+        },
+        {
+            "username": "user4",
+            "content": "천호동 로데오거리 - 다양한 패션 매장, 맛집, 카페가 밀집해 있어 젊은이들이 많이 찾는 쇼핑 거리입니다. 현대백화점과도 가깝습니다.",
+            "category_id": 2,
+            "review_score": 4,
+            "danger_score": 0,
+            "locations": [37.5388, 127.1245]
+        },
+        {
+            "username": "user8",
+            "content": "고덕수변생태공원 - 한강 상류의 자연스러운 하천 생태계를 보존하고 있는 공원입니다. 조용히 산책하기 좋은 곳입니다.",
+            "category_id": 2,
+            "review_score": 5,
+            "danger_score": 0,
+            "locations": [37.5582, 127.1691]
+        },
+        {
+            "username": "user6",
+            "content": "강동그린웨이 (일자산 자연공원) - 일자산을 따라 길게 이어진 산책로로, 둔촌동에서 하남시까지 연결됩니다. 걷기 운동하기 좋은 코스입니다.",
+            "category_id": 2,
+            "review_score": 4,
+            "danger_score": 0,
+            "locations": [37.5410, 127.1519]
+        },
+        {
+            "username": "user10",
+            "content": "광진교 8번가 (리버뷰) - 광진교 다리 하부에 위치한 이색적인 문화 공간입니다. 한강을 바라보며 전시나 공연을 즐길 수 있습니다.",
+            "category_id": 2,
+            "review_score": 4,
+            "danger_score": 0,
+            "locations": [37.5452, 127.1180]
+        },
+        {
+            "username": "user3",
+            "content": "명일동 카페거리 (가상) - (Mock Data) 조용하고 아기자기한 개인 카페들이 모여있는 가상의 힐링 스팟입니다. 디저트가 유명합니다.",
+            "category_id": 2,
+            "review_score": 4,
+            "danger_score": 0,
+            "locations": [37.5510, 127.1465]
+        },
+        {
+            "username": "user2",
+            "content": "길동 복조리 시장 - 신선한 식재료와 다양한 먹거리를 판매하는 전통 시장입니다. 정겨운 분위기를 느낄 수 있습니다.",
+            "category_id": 2,
+            "review_score": 4,
+            "danger_score": 0,
+            "locations": [37.5360, 127.1421]
+        },
+        {
+            "username": "user7",
+            "content": "강동아트센터 - 다양한 공연과 전시가 열리는 복합 문화 예술 공간입니다. 건축물이 아름답고 주변 공원과 이어져 있습니다.",
+            "category_id": 2,
+            "review_score": 5,
+            "danger_score": 0,
+            "locations": [37.5515, 127.1570]
+        },
+        {
+            "username": "user5",
+            "content": "둔촌동 전통시장 - 오랜 역사를 가진 전통 시장으로, 다양한 상점과 맛집이 있습니다. 곧 재개발 예정인 곳입니다.",
+            "category_id": 2,
+            "review_score": 4,
+            "danger_score": 0,
+            "locations": [37.5321, 127.1390]
+        },
+        {
+            "username": "user9",
+            "content": "성내동 만화카페 '코믹존' (가상) - (Mock Data) 강풀 만화거리 근처에 위치한, 편안하게 만화를 즐길 수 있는 가상의 휴식처입니다. 24시간 운영됩니다.",
+            "category_id": 2,
+            "review_score": 5,
+            "danger_score": 0,
+            "locations": [37.5359, 127.1300]
+        },
+        {
+            "username": "user1",
+            "content": "암사동 역사공원 (가상) - (Mock Data) 선사유적지 옆에 새로 조성된 공원으로, 조형물과 쉼터가 잘 갖춰져 있습니다.",
+            "category_id": 2,
+            "review_score": 4,
+            "danger_score": 0,
+            "locations": [37.5590, 127.1315]
+        },
+        {
+            "username": "user4",
+            "content": "고덕천 산책로 - 고덕동과 하남시를 잇는 하천 산책로입니다. 자전거 타기 좋고, 계절마다 꽃이 피어 아름답습니다.",
+            "category_id": 2,
+            "review_score": 5,
+            "danger_score": 0,
+            "locations": [37.5560, 127.1705]
+        },
+        {
+            "username": "user8",
+            "content": "천호공원 - 천호역 근처에 위치한 주민들의 쉼터입니다. 음악 분수대와 야외 무대가 있습니다.",
+            "category_id": 2,
+            "review_score": 4,
+            "danger_score": 0,
+            "locations": [37.5458, 127.1278]
+        },
+        {
+            "username": "user6",
+            "content": "길동 '그린테라스' 루프탑 (가상) - (Mock Data) 길동역 근처 빌딩 옥상에 위치한 가상의 루프탑 바로, 야경이 훌륭한 핫플레이스입니다.",
+            "category_id": 2,
+            "review_score": 5,
+            "danger_score": 0,
+            "locations": [37.5375, 127.1450]
+        },
+        {
+            "username": "user10",
+            "content": "굽은다리역 맛집골목 (가상) - (Mock Data) 굽은다리역 홈플러스 뒤편에 숨겨진 맛집들이 모여있는 가상의 골목입니다.",
+            "category_id": 2,
+            "review_score": 4,
+            "danger_score": 0,
+            "locations": [37.5451, 127.1402]
+        },
+        {
+            "username": "user2",
+            "content": "강동구 자전거정비소 (이색 장소) - 광나루 한강공원 근처에 위치한 자전거 정비소입니다. 간단한 수리와 상담을 받을 수 있습니다.",
+            "category_id": 2,
+            "review_score": 5,
+            "danger_score": 0,
+            "locations": [37.5490, 127.1198]
+        },
+        {
+            "username": "user3",
+            "content": "명일공원 - 명일동 주택가에 위치한 조용한 공원입니다. 산책로와 체육 시설이 잘 갖춰져 있습니다.",
+            "category_id": 2,
+            "review_score": 4,
+            "danger_score": 0,
+            "locations": [37.5539, 127.1495]
+        },
+        {
+            "username": "user7",
+            "content": "상일동 '스마트팜' 체험장 (가상) - (Mock Data) 첨단 기술로 농작물을 재배하는 스마트팜을 체험할 수 있는 가상의 교육 농장입니다.",
+            "category_id": 2,
+            "review_score": 5,
+            "danger_score": 0,
+            "locations": [37.5501, 127.1688]
+        },
+        {
+            "username": "user5",
+            "content": "성내도서관 - 강동구의 대표적인 도서관 중 하나로, 다양한 장서와 문화 프로그램을 제공합니다.",
+            "category_id": 2,
+            "review_score": 4,
+            "danger_score": 0,
+            "locations": [37.5300, 127.1287]
+        },
+        {
+            "username": "user9",
+            "content": "고덕동 '선셋 힐' 전망대 (가상) - (Mock Data) 고덕수변생태공원 근처 언덕에 위치한 가상의 전망대로, 한강의 일몰을 감상하기 좋습니다.",
+            "category_id": 2,
+            "review_score": 5,
+            "danger_score": 0,
+            "locations": [37.5570, 127.1650]
+        },
+        {
+            "username": "user1",
+            "content": "암사종합시장 - 암사역 근처에 위치한 대규모 전통 시장입니다. 먹거리, 반찬, 생활용품 등 없는 게 없습니다.",
+            "category_id": 2,
+            "review_score": 4,
+            "danger_score": 0,
+            "locations": [37.5508, 127.1350]
+        },
+        {
+            "username": "user4",
+            "content": "강동구 도시농업 공원 - 주민들이 직접 텃밭을 가꿀 수 있도록 조성된 공원입니다. 도시농업에 대한 교육도 이루어집니다.",
+            "category_id": 2,
+            "review_score": 4,
+            "danger_score": 0,
+            "locations": [37.5370, 127.1580]
+        },
+        {
+            "username": "user8",
+            "content": "천호동 문구완구 거리 - 천호역 근처에 문구점과 완구점이 밀집해 있는 거리입니다. 아이들 선물을 사기에 좋습니다.",
+            "category_id": 2,
+            "review_score": 4,
+            "danger_score": 0,
+            "locations": [37.5395, 127.1230]
+        },
+        {
+            "username": "user6",
+            "content": "둔촌동 '올드 레코드' LP바 (가상) - (Mock Data) 둔촌동 주택가에 숨겨진 가상의 LP바로, 희귀한 음반과 빈티지한 분위기가 매력적입니다.",
+            "category_id": 2,
+            "review_score": 5,
+            "danger_score": 0,
+            "locations": [37.5315, 127.1375]
+        },
+        {
+            "username": "user10",
+            "content": "방이동생태학습관 (경계 지역) - 강동구와 송파구 경계에 있으며, 습지 생태계를 관찰하고 학습할 수 있는 공간입니다. (올림픽공원 근처)",
+            "category_id": 2,
+            "review_score": 4,
+            "danger_score": 0,
+            "locations": [37.5250, 127.1270]
+        },
+        {
+            "username": "user2",
+            "content": "명일역 '청년식당' (가상) - (Mock Data) 청년 셰프들이 운영하는 퓨전 요리 전문점으로, 가성비 좋은 런치 메뉴가 인기입니다.",
+            "category_id": 2,
+            "review_score": 4,
+            "danger_score": 0,
+            "locations": [37.5518, 127.1430]
+        },
+        {
+            "username": "user3",
+            "content": "강동구립해공도서관 - 명일동에 위치한 구립 도서관으로, 깔끔한 시설과 다양한 도서를 보유하고 있습니다.",
+            "category_id": 2,
+            "review_score": 5,
+            "danger_score": 0,
+            "locations": [37.5499, 127.1390]
+        },
+        {
+            "username": "user7",
+            "content": "길동 '밤도깨비' 야시장 (가상) - (Mock Data) 주말 저녁마다 길동 복조리 시장 근처에서 열리는 가상의 야시장입니다. 푸드트럭이 유명합니다.",
+            "category_id": 2,
+            "review_score": 4,
+            "danger_score": 0,
+            "locations": [37.5365, 127.1435]
+        },
+        {
+            "username": "user5",
+            "content": "천호 자전거거리 - 광나루 한강공원 입구 쪽에 위치하며, 다양한 자전거 매장과 수리점이 모여 있습니다.",
+            "category_id": 2,
+            "review_score": 4,
+            "danger_score": 0,
+            "locations": [37.5405, 127.1211]
+        },
+        {
+            "username": "user9",
+            "content": "고덕 평생학습관 - 주민들을 위한 다양한 교육 프로그램과 강좌를 제공하는 복합 문화 시설입니다.",
+            "category_id": 2,
+            "review_score": 4,
+            "danger_score": 0,
+            "locations": [37.5540, 127.1601]
+        },
+        {
+            "username": "user1",
+            "content": "성내동 '시크릿 가든' 플라워 카페 (가상) - (Mock Data) 강풀 만화거리 안에 숨겨진 가상의 플라워 카페로, 꽃으로 가득 찬 인테리어가 특징입니다.",
+            "category_id": 2,
+            "review_score": 5,
+            "danger_score": 0,
+            "locations": [37.5350, 127.1288]
+        },
+        {
+            "username": "user4",
+            "content": "강동 '패밀리 캠핑장' (가상) - (Mock Data) 일자산 자연공원 내에 위치한 가상의 캠핑장으로, 주말 가족 나들이에 인기가 많습니다.",
+            "category_id": 2,
+            "review_score": 5,
+            "danger_score": 0,
+            "locations": [37.5390, 127.1595]
+        },
+        {
+            "username": "user8",
+            "content": "둔촌동 '그린 파크' (가상) - (Mock Data) 둔촌동역 근처에 새로 생긴 가상의 소규모 공원으로, 점심시간 직장인들의 쉼터입니다.",
+            "category_id": 2,
+            "review_score": 4,
+            "danger_score": 0,
+            "locations": [37.5305, 127.1410]
+        },
+        {
+            "username": "user6",
+            "content": "고덕 '리버사이드' 레스토랑 (가상) - (Mock Data) 한강이 내려다보이는 뷰를 가진 가상의 고급 레스토랑입니다. 기념일 데이트 코스로 유명합니다.",
+            "category_id": 2,
+            "review_score": 5,
+            "danger_score": 0,
+            "locations": [37.5595, 127.1680]
+        },
+        {
+            "username": "user10",
+            "content": "암사동 '리틀 베이커리' (가상) - (Mock Data) 암사종합시장 근처의 작은 빵집으로, 천연 발효종을 사용한 건강빵이 인기입니다.",
+            "category_id": 2,
+            "review_score": 5,
+            "danger_score": 0,
+            "locations": [37.5530, 127.1365]
+        },
+        {
+            "username": "user2",
+            "content": "천호 현대백화점 하늘정원 - 현대백화점 천호점 옥상에 위치한 정원입니다. 쇼핑 중 잠시 쉬어가기 좋은 장소입니다.",
+            "category_id": 2,
+            "review_score": 4,
+            "danger_score": 0,
+            "locations": [37.5401, 127.1260]
+        },
+        {
+            "username": "user3",
+            "content": "길동 '뮤직 스페이스' 인디 공연장 (가상) - (Mock Data) 길동역 근처 지하에 위치한 소규모 인디 밴드 공연장입니다. 매주 금요일 공연이 열립니다.",
+            "category_id": 2,
+            "review_score": 5,
+            "danger_score": 0,
+            "locations": [37.5380, 127.1415]
+        },
+        {
+            "username": "user7",
+            "content": "성내동 '레트로 게임방' (가상) - (Mock Data) 성내동 쭈꾸미 골목 근처에 위치한 가상의 오락실로, 추억의 고전 게임기들이 있습니다.",
+            "category_id": 2,
+            "review_score": 4,
+            "danger_score": 0,
+            "locations": [37.5361, 127.1275]
+        },
+        {
+            "username": "user5",
+            "content": "강일동 '리버 파크' (가상) - (Mock Data) 강일동 아파트 단지 근처에 위치한 수변 공원입니다. 조용하고 한적합니다.",
+            "category_id": 2,
+            "review_score": 4,
+            "danger_score": 0,
+            "locations": [37.5610, 127.1720]
+        },
+        {
+            "username": "user9",
+            "content": "상일동 '하이테크' VR 체험관 (가상) - (Mock Data) 상일동 첨단업무단지 내에 위치한 가상의 VR 체험관입니다. 최신 VR 게임을 즐길 수 있습니다.",
+            "category_id": 2,
+            "review_score": 4,
+            "danger_score": 0,
+            "locations": [37.5485, 127.1700]
+        },
+        {
+            "username": "user1",
+            "content": "둔촌동 '힐링 숲' (가상) - (Mock Data) 일자산 자연공원과 연결되는 둔촌동 쪽의 작은 숲길입니다. 피톤치드를 마시기 좋습니다.",
+            "category_id": 2,
+            "review_score": 5,
+            "danger_score": 0,
+            "locations": [37.5280, 127.1450]
+        },
+        {
+            "username": "user4",
+            "content": "고덕동 '선데이 마켓' (가상) - (Mock Data) 한 달에 한 번 고덕 평생학습관 광장에서 열리는 가상의 플리마켓입니다. 수공예품이 많습니다.",
+            "category_id": 2,
+            "review_score": 4,
+            "danger_score": 0,
+            "locations": [37.5555, 127.1620]
+        },
+        {
+            "username": "user8",
+            "content": "명일동 '오가닉' 브런치 카페 (가상) - (Mock Data) 명일동 카페거리(가상)에서 가장 유명한 유기농 브런치 카페입니다. 주말 웨이팅이 깁니다.",
+            "category_id": 2,
+            "review_score": 5,
+            "danger_score": 0,
+            "locations": [37.5525, 127.1470]
+        },
+        {
+            "username": "user6",
+            "content": "암사동 '별빛 산책로' (가상) - (Mock Data) 암사동 한강공원 가는 길에 조성된 가상의 조명 산책로입니다. 저녁 데이트 코스로 좋습니다.",
+            "category_id": 2,
+            "review_score": 5,
+            "danger_score": 0,
+            "locations": [37.5542, 127.1330]
+        },
+        {
+            "username": "user10",
+            "content": "천호동 '한강 야경' 포토존 (가상) - (Mock Data) 광진교 8번가 근처에 숨겨진, 아차산과 롯데타워가 함께 보이는 가상의 야경 명소입니다.",
+            "category_id": 2,
+            "review_score": 5,
+            "danger_score": 0,
+            "locations": [37.5470, 127.1190]
+        },
+        {
+            "username": "user2",
+            "content": "길동 '아트 갤러리 199' (가상) - (Mock Data) 길동의 오래된 주택을 개조한 가상의 소규모 갤러리입니다. 신진 작가들의 작품을 전시합니다.",
+            "category_id": 2,
+            "review_score": 4,
+            "danger_score": 0,
+            "locations": [37.5391, 127.1462]
+        },
+        {
+            "username": "user3",
+            "content": "성내동 '스포츠 몬스터' (가상) - (Mock Data) 성내동에 위치한 실내 스포츠 테마파크(가상)입니다. 날씨와 상관없이 즐길 수 있습니다.",
+            "category_id": 2,
+            "review_score": 5,
+            "danger_score": 0,
+            "locations": [37.5340, 127.1295]
+        },
+        {
+            "username": "user7",
+            "content": "둔촌동 '작은 책방' (가상) - (Mock Data) 둔촌동 주택가에 숨어있는 가상의 독립 서점입니다. 주인장의 큐레이션이 돋보입니다.",
+            "category_id": 2,
+            "review_score": 5,
+            "danger_score": 0,
+            "locations": [37.5312, 127.1380]
+        },
+        {
+            "username": "user5",
+            "content": "고덕동 '스카이 라운지' (가상) - (Mock Data) 고덕동 신축 아파트 상가 최고층에 위치한 가상의 스카이 라운지입니다. 전망이 좋습니다.",
+            "category_id": 2,
+            "review_score": 4,
+            "danger_score": 0,
+            "locations": [37.5568, 127.1635]
+        },
+        {
+            "username": "user9",
+            "content": "명일동 '허브 공방' (가상) - (Mock Data) 일자산 허브천문공원 근처에서 허브 관련 제품(비누, 오일)을 만들 수 있는 가상의 공방입니다.",
+            "category_id": 2,
+            "review_score": 5,
+            "danger_score": 0,
+            "locations": [37.5520, 127.1488]
+        }
+    ]
+}
