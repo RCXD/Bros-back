@@ -7,8 +7,8 @@ from werkzeug.security import generate_password_hash
 @pytest.mark.no_cleanup
 def test_generate_users(fixture_app):
     """더미 사용자 레코드를 데이터베이스에 생성"""
-    n_users = 10
-    n_admins = 2
+    n_users = 30
+    n_admins = 5
 
     with fixture_app.app_context():
         # 기존 사용자 확인 (중복 방지)
