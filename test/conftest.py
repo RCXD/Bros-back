@@ -36,8 +36,17 @@ def fixture_app():
     
     # 정리: 모든 테스트 후 정리
     with app.app_context():
-        db.session.remove()
-        # db.drop_all()
+        try:
+            # 외래 키 제약 조건을 일시적으로 비활성화
+            db.session.execute(db.text("SET FOREIGN_KEY_CHECKS = 0"))
+            db.session.commit()
+            db.drop_all()
+            db.session.execute(db.text("SET FOREIGN_KEY_CHECKS = 1"))
+            db.session.commit()
+        except Exception as e:
+            print(f"Warning during cleanup: {e}")
+        finally:
+            db.session.remove()
 
     # 테스트용 디렉토리 삭제
     if os.path.exists(app.config['PROFILE_IMG_UPLOAD_FOLDER']):
@@ -58,8 +67,11 @@ def clean_db(fixture_app, request):
     with fixture_app.app_context():
         # 데이터는 지우지만 테이블은 삭제하지 않음
         db.session.rollback()
+        # 외래 키 제약 조건을 일시적으로 비활성화
+        db.session.execute(db.text("SET FOREIGN_KEY_CHECKS = 0"))
         for table in reversed(db.metadata.sorted_tables):
             db.session.execute(table.delete())
+        db.session.execute(db.text("SET FOREIGN_KEY_CHECKS = 1"))
         db.session.commit()
 
 
