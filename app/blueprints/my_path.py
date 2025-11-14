@@ -6,7 +6,7 @@ from flask_jwt_extended import jwt_required, get_jwt_identity
 bp = Blueprint("my_path", __name__)
 
 # ---------------- 1. 경로 저장 ----------------
-@bp.route("/save", methods=["POST"])
+@bp.route("", methods=["POST"])
 @jwt_required()
 def save_path():
     user_id = get_jwt_identity()
@@ -26,7 +26,7 @@ def save_path():
 
 
 # ---------------- 2. 내 경로 목록 ----------------
-@bp.route("/list", methods=["GET"])
+@bp.route("/me", methods=["GET"])
 @jwt_required()
 def list_paths():
     user_id = get_jwt_identity()
