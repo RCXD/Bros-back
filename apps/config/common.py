@@ -16,7 +16,7 @@ class Config:
     SECRET_KEY = secrets.token_urlsafe(32)
     
     # Database
-    SQLALCHEMY_DATABASE_URI = "mysql+pymysql://root:1234@localhost:3306/404found"
+    SQLALCHEMY_DATABASE_URI = "mysql+pymysql://user1:1234@192.168.1.79:3306/404found_test"
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     SQLALCHEMY_ECHO = True
     

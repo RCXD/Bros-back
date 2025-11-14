@@ -1,12 +1,12 @@
 """
 게시글 모듈 - 게시글 CRUD 및 상호작용
 """
-from flask import Blueprint, jsonify, request
+from flask import Blueprint, jsonify, request, send_from_directory
 from flask_jwt_extended import jwt_required, get_jwt_identity, get_current_user
 from sqlalchemy.exc import IntegrityError
 
 from apps.config.server import db
-from apps.post.models import Post, Category, PostLike
+from apps.post.models import Post, Category, PostLike, Image
 from apps.auth.models import User
 
 bp = Blueprint("post", __name__)
@@ -47,6 +47,7 @@ def get_posts():
     posts = []
     for post in pagination.items:
         like_count = PostLike.query.filter_by(post_id=post.post_id).count()
+        images = Image.query.filter_by(post_id=post.post_id).all()
         posts.append({
             "post_id": post.post_id,
             "user_id": post.user_id,
@@ -54,12 +55,19 @@ def get_posts():
             "category": post.category.category_name if post.category else None,
             "view_counts": post.view_counts,
             "like_count": like_count,
+            "images": [{
+                "image_id": img.image_id,
+                "uuid": img.uuid,
+                "directory": img.directory,
+                "original_image_name": img.original_image_name,
+                "ext": img.ext
+            } for img in images],
             "created_at": post.created_at.isoformat(),
             "updated_at": post.updated_at.isoformat()
         })
     
     return jsonify({
-        "posts": posts,
+        "items": posts,
         "total": pagination.total,
         "pages": pagination.pages,
         "current_page": page
@@ -285,19 +293,48 @@ def get_my_posts():
     posts = []
     for post in pagination.items:
         like_count = PostLike.query.filter_by(post_id=post.post_id).count()
+        images = Image.query.filter_by(post_id=post.post_id).all()
         posts.append({
             "post_id": post.post_id,
             "content": post.content,
             "category": post.category.category_name if post.category else None,
             "view_counts": post.view_counts,
             "like_count": like_count,
+            "images": [{
+                "image_id": img.image_id,
+                "uuid": img.uuid,
+                "directory": img.directory,
+                "original_image_name": img.original_image_name,
+                "ext": img.ext
+            } for img in images],
             "created_at": post.created_at.isoformat(),
             "updated_at": post.updated_at.isoformat()
         })
     
     return jsonify({
-        "posts": posts,
+        "items": posts,
         "total": pagination.total,
         "pages": pagination.pages,
         "current_page": page
     }), 200
+
+
+@bp.get("/image/<string:uuid>")
+def get_post_image(uuid):
+    """
+    이미지 파일 조회
+    Path params:
+        - uuid: 이미지 UUID
+    Returns:
+        - 이미지 파일
+    """
+    image = Image.query.filter_by(uuid=uuid).first()
+    if not image:
+        return jsonify({"error": "이미지를 찾을 수 없습니다"}), 404
+    
+    # directory 경로에서 디렉토리와 파일명 분리
+    directory_parts = image.directory.split("/")
+    directory = "/".join(directory_parts[:-1])
+    filename = directory_parts[-1]
+    
+    return send_from_directory(directory, filename)

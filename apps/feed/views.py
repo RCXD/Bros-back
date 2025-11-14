@@ -6,7 +6,7 @@ from flask_jwt_extended import jwt_required, get_jwt_identity
 from datetime import datetime, timedelta
 
 from apps.config.server import db
-from apps.post.models import Post, PostLike, Category
+from apps.post.models import Post, PostLike, Category, Image
 from apps.user.models import Follow
 from apps.auth.models import User
 
@@ -41,6 +41,7 @@ def get_feed():
     for post in pagination.items:
         author = User.query.get(post.user_id)
         like_count = PostLike.query.filter_by(post_id=post.post_id).count()
+        images = Image.query.filter_by(post_id=post.post_id).all()
         
         posts.append({
             "post_id": post.post_id,
@@ -54,11 +55,18 @@ def get_feed():
             "category": post.category.category_name if post.category else None,
             "view_counts": post.view_counts,
             "like_count": like_count,
+            "images": [{
+                "image_id": img.image_id,
+                "uuid": img.uuid,
+                "directory": img.directory,
+                "original_image_name": img.original_image_name,
+                "ext": img.ext
+            } for img in images],
             "created_at": post.created_at.isoformat()
         })
     
     return jsonify({
-        "posts": posts,
+        "items": posts,
         "total": pagination.total,
         "pages": pagination.pages,
         "current_page": page
@@ -94,6 +102,7 @@ def get_trending():
     for post in posts:
         author = User.query.get(post.user_id)
         like_count = PostLike.query.filter_by(post_id=post.post_id).count()
+        images = Image.query.filter_by(post_id=post.post_id).all()
         
         result.append({
             "post_id": post.post_id,
@@ -106,10 +115,17 @@ def get_trending():
             "category": post.category.category_name if post.category else None,
             "view_counts": post.view_counts,
             "like_count": like_count,
+            "images": [{
+                "image_id": img.image_id,
+                "uuid": img.uuid,
+                "directory": img.directory,
+                "original_image_name": img.original_image_name,
+                "ext": img.ext
+            } for img in images],
             "created_at": post.created_at.isoformat()
         })
     
-    return jsonify({"posts": result, "count": len(result)}), 200
+    return jsonify({"items": result, "count": len(result)}), 200
 
 
 @bp.get("/explore")
@@ -139,6 +155,7 @@ def get_explore():
     for post in pagination.items:
         author = User.query.get(post.user_id)
         like_count = PostLike.query.filter_by(post_id=post.post_id).count()
+        images = Image.query.filter_by(post_id=post.post_id).all()
         
         posts.append({
             "post_id": post.post_id,
@@ -152,11 +169,18 @@ def get_explore():
             "category": post.category.category_name if post.category else None,
             "view_counts": post.view_counts,
             "like_count": like_count,
+            "images": [{
+                "image_id": img.image_id,
+                "uuid": img.uuid,
+                "directory": img.directory,
+                "original_image_name": img.original_image_name,
+                "ext": img.ext
+            } for img in images],
             "created_at": post.created_at.isoformat()
         })
     
     return jsonify({
-        "posts": posts,
+        "items": posts,
         "total": pagination.total,
         "pages": pagination.pages,
         "current_page": page
@@ -183,6 +207,6 @@ def get_nearby():
     # TODO: 위치 모델 사용 가능 시 지리공간 쿼리 구현
     # 현재는 빈 결과 반환
     return jsonify({
-        "posts": [],
+        "items": [],
         "message": "지리공간 검색이 아직 구현되지 않았습니다"
     }), 200

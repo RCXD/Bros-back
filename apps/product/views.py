@@ -17,7 +17,7 @@ def get_products():
         - page: Page number
     """
     # TODO: Implement when Product model is available
-    return jsonify({"products": [], "message": "Product module not yet implemented"}), 200
+    return jsonify({"items": [], "message": "Product module not yet implemented"}), 200
 
 
 @bp.post("")
@@ -62,7 +62,7 @@ def delete_product(product_id):
 def get_product_reviews(product_id):
     """Get reviews for a product"""
     # TODO: Implement when Review model is available
-    return jsonify({"reviews": [], "message": "Product module not yet implemented"}), 200
+    return jsonify({"items": [], "message": "Product module not yet implemented"}), 200
 
 
 @bp.post("/<int:product_id>/reviews")

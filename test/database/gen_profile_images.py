@@ -234,8 +234,10 @@ def _generate_profile_images_via_api(app, dummy_profile_dir):
     if subfolders:
         print(f"    하위 폴더: {', '.join(subfolders)}")
     
-    # 사용자 토큰 획득
-    user_tokens = get_all_user_tokens(base_url, num_users=12)  # 10 users + 2 admins
+    # 사용자 토큰 획득 (NUM_USERS + NUM_ADMINS)
+    num_users = app.config.get('NUM_USERS', 10)
+    num_admins = app.config.get('NUM_ADMINS', 2)
+    user_tokens = get_all_user_tokens(base_url, num_users=num_users + num_admins)
     
     if not user_tokens:
         print("❌ 사용자 토큰을 획득할 수 없습니다. 서버가 실행 중인지 확인하세요.")

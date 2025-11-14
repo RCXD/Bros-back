@@ -60,7 +60,7 @@ def get_replies():
         })
     
     return jsonify({
-        "replies": replies,
+        "items": replies,
         "total": pagination.total,
         "pages": pagination.pages,
         "current_page": page
@@ -274,4 +274,4 @@ def get_nested_replies(reply_id):
             "updated_at": reply.updated_at.isoformat()
         })
     
-    return jsonify({"replies": result, "count": len(result)}), 200
+    return jsonify({"items": result, "count": len(result)}), 200

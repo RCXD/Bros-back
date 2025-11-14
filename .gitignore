@@ -290,3 +290,4 @@ secrets.json
 /app/config.py
 /app/static/post_images
 apps/gen/.env.example
+/test/uploads
