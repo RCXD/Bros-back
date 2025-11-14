@@ -392,12 +392,31 @@ def delete_user_by_admin(user_id):
         return jsonify({"message": "회원 삭제에 실패했습니다."}), 400
 
 
-# ----------------------- 프로필 이미지 조회 -----------------------
-@bp.route("/image/<string:uuid>", methods=["GET"])
-def get_images(uuid):
+# ----------------------- uuid로 프로필 이미지 조회 -----------------------
+@bp.route("/image/uuid/<string:uuid>", methods=["GET"])
+def get_image_by_uuid(uuid):
     if uuid == "default_profile":
         path = "static/default_profile.jpg"
         return send_from_directory("/".join(path.split("/")[:-1]), path.split("/")[-1])
     else:
         image = Image.query.filter_by(uuid=uuid).first_or_404(description="이미지 없음")
         return send_from_directory("/".join(image.directory.split("/")[:-1]), image.directory.split("/")[-1])
+
+@bp.route("/image/user/<int:user_id>", methods=["GET"])
+def get_user_profile_image(user_id):
+    image = Image.query.filter_by(user_id=user_id).first_or_404(description="이미지 없음")
+
+    # DB: static/profile_images/2025-11-12/uuid.jpg
+    relative_path = image.directory
+
+    # 절대 경로 생성
+    absolute_path = os.path.join(current_app.root_path, relative_path)
+
+    folder = os.path.dirname(absolute_path)
+    filename = os.path.basename(absolute_path)
+
+    # 파일 존재 여부 체크
+    if not os.path.exists(absolute_path):
+        return {"message": f"파일 없음: {absolute_path}"}, 404
+
+    return send_from_directory(folder, filename)
