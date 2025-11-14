@@ -28,7 +28,7 @@ except ImportError:
 def get_config_paths(app):
     """앱 설정에서 경로 가져오기"""
     return {
-        'dummy_image_dir': Path(app.config.get('DUMMY_POST_IMG_DIR', r"D:\share\dummy data\images")),
+        'dummy_image_dir': Path(app.config.get('DUMMY_POST_IMG_DIR', r"\\192.168.1.89\share\dummy data\images")),
         'image_storage_dir': Path(app.config.get('POST_IMG_UPLOAD_FOLDER', "test/uploads/post_images")),
     }
 
