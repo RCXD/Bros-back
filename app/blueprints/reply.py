@@ -103,6 +103,7 @@ def get_root_replies(post_id):
         .paginate(page=page, per_page=PER_PAGE, error_out=False)
     )
 
+    #연재님 이게 모야ㅏㅏㅏㅏㅏㅏㅏㅏㅏㅏㅏㅏㅏㅏㅏㅏㅏㅏㅏㅏㅏㅏㅏㅏㅏㅏㅏㅏㅏㅏㅏㅏㅏㅏㅏㅏㅏㅏㅏㅏㅏㅏㅏㅏㅏㅏㅏㅏㅏㅏㅏㅏㅏ
     root_replies = [
         {
             "reply_id": r.reply_id,
@@ -132,6 +133,7 @@ def get_root_replies(post_id):
         ),
         200,
     )
+ #ㄴ연재님 이게 모야ㅏㅏㅏㅏㅏㅏㅏㅏㅏㅏㅏㅏㅏㅏㅏㅏㅏㅏㅏㅏㅏㅏㅏㅏㅏㅏㅏㅏㅏㅏㅏㅏㅏㅏㅏㅏㅏㅏㅏㅏㅏㅏㅏㅏㅏㅏㅏㅏㅏㅏㅏㅏㅏ
 
 
 @bp.route("/children/<int:parent_id>", methods=["GET"])
