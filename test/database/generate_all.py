@@ -12,7 +12,7 @@ from app.models.category import Category
 
 @pytest.mark.no_cleanup
 def test_generate_all_data(fixture_app):
-    """모든 테스트 데이터 생성: 사용자, 게시글, 댓글"""
+    """모든 테스트 데이터 생성: 사용자, 게시글, 댓글, 이미지"""
     import sys
     import os
     
@@ -24,22 +24,41 @@ def test_generate_all_data(fixture_app):
     from gen_user import test_generate_users
     from gen_post import test_generate_posts
     from gen_reply import test_generate_replies
+    from gen_profile_images import test_generate_profile_images
+    from gen_images import test_generate_images
     
     with fixture_app.app_context():
         print("\n" + "="*60)
         print("테스트 데이터 생성 중")
         print("="*60)
         
+        # 기존 데이터 정리 (외래 키 제약 조건 처리)
+        print("\n[0/5] 기존 데이터 정리 중...")
+        db.session.execute(db.text("SET FOREIGN_KEY_CHECKS = 0"))
+        for table in reversed(db.metadata.sorted_tables):
+            db.session.execute(table.delete())
+        db.session.execute(db.text("SET FOREIGN_KEY_CHECKS = 1"))
+        db.session.commit()
+        print("✓ 기존 데이터 정리 완료")
+        
         # 사용자 생성
-        print("\n[1/3] 사용자 생성 중...")
+        print("\n[1/5] 사용자 생성 중...")
         test_generate_users(fixture_app)
         
+        # 프로필 이미지 할당
+        print("\n[2/5] 프로필 이미지 할당 중...")
+        test_generate_profile_images(fixture_app)
+        
         # 게시글 생성
-        print("\n[2/3] 게시글 생성 중...")
+        print("\n[3/5] 게시글 생성 중...")
         test_generate_posts(fixture_app)
         
+        # 게시글 이미지 할당
+        print("\n[4/5] 게시글 이미지 할당 중...")
+        test_generate_images(fixture_app)
+        
         # 댓글 생성
-        print("\n[3/3] 댓글 생성 중...")
+        print("\n[5/5] 댓글 생성 중...")
         test_generate_replies(fixture_app)
         
         # 요약
