@@ -2,8 +2,10 @@ import requests
 from flask import current_app, request, jsonify, redirect, Blueprint
 from apps.config.server import db
 from .models import Order
+from ..auth.models import User
 
-bp=Blueprint("order",__name__)
+bp = Blueprint("order", __name__)
+
 
 def kakao_headers():
     return {
@@ -19,13 +21,14 @@ def pay_ready():
     body: { orderId, userId, itemName, quantity, amount }
     """
 
-    data = request.json
+    data = request.get_json() or {}
     order_id = data["orderId"]
-    user_id = data["userId"]
+    user_name = data["username"]
     item_name = data["itemName"]
     quantity = int(data.get("quantity", 1))
     total_amount = int(data["amount"])
 
+    user_id = User.query.filter_by(username=user_name)
     # DB에 주문 정보 저장 (상태 READY)
     order = Order(
         order_id=order_id,

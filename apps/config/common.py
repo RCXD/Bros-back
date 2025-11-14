@@ -4,6 +4,7 @@ Common configuration shared across all modules
 from pathlib import Path
 import secrets
 from datetime import timedelta
+import os
 
 # Base directory
 basedir = Path(__file__).parent.parent.parent
@@ -44,6 +45,21 @@ class Config:
     STATIC_FOLDER = "static"
     STATIC_URL_PATH = "/static"
 
+    CID = "TC0ONETIME"
+    # 관리자 키 (환경변수 권장)
+    KAKAO_ADMIN_KEY = os.getenv("KAKAO_ADMIN_KEY")
+    KAKAO_APPROVAL_URL = os.getenv(
+        "KAKAO_APPROVAL_URL",
+        "http://localhost:5000/payment/approve"    # 카카오에서 다시 돌아오는 URL
+    )
+    KAKAO_CANCEL_URL = os.getenv(
+        "KAKAO_CANCEL_URL",
+        "http://localhost:3000/payment/cancel"     # 프론트 전용 취소 페이지
+    )
+    KAKAO_FAIL_URL = os.getenv(
+        "KAKAO_FAIL_URL",
+        "http://localhost:3000/payment/fail"       # 프론트 전용 실패 페이지
+    )
 
 class DevelopmentConfig(Config):
     """Development configuration"""
