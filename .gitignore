@@ -284,5 +284,6 @@ secrets.json
 
 # enviroments
 .env
-config.py
+/app/config.py
 /app/static/post_images
+apps/gen/.env.example
