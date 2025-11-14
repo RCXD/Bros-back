@@ -10,7 +10,7 @@ class ReportType(enum.Enum):
 
 
 class Report(db.Model):
-    __tablename__ = "report"
+    __tablename__ = "reports"
 
     report_id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     user_id = db.Column(db.Integer, db.ForeignKey("users.user_id"), nullable=False)

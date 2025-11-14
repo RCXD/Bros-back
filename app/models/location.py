@@ -5,10 +5,11 @@ class Location(db.Model):
     __tablename__ = "locations"
 
     location_id = db.Column(db.Integer, primary_key=True)
-    post_id = db.Column(db.Integer, db.ForeignKey("posts.post_id"), nullable=False, unique=True)
+    post_id = db.Column(db.Integer, db.ForeignKey("posts.post_id"), nullable=False)
     latitude = db.Column(db.Float, nullable=False)
     longitude = db.Column(db.Float, nullable=False)
-    location_name = db.Column(db.String(100), nullable=True)  # 위치 이름 (선택)
+    order_index = db.Column(db.Integer, nullable=False, default=0)  # 점 순서
+    location_name = db.Column(db.String(100), nullable=True)  # 선택
     recommend_point = db.Column(db.Integer, default=0)
     risk_point = db.Column(db.Integer, default=0)
     created_at = db.Column(db.DateTime, default=datetime.now)

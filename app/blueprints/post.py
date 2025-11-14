@@ -9,8 +9,6 @@ from ..utils.image_storage import save_to_disk
 from ..utils.image_utils import delete_image, IMAGE_EXTENSIONS
 from ..utils.image_compressor import compress_image
 from ..utils.post_query import apply_order, paginate_posts, serialize_post
-import os
-from pathlib import Path
 
 bp = Blueprint("post", __name__)
 
@@ -19,57 +17,81 @@ bp = Blueprint("post", __name__)
 @bp.route("/write", methods=["POST"])
 @jwt_required()
 def write_post():
+    import json
+
     user_id = get_jwt_identity()
     content = request.form.get("content")
     category_id = request.form.get("category_id")
 
     latitude = request.form.get("latitude", type=float)
     longitude = request.form.get("longitude", type=float)
-    location_name = request.form.get("location_name")  # 선택
+    location_name = request.form.get("location_name")
     recommend_point = request.form.get("recommend_point", type=int, default=0)
     risk_point = request.form.get("risk_point", type=int, default=0)
 
+    points_raw = request.form.get("points")
+    points = []
+    if points_raw:
+        try:
+            points = json.loads(points_raw)
+        except json.JSONDecodeError:
+            return jsonify({"message": "points 형식이 올바르지 않습니다."}), 400
+
     if not content:
         return jsonify({"message": "게시글 내용은 필수입니다."}), 400
-
     if len(content) > 2000:
         return jsonify({"error": "게시글 내용은 2000자 이하로 입력해야 합니다."}), 400
-
-    # 1) 게시글 생성 먼저
-    post = Post(user_id=user_id, category_id=category_id, content=content)
-    db.session.add(post)
-    db.session.flush()  # post_id 확보
-
-    # 2) 위치가 있으면 Location 생성, post_id 포함
-    if latitude is not None and longitude is not None:
-        location = Location(
-            post_id=post.post_id,  # FK 연결
-            latitude=latitude,
-            longitude=longitude,
-            location_name=location_name,
-            recommend_point=recommend_point,
-            risk_point=risk_point,
-        )
-        db.session.add(location)
 
     files = request.files.getlist("images")
     uploaded_images = []
 
-    for file in files:
-        if not hasattr(file, "filename") or not hasattr(file, "name"):
-            return jsonify({"message": "파일명이 없습니다."}), 400
-        if hasattr(file, "name") and not hasattr(file, "filename"):
-            setattr(file, "filename", file.name)
-        ext = file.filename.rsplit(".", 1)[-1].lower()
-        if ext not in IMAGE_EXTENSIONS:
-            db.session.rollback()
-            return (
-                jsonify({"message": f"지원하지 않는 파일 형식: {file.filename}"}),
-                400,
-            )
-        try:
-            image_compressed, ext, filename = compress_image(file, image_type="post")
+    try:
+        # 1) 게시글 생성
+        post = Post(user_id=user_id, category_id=category_id, content=content)
+        db.session.add(post)
+        db.session.flush()  # post_id 확보
 
+        # 2) 위치 생성
+        locations_to_add = []
+
+        if latitude is not None and longitude is not None:
+            locations_to_add.append(
+                {"lat": latitude, "lng": longitude, "name": location_name}
+            )
+
+        for idx, point in enumerate(points):
+            locations_to_add.append(
+                {
+                    "lat": point.get("lat"),
+                    "lng": point.get("lng"),
+                    "name": point.get("name"),
+                    "order_index": idx,
+                }
+            )
+
+        for idx, loc in enumerate(locations_to_add):
+            location = Location(
+                post_id=post.post_id,
+                latitude=loc["lat"],
+                longitude=loc["lng"],
+                location_name=loc.get("name") or location_name,
+                recommend_point=recommend_point,
+                risk_point=risk_point,
+                order_index=loc.get("order_index", idx),
+            )
+            db.session.add(location)
+
+        # 3) 이미지 처리
+        for file in files:
+            if not hasattr(file, "filename") or not hasattr(file, "name"):
+                raise ValueError("파일명이 없습니다.")
+            if hasattr(file, "name") and not hasattr(file, "filename"):
+                setattr(file, "filename", file.name)
+            ext = file.filename.rsplit(".", 1)[-1].lower()
+            if ext not in IMAGE_EXTENSIONS:
+                raise ValueError(f"지원하지 않는 파일 형식: {file.filename}")
+
+            image_compressed, ext, filename = compress_image(file, image_type="post")
             image = Image(
                 post_id=post.post_id,
                 user_id=user_id,
@@ -77,17 +99,10 @@ def write_post():
                 original_image_name=file.filename,
                 ext=ext,
             )
-
             db.session.add(image)
             db.session.flush()
-
-            # 파일명 = uuid + 확장자
             filename = f"{image.uuid}.{ext}"
-
-            # 저장
             rel_path = save_to_disk(image_compressed, ext, filename, category="post")
-
-            # DB 경로 갱신
             image.directory = rel_path
             db.session.flush()
 
@@ -98,11 +113,8 @@ def write_post():
                     "original_name": image.original_image_name,
                 }
             )
-        except Exception as e:
-            db.session.rollback()
-            return jsonify({"message": f"이미지 저장 실패: {e}"}), 400
 
-    try:
+        # 4) 커밋 - 트랜잭션 종료
         db.session.commit()
         return (
             jsonify(
@@ -114,8 +126,9 @@ def write_post():
             ),
             200,
         )
+
     except Exception as e:
-        db.session.rollback()
+        db.session.rollback()  # 중간에 실패하면 전체 rollback
         return jsonify({"message": f"게시글 저장 실패: {e}"}), 400
 
 
@@ -133,54 +146,46 @@ def edit_post(post_id):
     location = request.form.get("location")
     delete_uuids_raw = request.form.getlist("delete_images")
     delete_uuids = [u.strip().lower() for u in delete_uuids_raw if u.strip()]
-
-    if content:
-        post.content = content
-    if category_id:
-        post.category_id = category_id
-    if location:
-        post.location = location
-
-    deleted, not_found = [], []
-
-    if delete_uuids:
-        post_images = Image.query.filter_by(post_id=post_id).all()
-        uuid_map = {str(img.uuid).lower(): img for img in post_images}
-
-        for u in delete_uuids:
-            img = uuid_map.get(u)
-            if img:
-                # current_app.logger.info(
-                #     f"[DEBUG] 삭제 시도 uuid={u}, path={img.directory}"
-                # )
-                try:
-                    # result = delete_image(img, category="post")
-                    # current_app.logger.info(f"[DELETE RESULT] {result}")
-                    delete_image(img)
-                except Exception as e:
-                    # current_app.logger.warning(f"[WARN] 파일 삭제 실패: {e}")
-                    print(f"[WARN] 파일 삭제 실패: {e}")
-                db.session.delete(img)
-                deleted.append(u)
-            else:
-                not_found.append(u)
-
-        db.session.flush()
-
     new_files = request.files.getlist("new_images")
     uploaded_images = []
+    deleted, not_found = [], []
 
-    for file in new_files:
-        if not file or not hasattr(file, "filename"):
-            continue
-        ext = file.filename.rsplit(".", 1)[-1].lower()
-        if ext not in {"png", "jpg", "jpeg", "gif"}:
-            db.session.rollback()
-            return (
-                jsonify({"message": f"지원하지 않는 파일 형식: {file.filename}"}),
-                400,
-            )
-        try:
+    try:
+        # ---------- 게시글 수정 ----------
+        if content:
+            post.content = content
+        if category_id:
+            post.category_id = category_id
+        if location:
+            post.location = location
+
+        # ---------- 이미지 삭제 ----------
+        if delete_uuids:
+            post_images = Image.query.filter_by(post_id=post_id).all()
+            uuid_map = {str(img.uuid).lower(): img for img in post_images}
+
+            for u in delete_uuids:
+                img = uuid_map.get(u)
+                if img:
+                    try:
+                        delete_image(img)
+                    except Exception as e:
+                        print(f"[WARN] 파일 삭제 실패: {e}")
+                    db.session.delete(img)
+                    deleted.append(u)
+                else:
+                    not_found.append(u)
+
+        db.session.flush()  # 변경사항 반영
+
+        # ---------- 새 이미지 업로드 ----------
+        for file in new_files:
+            if not file or not hasattr(file, "filename"):
+                continue
+            ext = file.filename.rsplit(".", 1)[-1].lower()
+            if ext not in {"png", "jpg", "jpeg", "gif"}:
+                raise ValueError(f"지원하지 않는 파일 형식: {file.filename}")
+
             image_compressed, ext, filename = compress_image(file, image_type="post")
             image = Image(
                 post_id=post.post_id,
@@ -192,13 +197,8 @@ def edit_post(post_id):
             db.session.add(image)
             db.session.flush()  # image.uuid 생성됨
 
-            # 2) 파일명은 DB의 uuid와 정확히 동일하게 (uuid + ext)
             filename = f"{image.uuid}.{ext}"
-
-            # 3) 압축 및 저장
             rel_path = save_to_disk(image_compressed, ext, filename, category="post")
-
-            # 4) DB 레코드의 directory 갱신
             image.directory = rel_path
             db.session.flush()
 
@@ -209,11 +209,8 @@ def edit_post(post_id):
                     "original_name": image.original_image_name,
                 }
             )
-        except Exception as e:
-            db.session.rollback()
-            return jsonify({"message": f"이미지 저장 실패: {e}"}), 400
 
-    try:
+        # ---------- 커밋 ----------
         db.session.commit()
         return (
             jsonify(
@@ -227,8 +224,9 @@ def edit_post(post_id):
             ),
             200,
         )
+
     except Exception as e:
-        db.session.rollback()
+        db.session.rollback()  # 실패 시 전체 rollback
         return jsonify({"message": f"게시글 수정 실패: {e}"}), 400
 
 
@@ -242,14 +240,14 @@ def delete_post(post_id):
         return jsonify({"message": "권한 없음"}), 403
 
     try:
-        for img in post.images:
-            try:
-                delete_image(img)
-            except Exception as e:
-                print(f"[WARN] 이미지 파일 삭제 실패: {e}")
-            db.session.delete(img)
-        db.session.delete(post)
-        db.session.commit()
+        with db.session.begin():  # 트랜잭션 블록
+            for img in post.images:
+                try:
+                    delete_image(img)
+                except Exception as e:
+                    print(f"[WARN] 이미지 파일 삭제 실패: {e}")
+                db.session.delete(img)
+            db.session.delete(post)
         return jsonify({"message": "게시글 및 이미지 삭제 완료"}), 200
     except Exception as e:
         db.session.rollback()
@@ -283,9 +281,9 @@ def get_posts():
 def get_post(post_id):
     post = Post.query.filter(Post.post_id == post_id).first_or_404()
     try:
-        Post.add_view_counts(post)
-        db.session.commit()
-    except:
+        with db.session.begin():
+            Post.add_view_counts(post)
+    except Exception:
         db.session.rollback()
     return jsonify(serialize_post(post))
 

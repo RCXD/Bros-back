@@ -2,11 +2,11 @@ from .accident_report import AccidentReport
 from .category import Category
 from .follow import Follow
 from .friend import Friend
+from .my_path import MyPath
 from .history import History
 from .image import Image
 from .location import Location
 from .mention import Mention
-from .path import Path
 from .post_like import PostLike
 from .post import Post
 from .reply_image import ReplyImage
@@ -15,3 +15,4 @@ from .reply import Reply
 from .report import Report
 from .sight import Sight
 from .user import User
+from .notification import Notification
