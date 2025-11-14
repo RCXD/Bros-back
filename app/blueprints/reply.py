@@ -172,7 +172,7 @@ def get_child_replies(parent_id):
             {
                 "total": pagination.total,
                 "pages": pagination.pages,
-                "current_page": pagination.page,
+                "page": pagination.page,
                 "per_page": pagination.per_page,
                 "has_next": pagination.has_next,
                 "has_prev": pagination.has_prev,
