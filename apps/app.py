@@ -2,12 +2,19 @@
 Flask Application Factory
 Refactored architecture with modular blueprint structure
 """
+# 경로 설정: apps 디렉토리가 인식되도록 프로젝트 루트를 경로에 추가
+import sys
+from pathlib import Path
+
+# 프로젝트 루트 디렉토리를 sys.path에 추가
+project_root = Path(__file__).parent.parent
+sys.path.insert(0, str(project_root))
+
 from flask import Flask
 from apps.config.common import config
 from apps.config.server import db, migrate, cors, jwt
 from apps.common.jwt_handlers import register_jwt_handlers
 import os
-
 
 def create_app(config_name='default'):
     """
@@ -87,7 +94,7 @@ def register_blueprints(app):
     app.register_blueprint(detector_bp, url_prefix="/detector")
     
     # Security module
-    from apps.security.views import bp as security_bp
+    from apps.report.views import bp as security_bp
     app.register_blueprint(security_bp, url_prefix="/security")
     
     # Admin module
