@@ -2,9 +2,15 @@ import os
 import shutil
 import pytest
 import warnings
+from pathlib import Path
+from dotenv import load_dotenv
 from app import create_app
 from app.extensions import db
 from app.config import Config
+
+# .env 파일 로드
+env_path = Path(__file__).parent.parent / '.env'
+load_dotenv(dotenv_path=env_path)
 
 # SQLAlchemy 경고 억제
 warnings.filterwarnings('ignore', category=DeprecationWarning)
@@ -47,18 +53,27 @@ def fixture_app(request):
     else:
         keep_generated_data = False
     
+    # .env 파일에서 설정 읽기
+    api_backend_url = os.getenv('API_BACKEND_URL', 'http://localhost:5000')
+    db_host = os.getenv('DB_HOST', 'localhost')
+    db_port = os.getenv('DB_PORT', '3306')
+    db_name = os.getenv('DB_NAME', '404found_test')
+    db_user = os.getenv('DB_USER', 'root')
+    db_password = os.getenv('DB_PASSWORD', '1234')
+    
+    # 데이터베이스 URI 구성
+    db_uri = f"mysql+pymysql://{db_user}:{db_password}@{db_host}:{db_port}/{db_name}"
+    
     # --use-test-env 옵션에 따라 환경 설정
     if use_test_env:
         # 테스트 환경
         profile_folder = "test/uploads/profile_images"
         post_folder = "test/uploads/post_images"
-        db_uri = "mysql+pymysql://root:1234@localhost:3306/404found_test"
         print("\n🔧 테스트 환경 사용")
     else:
         # 프로덕션 모드
         profile_folder = "static/profile_images"
         post_folder = "static/post_images"
-        db_uri = "mysql+pymysql://user1:1234@192.168.1.79/404found_test2"
         print("\n🚀 프로덕션 환경 사용")
     
     # 앱 생성 전 설정 오버라이드 - 별도의 테스트 데이터베이스 사용
@@ -71,7 +86,9 @@ def fixture_app(request):
     Config.DUMMY_POST_IMG_DIR = r"D:\share\dummy data\images"
     Config.SQLALCHEMY_DATABASE_URI = db_uri
     Config.SQLALCHEMY_ECHO = False  # 테스트 중 출력 소음 감소
+    Config.API_BACKEND_URL = api_backend_url  # API 백엔드 URL 추가
     
+    print(f"  🌐 API 백엔드: {api_backend_url}")
     print(f"  📁 프로필 이미지: {profile_folder}")
     print(f"  📁 게시글 이미지: {post_folder}")
     print(f"  💾 데이터베이스: {db_uri.split('@')[1]}")
