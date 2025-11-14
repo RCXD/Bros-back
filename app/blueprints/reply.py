@@ -121,15 +121,13 @@ def get_root_replies(post_id):
     return (
         jsonify(
             {
-                "replies": root_replies,
-                "pagination": {
-                    "total": pagination.total,
-                    "pages": pagination.pages,
-                    "current_page": pagination.page,
-                    "per_page": pagination.per_page,
-                    "has_next": pagination.has_next,
-                    "has_prev": pagination.has_prev,
-                },
+                "total": pagination.total,
+                "pages": pagination.pages,
+                "page": pagination.page,
+                "per_page": pagination.per_page,
+                "has_next": pagination.has_next,
+                "has_prev": pagination.has_prev,
+                "items": root_replies,
             }
         ),
         200,
