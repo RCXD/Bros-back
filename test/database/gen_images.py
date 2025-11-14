@@ -272,8 +272,8 @@ def _generate_images_direct(app, dummy_image_dir, image_storage_dir):
 def _generate_images_via_api(app, dummy_image_dir):
     """프로덕션 환경: API를 통한 이미지 업로드"""
     
-    # API 서버 주소
-    base_url = "http://192.168.1.86:8000"
+    # API 서버 주소 (앱 설정에서 가져오기)
+    base_url = app.config.get('API_BACKEND_URL', 'http://192.168.1.86:8000')
     
     # 모든 Post와 Category 가져오기
     posts = Post.query.all()
@@ -304,8 +304,9 @@ def _generate_images_via_api(app, dummy_image_dir):
     for cat_name, post_list in posts_by_category.items():
         print(f"  {cat_name}: {len(post_list)}개 게시글")
     
-    # 사용자 토큰 획득
-    user_tokens = get_all_user_tokens(base_url, num_users=10)
+    # 사용자 토큰 획득 (앱 설정에서 사용자 수 가져오기)
+    num_users = app.config.get('NUM_USERS', 10)
+    user_tokens = get_all_user_tokens(base_url, num_users=num_users)
     
     if not user_tokens:
         print("❌ 사용자 토큰을 획득할 수 없습니다. 서버가 실행 중인지 확인하세요.")
