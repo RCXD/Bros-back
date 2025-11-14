@@ -16,7 +16,7 @@ def create_reply():
 
     if not content or not post_id:
         return jsonify({"message": "내용과 게시글 ID는 필수입니다."}), 400
-    
+
     if len(content) > 400:
         return jsonify({"message": "댓글은 400자 이하로 입력해야 합니다."}), 400
 
@@ -24,7 +24,7 @@ def create_reply():
     if parent_id_:
         parent = Reply.query.get(parent_id_)
         if parent.parent_id is not None:
-            return jsonify({"message": "대댓글에는 추가로 댓글을 달 수 없습니다."}), 400     
+            return jsonify({"message": "대댓글에는 추가로 댓글을 달 수 없습니다."}), 400
 
     # 현재 로그인 유저 ID 가져오기
     current_user_id = get_jwt_identity()
@@ -103,7 +103,7 @@ def get_root_replies(post_id):
         .paginate(page=page, per_page=PER_PAGE, error_out=False)
     )
 
-    #연재님 이게 모야ㅏㅏㅏㅏㅏㅏㅏㅏㅏㅏㅏㅏㅏㅏㅏㅏㅏㅏㅏㅏㅏㅏㅏㅏㅏㅏㅏㅏㅏㅏㅏㅏㅏㅏㅏㅏㅏㅏㅏㅏㅏㅏㅏㅏㅏㅏㅏㅏㅏㅏㅏㅏㅏ
+    # 연재님 이게 모야ㅏㅏㅏㅏㅏㅏㅏㅏㅏㅏㅏㅏㅏㅏㅏㅏㅏㅏㅏㅏㅏㅏㅏㅏㅏㅏㅏㅏㅏㅏㅏㅏㅏㅏㅏㅏㅏㅏㅏㅏㅏㅏㅏㅏㅏㅏㅏㅏㅏㅏㅏㅏㅏ
     root_replies = [
         {
             "reply_id": r.reply_id,
@@ -133,7 +133,9 @@ def get_root_replies(post_id):
         ),
         200,
     )
- #ㄴ연재님 이게 모야ㅏㅏㅏㅏㅏㅏㅏㅏㅏㅏㅏㅏㅏㅏㅏㅏㅏㅏㅏㅏㅏㅏㅏㅏㅏㅏㅏㅏㅏㅏㅏㅏㅏㅏㅏㅏㅏㅏㅏㅏㅏㅏㅏㅏㅏㅏㅏㅏㅏㅏㅏㅏㅏ
+
+
+# ㄴ연재님 이게 모야ㅏㅏㅏㅏㅏㅏㅏㅏㅏㅏㅏㅏㅏㅏㅏㅏㅏㅏㅏㅏㅏㅏㅏㅏㅏㅏㅏㅏㅏㅏㅏㅏㅏㅏㅏㅏㅏㅏㅏㅏㅏㅏㅏㅏㅏㅏㅏㅏㅏㅏㅏㅏㅏ
 
 
 @bp.route("/children/<int:parent_id>", methods=["GET"])
@@ -168,15 +170,13 @@ def get_child_replies(parent_id):
     return (
         jsonify(
             {
-                "children": children,
-                "pagination": {
-                    "total": pagination.total,
-                    "pages": pagination.pages,
-                    "current_page": pagination.page,
-                    "per_page": pagination.per_page,
-                    "has_next": pagination.has_next,
-                    "has_prev": pagination.has_prev,
-                },
+                "total": pagination.total,
+                "pages": pagination.pages,
+                "current_page": pagination.page,
+                "per_page": pagination.per_page,
+                "has_next": pagination.has_next,
+                "has_prev": pagination.has_prev,
+                "items": children,
             }
         ),
         200,
