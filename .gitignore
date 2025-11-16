@@ -291,3 +291,4 @@ secrets.json
 /app/static/post_images
 apps/gen/.env.example
 /test/uploads
+test/.gen.env

@@ -33,15 +33,7 @@ def save_profile_image(file, user_id=None):
     Returns:
         str: 저장된 이미지의 UUID
     """
-    # 로그 파일에 기록 (절대 경로 사용)
-    log_file = r"D:\M\GitHub\Bros-back\profile_image_debug.log"
-    
-    def write_log(msg):
-        with open(log_file, "a", encoding="utf-8") as f:
-            timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-            f.write(f"[{timestamp}] {msg}\n")
-    
-    write_log(f"save_profile_image 시작 - user_id={user_id}, filename={file.filename}")
+    print(f"[DEBUG] save_profile_image 시작 - user_id={user_id}, filename={file.filename}")
     
     original_name = file.filename
     ext = file.filename.rsplit(".", 1)[1].lower()
@@ -53,14 +45,14 @@ def save_profile_image(file, user_id=None):
     filename = f"{uuid_val}.{ext}"
     file_path = os.path.join(folder_path, filename)
     
-    write_log(f"파일 저장 중... path={file_path}")
+    print(f"[DEBUG] 파일 저장 중... path={file_path}")
     file.save(file_path)
-    write_log(f"파일 저장 완료")
+    print(f"[DEBUG] 파일 저장 완료")
     
     relative_path = f"static/profile_images/{today}/{filename}"
     
     if user_id:
-        write_log(f"Image 레코드 생성 중... uuid={uuid_val}, user_id={user_id}")
+        print(f"[DEBUG] Image 레코드 생성 중... uuid={uuid_val}, user_id={user_id}")
         new_image = Image(
             uuid=str(uuid_val),
             user_id=user_id,
@@ -71,9 +63,9 @@ def save_profile_image(file, user_id=None):
             ext=ext,
         )
         db.session.add(new_image)
-        write_log(f"Image 레코드 추가 완료 (db.session.add)")
+        print(f"[DEBUG] Image 레코드 추가 완료 (db.session.add)")
     
-    write_log(f"save_profile_image 완료 - 반환 UUID={str(uuid_val)}")
+    print(f"[DEBUG] save_profile_image 완료 - 반환 UUID={str(uuid_val)}")
     return str(uuid_val)
 
 
@@ -224,20 +216,10 @@ def update_profile():
         - phone
         - profile_img (multipart file)
     """
-    # 로그 파일 함수 (절대 경로 사용)
-    log_file = r"D:\M\GitHub\Bros-back\profile_image_debug.log"
-    
-    def write_log(msg):
-        with open(log_file, "a", encoding="utf-8") as f:
-            timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-            f.write(f"[{timestamp}] {msg}\n")
-    
     try:
         current_user = get_current_user()
         if not current_user:
             return jsonify({"error": "사용자를 찾을 수 없습니다"}), 404
-        
-        write_log(f"=== update_profile 시작 - user_id={current_user.user_id}, username={current_user.username} ===")
         
         # 제공된 필드 업데이트
         email = request.form.get("email")
@@ -278,57 +260,55 @@ def update_profile():
         default_img = "static/default_profile.jpg"
         current_img = current_user.profile_img
         
-        write_log(f"프로필 이미지 처리 시작 - current_img={current_img}")
-        write_log(f"request.files: {list(request.files.keys())}")
+        print(f"[DEBUG] 프로필 이미지 처리 시작 - current_img={current_img}")
+        print(f"[DEBUG] request.files: {list(request.files.keys())}")
         
         if "profile_img" in request.files:
             file = request.files["profile_img"]
-            write_log(f"profile_img 파일 발견 - filename={file.filename if file else 'None'}")
+            print(f"[DEBUG] profile_img 파일 발견 - filename={file.filename if file else 'None'}")
             
             if file and file.filename:
-                write_log(f"파일 업로드 처리 시작")
+                print(f"[DEBUG] 파일 업로드 처리 시작")
                 
                 # 기존 프로필 이미지 삭제 (기본 이미지가 아닌 경우)
                 if current_img and current_img != default_img:
-                    write_log(f"기존 이미지 삭제 시도 - current_img={current_img}")
+                    print(f"[DEBUG] 기존 이미지 삭제 시도 - current_img={current_img}")
                     old_image = Image.query.filter_by(user_id=current_user.user_id, post_id=None).first()
                     if old_image:
                         try:
                             old_path = os.path.join(current_app.root_path, old_image.directory)
                             if os.path.exists(old_path):
                                 os.remove(old_path)
-                                write_log(f"기존 파일 삭제 완료 - {old_path}")
+                                print(f"[DEBUG] 기존 파일 삭제 완료 - {old_path}")
                         except Exception as e:
-                            write_log(f"기존 파일 삭제 실패 - {e}")
+                            print(f"[DEBUG] 기존 파일 삭제 실패 - {e}")
                         db.session.delete(old_image)
-                        write_log(f"기존 Image 레코드 삭제 완료")
+                        print(f"[DEBUG] 기존 Image 레코드 삭제 완료")
                 
                 # 새 프로필 이미지 저장
-                write_log(f"save_profile_image() 호출 전")
+                print(f"[DEBUG] 새 프로필 이미지 저장 호출")
                 new_uuid = save_profile_image(file, user_id=current_user.user_id)
-                write_log(f"save_profile_image() 반환값 - new_uuid={new_uuid}")
+                print(f"[DEBUG] save_profile_image 반환값 - new_uuid={new_uuid}")
                 
                 current_user.profile_img = new_uuid
-                write_log(f"current_user.profile_img 업데이트 완료 - {new_uuid}")
+                print(f"[DEBUG] current_user.profile_img 업데이트 완료 - {new_uuid}")
         else:
-            write_log(f"profile_img 파일 없음")
+            print(f"[DEBUG] profile_img 파일 없음")
         
-        write_log(f"db.session.commit() 호출 전")
+        print(f"[DEBUG] db.session.commit() 호출 전")
         db.session.commit()
-        write_log(f"db.session.commit() 완료")
+        print(f"[DEBUG] db.session.commit() 완료")
         
         # commit 후 DB에서 다시 조회
         db.session.refresh(current_user)
-        write_log(f"refresh 후 current_user.profile_img = {current_user.profile_img}")
+        print(f"[DEBUG] refresh 후 current_user.profile_img = {current_user.profile_img}")
         
         # Image 레코드 확인
         image_check = Image.query.filter_by(user_id=current_user.user_id, post_id=None).first()
-        write_log(f"Image 레코드 확인: {image_check}")
+        print(f"[DEBUG] Image 레코드 확인: {image_check}")
         if image_check:
-            write_log(f"  - Image UUID: {image_check.uuid}")
-            write_log(f"  - Image Directory: {image_check.directory}")
-        
-        write_log(f"=== update_profile 완료 ===\n")
+            print(f"[DEBUG]   - UUID: {image_check.uuid}")
+            print(f"[DEBUG]   - Directory: {image_check.directory}")
         
         return jsonify({
             "message": "프로필이 성공적으로 업데이트되었습니다",
@@ -337,8 +317,6 @@ def update_profile():
         
     except Exception as e:
         db.session.rollback()
-        write_log(f"!!! Exception 발생: {str(e)} !!!")
-        write_log(f"=== update_profile 실패 ===\n")
         return jsonify({"error": f"프로필 업데이트 실패: {str(e)}"}), 400
 
 # =====================================================
