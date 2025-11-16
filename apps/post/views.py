@@ -424,7 +424,6 @@ def get_post_image(uuid):
     Note: /image/ 와 /images/ 모두 지원
     """
     image = Image.query.filter_by(uuid=uuid).first_or_404(description="이미지 없음")
-    print('!!!!!!!!!!!!!!', "/".join(image.directory.split("/")[:-1]), image.directory.split("/")[-1], sep='@@@@@')
     return send_from_directory(
         "/".join(image.directory.split("/")[:-1]), image.directory.split("/")[-1]
     )
