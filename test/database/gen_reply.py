@@ -6,43 +6,40 @@ from app.models.reply import Reply
 from datetime import datetime, timedelta
 import random
 
+try:
+    from logger import get_logger
+    from gen_reply_helper import get_sample_reply_contents
+except ImportError:
+    from test.database.logger import get_logger
+    from test.database.gen_reply_helper import get_sample_reply_contents
+
 
 @pytest.mark.no_cleanup
 def test_generate_replies(fixture_app):
     """더미 댓글 레코드를 데이터베이스에 생성"""
     n_replies_per_post = 3  # 게시글당 평균 댓글 수
     
+    log = get_logger()
+    
     with fixture_app.app_context():
+        log.info(f"\n[4/5] 댓글 생성")
+        
         # 기존 사용자와 게시글 가져오기
         users = User.query.filter_by(account_type=AccountType.USER).all()
         posts = Post.query.all()
         
         if not users:
-            print("\n⚠ 사용자를 찾을 수 없습니다. gen_user.py를 먼저 실행하세요!")
+            log.warning("  사용자를 찾을 수 없습니다. gen_user.py를 먼저 실행하세요!")
             pytest.skip("댓글을 생성할 사용자가 없습니다")
         
         if not posts:
-            print("\n⚠ 게시글을 찾을 수 없습니다. gen_post.py를 먼저 실행하세요!")
+            log.warning("  게시글을 찾을 수 없습니다. gen_post.py를 먼저 실행하세요!")
             pytest.skip("댓글을 생성할 게시글이 없습니다")
         
+        log.debug(f"  {len(users)}명 사용자, {len(posts)}개 게시글 발견")
+        
         # 샘플 댓글 내용
-        reply_contents = [
-            "좋은 정보 감사합니다!",
-            "저도 그렇게 생각해요.",
-            "도움이 많이 되었어요!",
-            "공감합니다.",
-            "좋은 글이네요!",
-            "유용한 정보예요.",
-            "저도 궁금했던 내용인데 감사합니다.",
-            "완전 동의합니다!",
-            "이거 진짜 좋은 것 같아요.",
-            "추천드립니다!",
-            "저도 같은 경험이 있어요.",
-            "정말 유익한 정보네요.",
-            "감사합니다! 참고할게요.",
-            "좋은 하루 보내세요!",
-            "함께해요!",
-        ]
+        reply_contents = get_sample_reply_contents()
         
         # 각 게시글에 대한 댓글 생성
         replies = []
@@ -87,10 +84,9 @@ def test_generate_replies(fixture_app):
         
         # 통계 가져오기
         total_replies = Reply.query.count()
-        main_replies = Reply.query.filter_by(parent_id=None).count()
-        nested_replies = Reply.query.filter(Reply.parent_id.isnot(None)).count()
+        main_replies_count = Reply.query.filter_by(parent_id=None).count()
+        nested_replies_count = Reply.query.filter(Reply.parent_id.isnot(None)).count()
         
-        print(f"\n✓ {total_replies}개 댓글 생성 완료")
-        print(f"  - 일반 댓글: {main_replies}")
-        print(f"  - 중첩 댓글: {nested_replies}")
-        print(f"  - 게시글당 평균: {total_replies / len(posts):.1f}")
+        log.success(f"  {total_replies}개 댓글 생성 완료")
+        log.debug(f"  일반: {main_replies_count}개, 중첩: {nested_replies_count}개")
+        log.debug(f"  게시글당 평균: {total_replies / len(posts):.1f}개")

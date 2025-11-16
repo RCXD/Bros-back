@@ -57,9 +57,63 @@ def get_user_token(base_url, username, password="1234", timeout=30, max_retries=
     return None
 
 
+def get_all_user_tokens_from_db(app, base_url, expected_users=None, expected_admins=None):
+    """
+    데이터베이스에서 실제 사용자 수를 확인하고 토큰을 획득
+    
+    Args:
+        app: Flask 앱 인스턴스 (DB 조회용)
+        base_url: API 서버 주소
+        expected_users: 예상되는 일반 사용자 수 (경고용, 선택)
+        expected_admins: 예상되는 관리자 수 (경고용, 선택)
+        
+    Returns:
+        dict: {user_email: token} 매핑
+    """
+    from app.models.user import User, AccountType
+    
+    with app.app_context():
+        # 실제 사용자 수 확인
+        total_users = User.query.count()
+        num_regular_users = User.query.filter_by(account_type=AccountType.USER).count()
+        num_admins = User.query.filter_by(account_type=AccountType.ADMIN).count()
+        
+        print(f"\n📊 데이터베이스 사용자 현황:")
+        print(f"  일반 사용자: {num_regular_users}명")
+        print(f"  관리자: {num_admins}명")
+        print(f"  총: {total_users}명")
+        
+        # 예상 수와 비교하여 경고
+        if expected_users is not None and num_regular_users != expected_users:
+            print(f"  ⚠️  경고: 예상 일반 사용자({expected_users}명)와 실제({num_regular_users}명)가 다릅니다!")
+        if expected_admins is not None and num_admins != expected_admins:
+            print(f"  ⚠️  경고: 예상 관리자({expected_admins}명)와 실제({num_admins}명)가 다릅니다!")
+        
+        # 모든 사용자 가져오기
+        all_users = User.query.all()
+    
+    tokens = {}
+    
+    print(f"\n🔐 {total_users}명의 사용자 토큰 획득 중...")
+    
+    for user in all_users:
+        token = get_user_token(base_url, user.username)
+        
+        if token:
+            tokens[user.email] = token
+            user_type = "👑" if user.account_type == AccountType.ADMIN else "👤"
+            print(f"  ✓ {user_type} {user.username} ({user.email})")
+        else:
+            print(f"  ✗ {user.username} (실패)")
+    
+    print(f"  총 {len(tokens)}/{total_users}개 토큰 획득\n")
+    
+    return tokens
+
+
 def get_all_user_tokens(base_url, num_users=10):
     """
-    여러 사용자의 토큰을 미리 획득
+    여러 사용자의 토큰을 미리 획득 (레거시 함수, 하위 호환성 유지)
     
     Args:
         base_url: API 서버 주소
@@ -70,7 +124,7 @@ def get_all_user_tokens(base_url, num_users=10):
     """
     tokens = {}
     
-    print(f"\n🔐 사용자 토큰 획득 중...")
+    print(f"\n🔐 {num_users}명의 사용자 토큰 획득 중...")
     
     for i in range(1, num_users + 1):
         username = f"user{i}"

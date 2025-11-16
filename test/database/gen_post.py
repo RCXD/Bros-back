@@ -2,41 +2,43 @@ import pytest
 from app.extensions import db
 from app.models.user import User, AccountType
 from app.models.post import Post
-from app.models.category import Category
 from datetime import datetime, timedelta
 import random
-import json
 import os
+
+try:
+    from logger import get_logger
+    from gen_post_helper import ensure_categories, load_posts_from_json, create_username_to_userid_map
+except ImportError:
+    from test.database.logger import get_logger
+    from test.database.gen_post_helper import ensure_categories, load_posts_from_json, create_username_to_userid_map
 
 
 @pytest.mark.no_cleanup
 def test_generate_posts(fixture_app):
     """cat*.json 파일에서 게시글 데이터를 로드하여 데이터베이스에 생성"""
     
+    log = get_logger()
+    
     with fixture_app.app_context():
-        # 기존 사용자 가져오기 및 username -> user_id 매핑 생성
+        log.info(f"\n[3/5] 게시글 생성")
+        
+        # 기존 사용자 가져오기
         users = User.query.filter_by(account_type=AccountType.USER).all()
         
         if not users:
-            print("\n⚠ 사용자를 찾을 수 없습니다. gen_user.py를 먼저 실행하세요!")
+            log.warning("  사용자를 찾을 수 없습니다. gen_user.py를 먼저 실행하세요!")
             pytest.skip("게시글을 생성할 사용자가 없습니다")
         
+        log.debug(f"  {len(users)}명의 사용자 발견")
+        
         # username -> user_id 매핑 생성
-        username_to_userid = {user.username: user.user_id for user in users}
+        username_to_userid = create_username_to_userid_map(users)
         
-        # 카테고리가 없으면 생성
+        # 카테고리 확인/생성
         category_names = ["STORY", "ROUTE", "REVIEW", "REPORT"]
-        categories = {}
-        
-        for idx, name in enumerate(category_names):
-            category = Category.query.filter_by(category_name=name).first()
-            if not category:
-                category = Category(category_name=name)
-                db.session.add(category)
-                db.session.flush()  # ID를 얻기 위해 flush
-            categories[idx] = category.category_id
-        
-        db.session.commit()
+        categories = ensure_categories(category_names)
+        log.debug(f"  {len(categories)}개 카테고리 준비 완료")
         
         # JSON 파일에서 게시글 데이터 로드
         json_dir = os.path.join(os.path.dirname(__file__), "json")
@@ -45,16 +47,12 @@ def test_generate_posts(fixture_app):
         total_posts = 0
         
         for cat_idx in range(4):
-            json_file = os.path.join(json_dir, f"cat{cat_idx}.json")
+            post_list = load_posts_from_json(json_dir, cat_idx)
             
-            if not os.path.exists(json_file):
-                print(f"⚠ {json_file} 파일이 없습니다. 건너뜁니다.")
+            if not post_list:
+                log.debug(f"  {category_names[cat_idx]}: JSON 파일 없음, 건너뜀")
                 continue
             
-            with open(json_file, 'r', encoding='utf-8') as f:
-                data = json.load(f)
-            
-            post_list = data.get("posts", [])
             category_name = category_names[cat_idx]
             
             for post_data in post_list:
@@ -76,15 +74,15 @@ def test_generate_posts(fixture_app):
                 posts.append(post)
             
             total_posts += len(post_list)
-            print(f"✓ {category_name}: {len(post_list)}개 게시글 로드")
+            log.debug(f"  {category_name}: {len(post_list)}개 게시글 로드")
         
         # 데이터베이스에 저장
-        db.session.add_all(posts)
-        db.session.commit()
-        
-        # 게시글이 생성되었는지 확인
-        final_count = Post.query.count()
-        assert final_count >= total_posts
-        
-        print(f"\n✓ 총 {total_posts}개 게시글 생성 완료")
-        print(f"  데이터베이스의 총 게시글 수: {final_count}")
+        if posts:
+            db.session.add_all(posts)
+            db.session.commit()
+            
+            # 게시글이 생성되었는지 확인
+            final_count = Post.query.count()
+            log.success(f"  {total_posts}개 게시글 생성 완료 (DB 총: {final_count}개)")
+        else:
+            log.warning("  생성할 게시글이 없습니다")

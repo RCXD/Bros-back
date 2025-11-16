@@ -15,10 +15,12 @@ if str(current_dir) not in sys.path:
 
 try:
     from image_api_helper import ImageAPIUploader
-    from auth_helper import get_all_user_tokens
+    from gen_user_helper import get_all_user_tokens_from_db
+    from logger import get_logger
 except ImportError:
     from test.database.image_api_helper import ImageAPIUploader
-    from test.database.auth_helper import get_all_user_tokens
+    from test.database.gen_user_helper import get_all_user_tokens_from_db
+    from test.database.logger import get_logger
 
 
 def get_config_paths(app):
@@ -97,7 +99,11 @@ def get_profile_images(dummy_profile_dir):
 def test_generate_profile_images(fixture_app):
     """사용자에게 프로필 이미지 할당 (512x512 정사각형, PNG)"""
     
+    log = get_logger()
+    
     with fixture_app.app_context():
+        log.info("\n[2/5] 프로필 이미지 할당")
+        
         # 설정에서 경로 가져오기
         paths = get_config_paths(fixture_app)
         dummy_profile_dir = paths['dummy_profile_dir']
@@ -108,51 +114,53 @@ def test_generate_profile_images(fixture_app):
         
         if use_test_env:
             # 테스트 환경: 직접 파일 저장
-            print("\n🔧 테스트 환경: 직접 파일 저장 모드")
+            log.debug("  테스트 환경: 직접 파일 저장 모드")
             _generate_profile_images_direct(fixture_app, dummy_profile_dir, profile_storage_dir)
         else:
             # 프로덕션 환경: API를 통한 업로드
-            print("\n🚀 프로덕션 환경: API 업로드 모드")
+            log.debug("  프로덕션 환경: API 업로드 모드")
             _generate_profile_images_via_api(fixture_app, dummy_profile_dir)
 
 
 def _generate_profile_images_direct(app, dummy_profile_dir, profile_storage_dir):
     """테스트 환경: 직접 파일 저장 (기존 로직)"""
+    log = get_logger()
+    
     # 프로필 이미지 저장 디렉토리 생성
     profile_storage_dir.mkdir(parents=True, exist_ok=True)
     
     # 기존 프로필 이미지 레코드 삭제 (post_id가 NULL인 이미지)
-    print("\n🗑️  기존 프로필 이미지 레코드 정리 중...")
+    log.debug("  기존 프로필 이미지 레코드 정리 중...")
     Image.query.filter(Image.post_id == None).delete()
     db.session.commit()
-    print("  ✓ 기존 프로필 이미지 레코드 삭제 완료")
+    log.debug("  기존 프로필 이미지 레코드 삭제 완료")
     
     # 모든 사용자 가져오기
     users = User.query.all()
     
     if not users:
-        print("\n⚠ 사용자를 찾을 수 없습니다. gen_user.py를 먼저 실행하세요!")
+        log.warning("  사용자를 찾을 수 없습니다. gen_user.py를 먼저 실행하세요!")
         pytest.skip("프로필 이미지를 할당할 사용자가 없습니다")
     
     # 프로필 이미지 파일 목록
-    print("\n📁 프로필 이미지 폴더 스캔 중...")
+    log.debug("  프로필 이미지 폴더 스캔 중...")
     profile_images = get_profile_images(dummy_profile_dir)
     
     if not profile_images:
-        print(f"⚠ {dummy_profile_dir}에서 이미지 파일을 찾을 수 없습니다.")
+        log.warning(f"  {dummy_profile_dir}에서 이미지 파일을 찾을 수 없습니다.")
         pytest.skip("프로필 이미지 파일이 없습니다")
     
-    print(f"  ✓ {len(profile_images)}개의 프로필 이미지 발견")
+    log.debug(f"  {len(profile_images)}개의 프로필 이미지 발견")
     
     # 하위 폴더 정보 출력
     subfolders = [d.name for d in dummy_profile_dir.iterdir() if d.is_dir()]
     if subfolders:
-        print(f"    하위 폴더: {', '.join(subfolders)}")
+        log.debug(f"  하위 폴더: {', '.join(subfolders)}")
     
     total_success = 0
     total_failed = 0
     
-    print(f"\n🖼️ 프로필 이미지 할당 시작...")
+    log.debug("  프로필 이미지 할당 시작...")
     
     # 이미지를 섞어서 랜덤하게 할당 (중복 가능)
     random.shuffle(profile_images)
@@ -199,61 +207,64 @@ def _generate_profile_images_direct(app, dummy_profile_dir, profile_storage_dir)
     
     db.session.commit()
     
-    print(f"\n{'='*60}")
-    print(f"✅ 프로필 이미지 할당 완료 (직접 저장)")
-    print(f"{'='*60}")
-    print(f"  성공: {total_success}개")
+    log.success(f"  성공: {total_success}개")
     if total_failed > 0:
-        print(f"  실패: {total_failed}개")
-    print(f"  총 사용자: {len(User.query.all())}명")
-    print(f"  이미지 레코드: {Image.query.filter(Image.post_id == None).count()}개")
-    print(f"{'='*60}\n")
+        log.warning(f"  실패: {total_failed}개")
+    log.debug(f"  이미지 레코드: {Image.query.filter(Image.post_id == None).count()}개")
 
 
 def _generate_profile_images_via_api(app, dummy_profile_dir):
     """프로덕션 환경: API를 통한 프로필 이미지 업로드"""
+    log = get_logger()
     
-    # API 서버 주소
-    base_url = "http://192.168.1.86:8000"
+    # API 서버 주소 (앱 설정에서 가져오기)
+    base_url = app.config.get('API_BACKEND_URL', 'http://192.168.1.86:8002')
     
     # 모든 사용자 가져오기
     users = User.query.all()
     
     if not users:
-        print("\n⚠ 사용자를 찾을 수 없습니다. gen_user.py를 먼저 실행하세요!")
+        log.warning("  사용자를 찾을 수 없습니다. gen_user.py를 먼저 실행하세요!")
         pytest.skip("프로필 이미지를 업로드할 사용자가 없습니다")
     
     # 프로필 이미지 파일 목록
-    print("\n📁 프로필 이미지 폴더 스캔 중...")
+    log.debug("  프로필 이미지 폴더 스캔 중...")
     profile_images = get_profile_images(dummy_profile_dir)
     
     if not profile_images:
-        print(f"⚠ {dummy_profile_dir}에서 이미지 파일을 찾을 수 없습니다.")
+        log.warning(f"  {dummy_profile_dir}에서 이미지 파일을 찾을 수 없습니다.")
         pytest.skip("프로필 이미지 파일이 없습니다")
     
-    print(f"  ✓ {len(profile_images)}개의 프로필 이미지 발견")
+    log.debug(f"  {len(profile_images)}개의 프로필 이미지 발견")
     
     # 하위 폴더 정보 출력
     subfolders = [d.name for d in dummy_profile_dir.iterdir() if d.is_dir()]
     if subfolders:
-        print(f"    하위 폴더: {', '.join(subfolders)}")
+        log.debug(f"  하위 폴더: {', '.join(subfolders)}")
     
-    # 사용자 토큰 획득 (NUM_USERS + NUM_ADMINS)
+    # 사용자 토큰 획득 (DB에서 실제 사용자 조회)
+    log.debug("  사용자 토큰 획득 중...")
     num_users = app.config.get('NUM_USERS', 10)
     num_admins = app.config.get('NUM_ADMINS', 2)
-    user_tokens = get_all_user_tokens(base_url, num_users=num_users + num_admins)
+    user_tokens = get_all_user_tokens_from_db(
+        app, 
+        base_url, 
+        expected_users=num_users, 
+        expected_admins=num_admins
+    )
     
     if not user_tokens:
-        print("❌ 사용자 토큰을 획득할 수 없습니다. 서버가 실행 중인지 확인하세요.")
+        log.error("  사용자 토큰을 획득할 수 없습니다. 서버가 실행 중인지 확인하세요.")
         pytest.skip("API 인증 실패")
     
-    # API Uploader 초기화
-    uploader = ImageAPIUploader(base_url)
+    # API Uploader 초기화 (API 버전 전달)
+    api_version = app.config.get('API_VERSION', 'v1')
+    uploader = ImageAPIUploader(base_url, api_version=api_version)
     
     total_success = 0
     total_failed = 0
     
-    print(f"\n🖼️ API를 통한 프로필 이미지 업로드 시작...")
+    log.debug("  API를 통한 프로필 이미지 업로드 시작...")
     
     # 이미지를 섞어서 랜덤하게 할당
     random.shuffle(profile_images)
@@ -265,7 +276,7 @@ def _generate_profile_images_via_api(app, dummy_profile_dir):
         # 사용자 토큰 확인
         user_token = user_tokens.get(user.email)
         if not user_token:
-            print(f"  ✗ {user.email}: 토큰 없음")
+            log.debug(f"  ✗ {user.email}: 토큰 없음")
             total_failed += 1
             continue
         
@@ -279,29 +290,32 @@ def _generate_profile_images_via_api(app, dummy_profile_dir):
             image_path=str(source_image)
         )
         
-        if api_result and api_result.get('message') == '회원 정보가 수정되었습니다.':
-            total_success += 1
-            print(f"  ✓ {user.nickname}")
+        if api_result:
+            response_message = api_result.get('message', '')
+            
+            # V1 API 응답: "프로필이 성공적으로 업데이트되었습니다"
+            # Legacy API 응답: "회원 정보가 수정되었습니다."
+            if '업데이트' in response_message or '수정' in response_message:
+                total_success += 1
+                log.debug(f"  ✓ {user.nickname}")
+            else:
+                total_failed += 1
+                log.debug(f"  ✗ {user.nickname}: 예상치 못한 응답 - {response_message}")
         else:
             total_failed += 1
-            print(f"  ✗ {user.nickname}: API 업로드 실패")
+            log.debug(f"  ✗ {user.nickname}: API 응답 없음")
     
     # 검증: 업로드된 이미지 확인
-    print(f"\n🔍 업로드 결과 검증 중...")
+    log.debug("  업로드 결과 검증 중...")
     db.session.expire_all()  # 캐시 무효화
     users_with_images = User.query.filter(User.profile_img != None).count()
     profile_images_in_db = Image.query.filter(Image.post_id == None).count()
     
-    print(f"\n{'='*60}")
-    print(f"✅ 프로필 이미지 업로드 완료 (API)")
-    print(f"{'='*60}")
-    print(f"  성공: {total_success}개")
+    log.success(f"  성공: {total_success}개")
     if total_failed > 0:
-        print(f"  실패: {total_failed}개")
-    print(f"  총 사용자: {len(users)}명")
-    print(f"  이미지 있는 사용자: {users_with_images}명")
-    print(f"  이미지 레코드: {profile_images_in_db}개")
-    print(f"{'='*60}\n")
+        log.warning(f"  실패: {total_failed}개")
+    log.debug(f"  이미지 있는 사용자: {users_with_images}명")
+    log.debug(f"  이미지 레코드: {profile_images_in_db}개")
 
 
 if __name__ == "__main__":

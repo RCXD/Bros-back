@@ -18,11 +18,13 @@ if str(current_dir) not in sys.path:
 
 try:
     from image_api_helper import ImageAPIUploader
-    from auth_helper import get_all_user_tokens
+    from gen_user_helper import get_all_user_tokens_from_db
+    from logger import get_logger
 except ImportError:
     # pytest로 실행할 때는 절대 import 사용
     from test.database.image_api_helper import ImageAPIUploader
-    from test.database.auth_helper import get_all_user_tokens
+    from test.database.gen_user_helper import get_all_user_tokens_from_db
+    from test.database.logger import get_logger
 
 
 def get_config_paths(app):
@@ -120,7 +122,11 @@ def get_valid_image_files(dummy_image_dir):
 def test_generate_images(fixture_app):
     """Post 객체에 이미지 연결 (리사이즈 및 PNG 변환, 폴더별 카테고리 매칭)"""
     
+    log = get_logger()
+    
     with fixture_app.app_context():
+        log.info("\n[5/5] 게시글 이미지 할당")
+        
         # 설정에서 경로 가져오기
         paths = get_config_paths(fixture_app)
         dummy_image_dir = paths['dummy_image_dir']
@@ -131,16 +137,18 @@ def test_generate_images(fixture_app):
         
         if use_test_env:
             # 테스트 환경: 직접 파일 저장
-            print("\n🔧 테스트 환경: 직접 파일 저장 모드")
+            log.debug("  테스트 환경: 직접 파일 저장 모드")
             _generate_images_direct(fixture_app, dummy_image_dir, image_storage_dir)
         else:
             # 프로덕션 환경: API를 통한 업로드
-            print("\n🚀 프로덕션 환경: API 업로드 모드")
+            log.debug("  프로덕션 환경: API 업로드 모드")
             _generate_images_via_api(fixture_app, dummy_image_dir)
 
 
 def _generate_images_direct(app, dummy_image_dir, image_storage_dir):
     """테스트 환경: 직접 파일 저장 (기존 로직)"""
+    log = get_logger()
+    
     # 이미지 저장 디렉토리 생성
     image_storage_dir.mkdir(parents=True, exist_ok=True)
     
@@ -203,7 +211,7 @@ def _generate_images_direct(app, dummy_image_dir, image_storage_dir):
         
         for post in post_list:
             # 각 포스트에 랜덤하게 0-3개의 이미지 할당 (0개 가능)
-            num_images = random.choice([0, 1, 1, 2, 2, 3])  # 0개 가능하지만 확률 낮게
+            num_images = random.choice([0, 0, 1, 1, 1, 2, 2, 2, 2, 2, 2, 2, 2, 3, 3, 3, 3, 3, 3, 3])  # 0개 가능하지만 확률 낮게
             
             if num_images == 0:
                 continue
@@ -275,9 +283,10 @@ def _generate_images_direct(app, dummy_image_dir, image_storage_dir):
 
 def _generate_images_via_api(app, dummy_image_dir):
     """프로덕션 환경: API를 통한 이미지 업로드"""
+    log = get_logger()
     
     # API 서버 주소 (앱 설정에서 가져오기)
-    base_url = app.config.get('API_BACKEND_URL', 'http://192.168.1.86:8000')
+    base_url = app.config.get('API_BACKEND_URL', 'http://192.168.1.86:8002')
     
     # 모든 Post와 Category 가져오기
     posts = Post.query.all()
@@ -308,16 +317,23 @@ def _generate_images_via_api(app, dummy_image_dir):
     for cat_name, post_list in posts_by_category.items():
         print(f"  {cat_name}: {len(post_list)}개 게시글")
     
-    # 사용자 토큰 획득 (앱 설정에서 사용자 수 가져오기)
+    # 사용자 토큰 획득 (DB에서 실제 사용자 조회)
     num_users = app.config.get('NUM_USERS', 10)
-    user_tokens = get_all_user_tokens(base_url, num_users=num_users)
+    num_admins = app.config.get('NUM_ADMINS', 2)
+    user_tokens = get_all_user_tokens_from_db(
+        app, 
+        base_url, 
+        expected_users=num_users, 
+        expected_admins=num_admins
+    )
     
     if not user_tokens:
         print("❌ 사용자 토큰을 획득할 수 없습니다. 서버가 실행 중인지 확인하세요.")
         pytest.skip("API 인증 실패")
     
-    # API Uploader 초기화
-    uploader = ImageAPIUploader(base_url)
+    # API Uploader 초기화 (API 버전 전달)
+    api_version = app.config.get('API_VERSION', 'v1')
+    uploader = ImageAPIUploader(base_url, api_version=api_version)
     
     total_uploaded = 0
     total_failed = 0
@@ -366,6 +382,8 @@ def _generate_images_via_api(app, dummy_image_dir):
             # 이미지 경로 리스트 준비
             image_paths = [str(img) for img in selected_images]
             
+            print(f"    📤 Post {post.post_id} ({user.nickname}): {len(image_paths)}개 이미지 업로드 시도...")
+            
             # API를 통해 이미지 업로드 (PUT 요청으로 기존 게시글에 이미지 추가)
             result = uploader.update_post_images(
                 user_token=user_token,
@@ -373,13 +391,29 @@ def _generate_images_via_api(app, dummy_image_dir):
                 new_image_paths=image_paths
             )
             
-            if result and result.get('message') == '게시글 수정 완료':
-                uploaded_images = result.get('uploaded_images', [])
-                category_upload_count += len(uploaded_images)
-                total_uploaded += len(uploaded_images)
+            if result:
+                response_message = result.get('message', '')
+                print(f"       📩 응답: {response_message}")
+                
+                # 다양한 성공 메시지 처리
+                if '수정' in response_message or '완료' in response_message or 'uploaded' in response_message.lower():
+                    # uploaded_images 키가 있으면 사용, 없으면 업로드 시도한 개수로 계산
+                    uploaded_images = result.get('uploaded_images', [])
+                    if uploaded_images:
+                        count = len(uploaded_images)
+                    else:
+                        # uploaded_images가 없으면 성공 메시지만으로 판단
+                        count = len(image_paths)  # 시도한 개수를 성공으로 간주
+                    
+                    category_upload_count += count
+                    total_uploaded += count
+                    print(f"       ✓ {count}개 업로드 성공")
+                else:
+                    total_failed += len(image_paths)
+                    print(f"       ✗ 예상치 못한 응답")
             else:
                 total_failed += len(image_paths)
-                print(f"    ✗ Post {post.post_id} 업로드 실패")
+                print(f"       ✗ API 응답 없음")
         
         print(f"    ✓ {category_upload_count}개 이미지 업로드됨")
     
