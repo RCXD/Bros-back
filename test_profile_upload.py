@@ -47,7 +47,7 @@ if not test_images:
 test_image = test_images[0]
 print(f"테스트 이미지: {test_image.name}")
 
-# 직접 requests로 업로드 (디버깅용)
+# 직접 requests로 업로드
 url = f"{base_url}/auth/user"
 headers = {
     'Authorization': f'Bearer {test_user_token}'
@@ -74,7 +74,7 @@ with open(test_image, 'rb') as f:
             print(f"   Message: {result.get('message')}")
             
             user_data = result.get('user', {})
-            print(f"\n6. 사용자 정보:")
+            print(f"\n6. 사용자 정보 (응답):")
             print(f"   user_id: {user_data.get('user_id')}")
             print(f"   username: {user_data.get('username')}")
             print(f"   nickname: {user_data.get('nickname')}")
@@ -112,6 +112,27 @@ with open(test_image, 'rb') as f:
                     print(f"     - {f.relative_to(profile_dir)}")
             else:
                 print(f"   ❌ 디렉토리 없음")
+            
+            # 결과 요약
+            print(f"\n=== 결과 요약 ===")
+            response_uuid = user_data.get('profile_img')
+            db_uuid = user.profile_img if user else None
+            image_exists = image is not None
+            file_count = len(files_found) if profile_dir.exists() else 0
+            
+            print(f"응답 UUID: {response_uuid}")
+            print(f"DB UUID: {db_uuid}")
+            print(f"Image 레코드: {'✅' if image_exists else '❌'}")
+            print(f"파일 저장: {'✅' if file_count > 0 else '❌'} ({file_count}개)")
+            
+            if response_uuid != 'static/default_profile.jpg':
+                if db_uuid == response_uuid and image_exists and file_count > 0:
+                    print(f"\n✅ 성공: 프로필 이미지가 정상적으로 업로드되었습니다!")
+                else:
+                    print(f"\n⚠️ 부분 성공: API는 성공했지만 DB/파일에 문제가 있습니다")
+                    print(f"   서버 콘솔에서 [DEBUG] 로그를 확인하세요")
+            else:
+                print(f"\n❌ 실패: 프로필 이미지가 업데이트되지 않았습니다")
                 
         else:
             print(f"\n❌ 업로드 실패")
