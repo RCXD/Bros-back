@@ -8,8 +8,8 @@ from app import create_app
 from app.extensions import db
 from app.config import Config
 
-# .env 파일 로드 (test/.env)
-env_path = Path(__file__).parent / '.env'
+# .gen.env 파일 로드 (test/.gen.env)
+env_path = Path(__file__).parent / '.gen.env'
 load_dotenv(dotenv_path=env_path)
 
 # SQLAlchemy 경고 억제
