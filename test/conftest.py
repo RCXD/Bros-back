@@ -38,6 +38,12 @@ def pytest_addoption(parser):
         default=False,
         help="테스트 환경 사용 (test/uploads, localhost DB)"
     )
+    parser.addoption(
+        "--reset-prev-data",
+        action="store_true",
+        default=False,
+        help="데이터 생성 전 기존 데이터를 모두 삭제합니다"
+    )
 
 
 @pytest.fixture(scope="session")
@@ -46,6 +52,7 @@ def fixture_app(request):
     keep_data = request.config.getoption("--keep-data")
     clean_data = request.config.getoption("--clean-data")
     use_test_env = request.config.getoption("--use-test-env")
+    reset_prev_data = request.config.getoption("--reset-prev-data")
     
     # --keep-data가 명시되면 True, --clean-data가 명시되면 False, 둘 다 없으면 False (기본값)
     if keep_data:
@@ -91,6 +98,7 @@ def fixture_app(request):
     # 앱 생성 전 설정 오버라이드
     Config.TESTING = True
     Config.KEEP_GENERATED_DATA = keep_generated_data
+    Config.RESET_PREV_DATA = reset_prev_data
     Config.PROFILE_IMG_UPLOAD_FOLDER = profile_folder
     Config.POST_IMG_UPLOAD_FOLDER = post_folder
     Config.DUMMY_DATA_DIR = dummy_data_dir

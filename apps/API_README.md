@@ -412,7 +412,7 @@ GET /post?page=1&per_page=20&category=여행&order_by=latest
   ],
   "total": 150,
   "pages": 8,
-  "current_page": 1
+  "page": 1
 }
 ```
 
@@ -581,7 +581,7 @@ Authorization: Bearer <token>
   "posts": [ ... ],
   "total": 15,
   "pages": 1,
-  "current_page": 1
+  "page": 1
 }
 ```
 
@@ -626,7 +626,7 @@ GET /reply?post_id=1&page=1&per_page=20
   ],
   "total": 10,
   "pages": 1,
-  "current_page": 1
+  "page": 1
 }
 ```
 
@@ -810,7 +810,7 @@ Authorization: Bearer <token>
   ],
   "total": 45,
   "pages": 3,
-  "current_page": 1
+  "page": 1
 }
 ```
 
@@ -866,7 +866,7 @@ GET /feed/explore?category=여행&page=1
   "posts": [ ... ],
   "total": 200,
   "pages": 10,
-  "current_page": 1
+  "page": 1
 }
 ```
 
@@ -1037,7 +1037,7 @@ Authorization: Bearer <admin_token>
   ],
   "total": 500,
   "pages": 25,
-  "current_page": 1,
+  "page": 1,
   "per_page": 20
 }
 ```
@@ -1210,7 +1210,7 @@ Authorization: Bearer <admin_token>
   ],
   "total": 25,
   "pages": 2,
-  "current_page": 1
+  "page": 1
 }
 ```
 
@@ -1344,7 +1344,7 @@ POST /test/error?code=400
   "items": [...],
   "total": 150,
   "pages": 8,
-  "current_page": 1
+  "page": 1
 }
 ```
 
