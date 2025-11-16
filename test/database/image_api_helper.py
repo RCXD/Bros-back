@@ -8,22 +8,32 @@ import time
 from pathlib import Path
 from PIL import Image as PILImage
 
+# 상대 경로 import 시도
+try:
+    from endpoint_helper import APIEndpoints
+except ImportError:
+    from test.database.endpoint_helper import APIEndpoints
+
 
 class ImageAPIUploader:
     """API를 통한 이미지 업로드 처리"""
     
-    def __init__(self, base_url, auth_token=None, timeout=120, max_retries=3):
+    def __init__(self, base_url, auth_token=None, timeout=120, max_retries=3, api_version='v1'):
         """
         Args:
-            base_url: API 서버 주소 (예: http://192.168.1.86:8000)
+            base_url: API 서버 주소 (예: http://192.168.1.86:8002)
             auth_token: JWT 인증 토큰 (필요시)
             timeout: 요청 타임아웃 (초, 기본값: 120)
             max_retries: 최대 재시도 횟수 (기본값: 3)
+            api_version: API 버전 ('v1' 또는 'legacy')
         """
         self.base_url = base_url.rstrip('/')
         self.auth_token = auth_token
         self.timeout = timeout
         self.max_retries = max_retries
+        self.api = APIEndpoints(api_version)
+        
+        print(f"📡 ImageAPIUploader 초기화: API {api_version.upper()}")
         
     def upload_post_with_images(self, user_token, content, category_id, image_paths, 
                                  latitude=None, longitude=None, location_name=None):
@@ -135,7 +145,7 @@ class ImageAPIUploader:
     
     def update_post_images(self, user_token, post_id, new_image_paths=None, delete_uuids=None):
         """
-        /post/edit/<post_id> 엔드포인트를 통해 이미지 추가/삭제
+        게시글 이미지 추가/삭제
         
         Args:
             user_token: 사용자 JWT 토큰
@@ -146,7 +156,15 @@ class ImageAPIUploader:
         Returns:
             dict: API 응답
         """
-        url = f"{self.base_url}/post/edit/{post_id}"
+        # 엔드포인트 결정 (API 버전에 따라)
+        endpoint = self.api.format_url(self.api.POST_UPDATE, post_id=post_id)
+        url = f"{self.base_url}{endpoint}"
+        
+        print(f"         🔗 요청 URL: {url}")
+        print(f"            메소드: PUT")
+        print(f"            엔드포인트: {endpoint}")
+        if new_image_paths:
+            print(f"            이미지 수: {len(new_image_paths)}개")
         
         headers = {
             'Authorization': f'Bearer {user_token}'
@@ -194,10 +212,14 @@ class ImageAPIUploader:
                         response = requests.put(url, headers=headers, data=data, files=files, timeout=self.timeout)
                         
                         if response.status_code == 200:
-                            return response.json()
+                            print(f"            ✅ 성공")
+                            result = response.json()
+                            print(f"            📦 응답 내용: {result}")
+                            return result
                         else:
-                            print(f"❌ API 오류: {response.status_code}")
-                            print(f"   응답: {response.text}")
+                            print(f"            ❌ API 오류: {response.status_code}")
+                            print(f"            URL: {url}")
+                            print(f"            응답: {response.text}")
                             if attempt < self.max_retries - 1:
                                 print(f"   재시도 {attempt + 1}/{self.max_retries}...")
                                 time.sleep(2)
@@ -252,7 +274,7 @@ class ImageAPIUploader:
     
     def upload_profile_image(self, user_token, image_path):
         """
-        /auth/update 엔드포인트를 통해 프로필 이미지 업로드
+        프로필 이미지 업로드
         
         Args:
             user_token: 사용자 JWT 토큰
@@ -261,7 +283,12 @@ class ImageAPIUploader:
         Returns:
             dict: API 응답
         """
-        url = f"{self.base_url}/auth/update"
+        url = f"{self.base_url}{self.api.AUTH_UPDATE}"
+        
+        print(f"🔗 요청 URL: {url}")
+        print(f"   메소드: PUT")
+        print(f"   엔드포인트: {self.api.AUTH_UPDATE}")
+        print(f"   이미지: {Path(image_path).name}")
         
         headers = {
             'Authorization': f'Bearer {user_token}'
@@ -305,9 +332,11 @@ class ImageAPIUploader:
                         response = requests.put(url, headers=headers, files=files, timeout=self.timeout)
                         
                         if response.status_code == 200:
+                            print(f"   ✅ 성공")
                             return response.json()
                         else:
                             print(f"❌ API 오류: {response.status_code}")
+                            print(f"   URL: {url}")
                             print(f"   응답: {response.text}")
                             if attempt < self.max_retries - 1:
                                 print(f"   재시도 {attempt + 1}/{self.max_retries}...")

@@ -8,6 +8,7 @@ from sqlalchemy.exc import IntegrityError
 from apps.config.server import db
 from apps.post.models import Post, Category, PostLike, Image
 from apps.auth.models import User
+from apps.post.image_utils import compress_image, save_to_disk, IMAGE_EXTENSIONS
 
 bp = Blueprint("post", __name__)
 
@@ -207,7 +208,8 @@ def update_post(post_id):
     게시글 수정
     Form data:
         - content: 선택
-        - images: 선택
+        - images: 선택 (새 이미지 추가)
+        - new_images: 선택 (새 이미지 추가, 'images'와 동일)
     """
     try:
         current_user = get_current_user()
@@ -221,11 +223,56 @@ def update_post(post_id):
         if content:
             post.content = content
         
-        # TODO: 이미지 업데이트 처리
+        # 이미지 업로드 처리
+        files = request.files.getlist("images")
+        if not files or len(files) == 0:
+            # 'images' 키가 없으면 'new_images' 키 시도
+            files = request.files.getlist("new_images")
+        
+        uploaded_images = []
+        
+        for file in files:
+            if not file or not hasattr(file, "filename") or file.filename == '':
+                continue
+                
+            # 파일 확장자 검증
+            ext = file.filename.rsplit(".", 1)[-1].lower()
+            if ext not in IMAGE_EXTENSIONS:
+                raise ValueError(f"지원하지 않는 파일 형식: {file.filename}")
+            
+            # 이미지 압축
+            image_compressed, ext, filename = compress_image(file, image_type="post")
+            
+            # Image 레코드 생성 (UUID 자동 생성)
+            image = Image(
+                post_id=post.post_id,
+                user_id=current_user.user_id,
+                directory="",
+                original_image_name=file.filename,
+                ext=ext,
+            )
+            db.session.add(image)
+            db.session.flush()  # UUID 생성
+            
+            # UUID로 파일명 생성하여 저장
+            filename = f"{image.uuid}.{ext}"
+            rel_path = save_to_disk(image_compressed, ext, filename, category="post")
+            image.directory = rel_path
+            db.session.flush()
+            
+            uploaded_images.append({
+                "uuid": str(image.uuid),
+                "path": image.directory,
+                "original_name": image.original_image_name,
+            })
         
         db.session.commit()
         
-        return jsonify({"message": "게시글이 수정되었습니다"}), 200
+        response = {"message": "게시글이 수정되었습니다"}
+        if uploaded_images:
+            response["uploaded_images"] = uploaded_images
+        
+        return jsonify(response), 200
         
     except Exception as e:
         db.session.rollback()
