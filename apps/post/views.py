@@ -70,7 +70,7 @@ def get_posts():
         "items": posts,
         "total": pagination.total,
         "pages": pagination.pages,
-        "current_page": page
+        "page": page
     }), 200
 
 
@@ -84,6 +84,10 @@ def create_post():
         - category_id: 필수
         - images: 선택 (다중 파일)
     """
+    from app.utils.image_storage import save_to_disk
+    from app.utils.image_compressor import compress_image
+    from app.utils.image_utils import IMAGE_EXTENSIONS
+    
     try:
         current_user = get_current_user()
         content = request.form.get("content")
@@ -91,6 +95,8 @@ def create_post():
         
         if not content:
             return jsonify({"error": "내용은 필수입니다"}), 400
+        if len(content) > 2000:
+            return jsonify({"error": "게시글 내용은 2000자 이하로 입력해야 합니다."}), 400
         if not category_id:
             return jsonify({"error": "카테고리는 필수입니다"}), 400
         
@@ -107,13 +113,53 @@ def create_post():
         )
         
         db.session.add(post)
-        db.session.commit()
+        db.session.flush()  # post_id 확보
         
-        # TODO: 이미지 업로드 처리
+        # 이미지 업로드 처리
+        files = request.files.getlist("images")
+        uploaded_images = []
+        
+        for file in files:
+            if not file or not hasattr(file, "filename"):
+                continue
+                
+            # 파일 확장자 검증
+            ext = file.filename.rsplit(".", 1)[-1].lower()
+            if ext not in IMAGE_EXTENSIONS:
+                raise ValueError(f"지원하지 않는 파일 형식: {file.filename}")
+            
+            # 이미지 압축
+            image_compressed, ext, filename = compress_image(file, image_type="post")
+            
+            # Image 레코드 생성 (UUID 자동 생성)
+            image = Image(
+                post_id=post.post_id,
+                user_id=current_user.user_id,
+                directory="",
+                original_image_name=file.filename,
+                ext=ext,
+            )
+            db.session.add(image)
+            db.session.flush()  # UUID 생성
+            
+            # UUID로 파일명 생성하여 저장
+            filename = f"{image.uuid}.{ext}"
+            rel_path = save_to_disk(image_compressed, ext, filename, category="post")
+            image.directory = rel_path
+            db.session.flush()
+            
+            uploaded_images.append({
+                "uuid": str(image.uuid),
+                "path": image.directory,
+                "original_name": image.original_image_name,
+            })
+        
+        db.session.commit()
         
         return jsonify({
             "message": "게시글이 작성되었습니다",
-            "post_id": post.post_id
+            "post_id": post.post_id,
+            "uploaded_images": uploaded_images
         }), 201
         
     except Exception as e:
@@ -315,7 +361,7 @@ def get_my_posts():
         "items": posts,
         "total": pagination.total,
         "pages": pagination.pages,
-        "current_page": page
+        "page": page
     }), 200
 
 
@@ -327,14 +373,11 @@ def get_post_image(uuid):
         - uuid: 이미지 UUID
     Returns:
         - 이미지 파일
+    
+    Note: /image/ 와 /images/ 모두 지원
     """
-    image = Image.query.filter_by(uuid=uuid).first()
-    if not image:
-        return jsonify({"error": "이미지를 찾을 수 없습니다"}), 404
-    
-    # directory 경로에서 디렉토리와 파일명 분리
-    directory_parts = image.directory.split("/")
-    directory = "/".join(directory_parts[:-1])
-    filename = directory_parts[-1]
-    
-    return send_from_directory(directory, filename)
+    image = Image.query.filter_by(uuid=uuid).first_or_404(description="이미지 없음")
+    print('!!!!!!!!!!!!!!', "/".join(image.directory.split("/")[:-1]), image.directory.split("/")[-1], sep='@@@@@')
+    return send_from_directory(
+        "/".join(image.directory.split("/")[:-1]), image.directory.split("/")[-1]
+    )

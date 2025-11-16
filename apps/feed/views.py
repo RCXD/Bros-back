@@ -69,7 +69,7 @@ def get_feed():
         "items": posts,
         "total": pagination.total,
         "pages": pagination.pages,
-        "current_page": page
+        "page": page
     }), 200
 
 
@@ -183,7 +183,7 @@ def get_explore():
         "items": posts,
         "total": pagination.total,
         "pages": pagination.pages,
-        "current_page": page
+        "page": page
     }), 200
 
 

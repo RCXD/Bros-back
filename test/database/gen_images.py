@@ -223,7 +223,7 @@ def _generate_images_direct(app, dummy_image_dir, image_storage_dir):
                 image_record = Image(
                     post_id=post.post_id,
                     user_id=user.user_id,
-                    directory=str(image_storage_dir),
+                    directory="",  # 임시값, 나중에 상대 경로로 업데이트
                     original_image_name=image_file.name,
                     ext="png"
                 )
@@ -239,6 +239,10 @@ def _generate_images_direct(app, dummy_image_dir, image_storage_dir):
                 result = resize_and_convert_image(image_file, dest_path)
                 
                 if result:
+                    # 상대 경로 + 파일명을 directory에 저장 (레거시 방식과 동일)
+                    # 예: "test/uploads/post_images/uuid.png"
+                    rel_path = str(dest_path).replace("\\", "/")
+                    image_record.directory = rel_path
                     total_images += 1
                     category_image_count += 1
                 else:

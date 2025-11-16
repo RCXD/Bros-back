@@ -63,7 +63,7 @@ def get_replies():
         "items": replies,
         "total": pagination.total,
         "pages": pagination.pages,
-        "current_page": page
+        "page": page
     }), 200
 
 

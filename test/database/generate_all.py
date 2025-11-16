@@ -32,14 +32,18 @@ def test_generate_all_data(fixture_app):
         print("테스트 데이터 생성 중")
         print("="*60)
         
-        # 기존 데이터 정리 (외래 키 제약 조건 처리)
-        print("\n[0/5] 기존 데이터 정리 중...")
-        db.session.execute(db.text("SET FOREIGN_KEY_CHECKS = 0"))
-        for table in reversed(db.metadata.sorted_tables):
-            db.session.execute(table.delete())
-        db.session.execute(db.text("SET FOREIGN_KEY_CHECKS = 1"))
-        db.session.commit()
-        print("✓ 기존 데이터 정리 완료")
+        # --reset-prev-data 옵션이 있는 경우에만 기존 데이터 정리
+        if fixture_app.config.get('RESET_PREV_DATA', False):
+            print("\n[0/5] 기존 데이터 정리 중...")
+            db.session.execute(db.text("SET FOREIGN_KEY_CHECKS = 0"))
+            for table in reversed(db.metadata.sorted_tables):
+                db.session.execute(table.delete())
+            db.drop_all()
+            db.session.execute(db.text("SET FOREIGN_KEY_CHECKS = 1"))
+            db.session.commit()
+            print("✓ 기존 데이터 정리 완료")
+        else:
+            print("\n[0/5] 기존 데이터 유지 (--reset-prev-data 옵션 없음)")
         
         # 사용자 생성
         print("\n[1/5] 사용자 생성 중...")

@@ -169,7 +169,7 @@ def _generate_profile_images_direct(app, dummy_profile_dir, profile_storage_dir)
         image_record = Image(
             post_id=None,  # 프로필 이미지는 post와 연결되지 않음
             user_id=user.user_id,
-            directory=str(profile_storage_dir),
+            directory="",  # 임시값, 나중에 상대 경로로 업데이트
             original_image_name=source_image.name,
             ext="png"
         )
@@ -185,6 +185,10 @@ def _generate_profile_images_direct(app, dummy_profile_dir, profile_storage_dir)
         result = resize_and_convert_profile_image(source_image, dest_path)
         
         if result:
+            # 상대 경로 + 파일명을 directory에 저장 (레거시 방식과 동일)
+            # 예: "test/uploads/profile_images/uuid.png"
+            rel_path = str(dest_path).replace("\\", "/")
+            image_record.directory = rel_path
             # User 모델의 profile_img 필드를 UUID로 업데이트
             user.profile_img = image_uuid
             total_success += 1

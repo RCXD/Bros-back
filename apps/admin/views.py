@@ -81,7 +81,7 @@ def get_users():
         ],
         "total": pagination.total,
         "pages": pagination.pages,
-        "current_page": page,
+        "page": page,
         "per_page": per_page,
     }), 200
 
@@ -325,7 +325,7 @@ def get_reports():
         ],
         "total": pagination.total,
         "pages": pagination.pages,
-        "current_page": page,
+        "page": page,
     }), 200
 
 
