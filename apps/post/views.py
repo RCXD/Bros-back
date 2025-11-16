@@ -8,7 +8,7 @@ from sqlalchemy.exc import IntegrityError
 from apps.config.server import db
 from apps.post.models import Post, Category, PostLike, Image
 from apps.auth.models import User
-from apps.post.image_utils import compress_image, save_to_disk, IMAGE_EXTENSIONS
+from apps.common.image_handlers import compress_image, save_to_disk, IMAGE_EXTENSIONS
 
 bp = Blueprint("post", __name__)
 
