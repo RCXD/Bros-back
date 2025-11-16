@@ -1,144 +1,165 @@
-import sys
+"""
+프로필 이미지 업로드 전체 사용자 테스트
+"""
+import os
 import requests
-sys.path.insert(0, '.')
-
-from test.database.gen_user_helper import get_all_user_tokens_from_db
-from app import create_app
 from pathlib import Path
+from apps.app import create_app
+from apps.auth.models import User, AccountType
+from apps.post.models import Image
 
-# 앱 컨텍스트 생성
-app = create_app()
-app.app_context().push()
 
-# 설정 가져오기
-base_url = app.config.get('API_BACKEND_URL', 'http://192.168.1.86:8002')
-num_users = app.config.get('NUM_USERS', 10)
-num_admins = app.config.get('NUM_ADMINS', 2)
+# API 서버 URL
+BASE_URL = "http://192.168.1.86:8002"
 
-print(f"=== 프로필 이미지 업로드 테스트 ===")
-print(f"서버: {base_url}")
+# Flask 앱 생성
+apps_app = create_app('development')
 
-# 사용자 토큰 획득
-print("\n1. 사용자 토큰 획득 중...")
-user_tokens = get_all_user_tokens_from_db(
-    app, 
-    base_url, 
-    expected_users=num_users, 
-    expected_admins=num_admins
-)
+
+def get_user_token(username, password="1234"):
+    """사용자 로그인으로 JWT 토큰 획득"""
+    url = f"{BASE_URL}/auth/login"
+    response = requests.post(url, json={'username': username, 'password': password})
+    if response.status_code == 200:
+        return response.json().get('access_token')
+    return None
+
+
+print("\n=== 프로필 이미지 업로드 테스트 ===")
+print(f"서버: {BASE_URL}\n")
+
+# 1. DB에서 사용자 조회 및 토큰 획득
+print("1. 사용자 토큰 획득 중...")
+with apps_app.app_context():
+    all_users = User.query.all()
+    num_regular = User.query.filter_by(account_type=AccountType.USER).count()
+    num_admins = User.query.filter_by(account_type=AccountType.ADMIN).count()
+    
+    print(f"📊 데이터베이스 사용자 현황:")
+    print(f"  일반 사용자: {num_regular}명")
+    print(f"  관리자: {num_admins}명")
+    print(f"  총: {len(all_users)}명\n")
+
+# 토큰 획득
+user_tokens = {}
+for user in all_users:
+    token = get_user_token(user.username)
+    if token:
+        user_tokens[user.email] = token
+        user_type = "👑" if user.account_type == AccountType.ADMIN else "👤"
+        print(f"  ✓ {user_type} {user.username} ({user.email})")
+    else:
+        print(f"  ✗ {user.username} (실패)")
+
+print(f"  총 {len(user_tokens)}/{len(all_users)}개 토큰 획득\n")
 
 if not user_tokens:
     print("❌ 토큰 획득 실패")
-    sys.exit(1)
+    exit(1)
 
-# 첫 번째 사용자로 테스트
-test_user_email = list(user_tokens.keys())[0]
-test_user_token = user_tokens[test_user_email]
-print(f"\n2. 테스트 사용자: {test_user_email}")
 
-# 테스트 이미지 경로
-dummy_profile_dir = Path(app.config.get('DUMMY_PROFILE_IMG_DIR', r"D:\share\dummy data\profile_images"))
-test_images = list(dummy_profile_dir.rglob("*.jpg"))[:1]
+# 2. 테스트 이미지 준비
+print("2. 테스트 이미지 준비...")
+dummy_profile_dir = Path(r"D:\share\dummy data\profile_images")
+test_images = list(dummy_profile_dir.rglob("*.jpg"))
 
 if not test_images:
     print("❌ 테스트 이미지 없음")
-    sys.exit(1)
+    exit(1)
 
-test_image = test_images[0]
-print(f"테스트 이미지: {test_image.name}")
+print(f"  {len(test_images)}개 이미지 발견\n")
 
-# 직접 requests로 업로드
-url = f"{base_url}/auth/user"
-headers = {
-    'Authorization': f'Bearer {test_user_token}'
-}
 
-print("\n3. 프로필 이미지 업로드 시작...")
-print(f"   URL: {url}")
+# 3. 모든 사용자에 대해 프로필 이미지 업로드
+print("3. 프로필 이미지 업로드 시작...")
+print(f"{'='*70}\n")
 
-with open(test_image, 'rb') as f:
-    files = {
-        'profile_img': (test_image.name, f, 'image/jpeg')
-    }
+success_count = 0
+fail_count = 0
+
+for idx, (email, token) in enumerate(user_tokens.items()):
+    # Round-robin으로 이미지 할당
+    image_path = test_images[idx % len(test_images)]
     
-    try:
-        response = requests.put(url, headers=headers, files=files, timeout=30)
+    print(f"[{idx + 1}/{len(user_tokens)}] {email}")
+    print(f"  이미지: {image_path.name}")
+    
+    # API를 통한 프로필 이미지 업로드
+    url = f"{BASE_URL}/auth/user"
+    headers = {"Authorization": f"Bearer {token}"}
+    
+    with open(image_path, 'rb') as f:
+        files = {'profile_img': (image_path.name, f, 'image/jpeg')}
+        response = requests.put(url, headers=headers, files=files)
+    
+    if response.status_code != 200:
+        print(f"  ❌ API 업로드 실패: {response.status_code}")
+        print(f"     {response.text}")
+        fail_count += 1
+        continue
+    
+    result = response.json()
+    returned_uuid = result.get('user', {}).get('profile_img')
+    
+    if not returned_uuid or returned_uuid == 'static/default_profile.jpg':
+        print(f"  ❌ API 응답에 UUID 없음: {returned_uuid}")
+        fail_count += 1
+        continue
+    
+    print(f"  ✓ API 업로드 성공 (UUID: {returned_uuid})")
+    
+    # DB 검증
+    with apps_app.app_context():
+        user = User.query.filter_by(email=email).first()
         
-        print(f"\n4. 응답:")
-        print(f"   Status Code: {response.status_code}")
-        print(f"   Content-Type: {response.headers.get('Content-Type')}")
+        if not user:
+            print(f"  ❌ DB에서 사용자 찾을 수 없음")
+            fail_count += 1
+            continue
         
-        if response.status_code == 200:
-            result = response.json()
-            print(f"\n5. 응답 데이터:")
-            print(f"   Message: {result.get('message')}")
-            
-            user_data = result.get('user', {})
-            print(f"\n6. 사용자 정보 (응답):")
-            print(f"   user_id: {user_data.get('user_id')}")
-            print(f"   username: {user_data.get('username')}")
-            print(f"   nickname: {user_data.get('nickname')}")
-            print(f"   profile_img: {user_data.get('profile_img')}")
-            
-            # DB 확인
-            from apps.app import create_app as create_apps_app
-            from apps.auth.models import User
-            from apps.post.models import Image
-            
-            apps_app = create_apps_app('development')
-            apps_app.app_context().push()
-            
-            user_id = user_data.get('user_id')
-            user = User.query.filter_by(user_id=user_id).first()
-            image = Image.query.filter_by(user_id=user_id, post_id=None).first()
-            
-            print(f"\n7. DB 검증:")
-            print(f"   User.profile_img: {user.profile_img if user else 'User not found'}")
-            print(f"   Image record: {'Found' if image else 'Not found'}")
-            if image:
-                print(f"     - UUID: {image.uuid}")
-                print(f"     - Directory: {image.directory}")
-                print(f"     - User ID: {image.user_id}")
-                print(f"     - Post ID: {image.post_id}")
-            
-            # 파일 확인
-            import os
-            print(f"\n8. 파일 시스템 검증:")
-            profile_dir = Path("apps/static/profile_images")
-            if profile_dir.exists():
-                files_found = list(profile_dir.rglob("*.*"))
-                print(f"   프로필 이미지 파일 수: {len(files_found)}")
-                for f in files_found[:5]:
-                    print(f"     - {f.relative_to(profile_dir)}")
-            else:
-                print(f"   ❌ 디렉토리 없음")
-            
-            # 결과 요약
-            print(f"\n=== 결과 요약 ===")
-            response_uuid = user_data.get('profile_img')
-            db_uuid = user.profile_img if user else None
-            image_exists = image is not None
-            file_count = len(files_found) if profile_dir.exists() else 0
-            
-            print(f"응답 UUID: {response_uuid}")
-            print(f"DB UUID: {db_uuid}")
-            print(f"Image 레코드: {'✅' if image_exists else '❌'}")
-            print(f"파일 저장: {'✅' if file_count > 0 else '❌'} ({file_count}개)")
-            
-            if response_uuid != 'static/default_profile.jpg':
-                if db_uuid == response_uuid and image_exists and file_count > 0:
-                    print(f"\n✅ 성공: 프로필 이미지가 정상적으로 업로드되었습니다!")
-                else:
-                    print(f"\n⚠️ 부분 성공: API는 성공했지만 DB/파일에 문제가 있습니다")
-                    print(f"   서버 콘솔에서 [DEBUG] 로그를 확인하세요")
-            else:
-                print(f"\n❌ 실패: 프로필 이미지가 업데이트되지 않았습니다")
-                
+        if user.profile_img == 'static/default_profile.jpg':
+            print(f"  ❌ DB에 저장 안됨 (여전히 기본값)")
+            fail_count += 1
+            continue
+        
+        if user.profile_img != returned_uuid:
+            print(f"  ⚠️  DB UUID 불일치:")
+            print(f"     API: {returned_uuid}")
+            print(f"     DB:  {user.profile_img}")
         else:
-            print(f"\n❌ 업로드 실패")
-            print(f"   Response: {response.text[:500]}")
-            
-    except Exception as e:
-        print(f"\n❌ 에러: {e}")
-        import traceback
-        traceback.print_exc()
+            print(f"  ✓ DB 저장 확인 (UUID: {user.profile_img})")
+        
+        # Image 레코드 확인
+        image_record = Image.query.filter_by(user_id=user.id, post_id=None).first()
+        
+        if not image_record:
+            print(f"  ❌ Image 레코드 없음")
+            fail_count += 1
+            continue
+        
+        print(f"  ✓ Image 레코드 확인 (UUID: {image_record.uuid})")
+        
+        # 파일 시스템 확인
+        profile_images_dir = Path("apps/static/profile_images")
+        found_files = list(profile_images_dir.rglob(f"{returned_uuid}.*"))
+        
+        if not found_files:
+            print(f"  ❌ 파일 시스템에 파일 없음")
+            fail_count += 1
+            continue
+        
+        print(f"  ✓ 파일 확인: {found_files[0].relative_to('apps')}")
+        success_count += 1
+    
+    print()
+
+
+# 결과 요약
+print(f"{'='*70}")
+print(f"\n✅ 성공: {success_count}/{len(user_tokens)}")
+print(f"❌ 실패: {fail_count}/{len(user_tokens)}")
+
+if success_count == len(user_tokens):
+    print("\n🎉 모든 사용자 프로필 이미지 업로드 성공!")
+else:
+    print(f"\n⚠️  {fail_count}명의 사용자 업로드 실패")
