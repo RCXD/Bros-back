@@ -33,8 +33,8 @@ def save_profile_image(file, user_id=None):
     Returns:
         str: 저장된 이미지의 UUID
     """
-    # 로그 파일에 기록
-    log_file = os.path.join(current_app.root_path, "../profile_image_debug.log")
+    # 로그 파일에 기록 (절대 경로 사용)
+    log_file = r"D:\M\GitHub\Bros-back\profile_image_debug.log"
     
     def write_log(msg):
         with open(log_file, "a", encoding="utf-8") as f:
@@ -224,8 +224,8 @@ def update_profile():
         - phone
         - profile_img (multipart file)
     """
-    # 로그 파일 함수
-    log_file = os.path.join(current_app.root_path, "../profile_image_debug.log")
+    # 로그 파일 함수 (절대 경로 사용)
+    log_file = r"D:\M\GitHub\Bros-back\profile_image_debug.log"
     
     def write_log(msg):
         with open(log_file, "a", encoding="utf-8") as f:
