@@ -6,6 +6,8 @@ from flask import Blueprint, request, jsonify, send_from_directory, current_app
 from flask_jwt_extended import jwt_required, get_jwt_identity, get_jwt, get_current_user
 from email_validator import validate_email, EmailNotValidError
 import os
+import uuid
+from datetime import datetime
 
 from apps.config.server import db, BLACKLIST
 from apps.auth.models import User
@@ -14,6 +16,49 @@ from apps.auth.utils import token_provider, is_valid_phone
 
 
 bp = Blueprint("auth", __name__)
+
+
+# =====================================================
+# 헬퍼 함수
+# =====================================================
+
+def save_profile_image(file, user_id=None):
+    """
+    프로필 이미지를 저장하고 Image 레코드 생성
+    
+    Args:
+        file: 업로드된 파일 객체
+        user_id: 사용자 ID (선택)
+    
+    Returns:
+        str: 저장된 이미지의 UUID
+    """
+    original_name = file.filename
+    ext = file.filename.rsplit(".", 1)[1].lower()
+    today = datetime.now().strftime("%Y-%m-%d")
+    folder_path = os.path.join(current_app.root_path, "static/profile_images", today)
+    os.makedirs(folder_path, exist_ok=True)
+    
+    uuid_val = uuid.uuid4()
+    filename = f"{uuid_val}.{ext}"
+    file_path = os.path.join(folder_path, filename)
+    file.save(file_path)
+    
+    relative_path = f"static/profile_images/{today}/{filename}"
+    
+    if user_id:
+        new_image = Image(
+            uuid=str(uuid_val),
+            user_id=user_id,
+            directory=relative_path,
+            original_image_name=original_name,
+            updated_at=datetime.now(),
+            post_id=None,
+            ext=ext,
+        )
+        db.session.add(new_image)
+    
+    return str(uuid_val)
 
 
 # =====================================================
@@ -204,11 +249,27 @@ def update_profile():
             current_user.phone = phone
         
         # 프로필 이미지 업로드 처리
+        default_img = "static/default_profile.jpg"
+        current_img = current_user.profile_img
+        
         if "profile_img" in request.files:
             file = request.files["profile_img"]
             if file and file.filename:
-                # TODO: 이미지 업로드 및 기존 이미지 삭제 구현
-                pass
+                # 기존 프로필 이미지 삭제 (기본 이미지가 아닌 경우)
+                if current_img and current_img != default_img:
+                    old_image = Image.query.filter_by(user_id=current_user.user_id, post_id=None).first()
+                    if old_image:
+                        try:
+                            old_path = os.path.join(current_app.root_path, old_image.directory)
+                            if os.path.exists(old_path):
+                                os.remove(old_path)
+                        except Exception as e:
+                            pass  # 파일 삭제 실패해도 계속 진행
+                        db.session.delete(old_image)
+                
+                # 새 프로필 이미지 저장
+                new_uuid = save_profile_image(file, user_id=current_user.user_id)
+                current_user.profile_img = new_uuid
         
         db.session.commit()
         
