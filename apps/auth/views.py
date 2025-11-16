@@ -2,12 +2,14 @@
 인증 뷰 (라우트)
 사용자 등록, 로그인, 로그아웃, 프로필 관리 처리
 """
-from flask import Blueprint, request, jsonify
+from flask import Blueprint, request, jsonify, send_from_directory, current_app
 from flask_jwt_extended import jwt_required, get_jwt_identity, get_jwt, get_current_user
 from email_validator import validate_email, EmailNotValidError
+import os
 
 from apps.config.server import db, BLACKLIST
 from apps.auth.models import User
+from apps.post.models import Image
 from apps.auth.utils import token_provider, is_valid_phone
 
 
@@ -303,3 +305,65 @@ def naver_login():
     """Naver OAuth 로그인"""
     # TODO: Naver OAuth 구현
     return jsonify({"message": "Naver OAuth - 구현 예정"}), 501
+
+
+# =====================================================
+# 프로필 이미지 조회
+# =====================================================
+
+@bp.get("/image/uuid/<string:uuid>")
+def get_image_by_uuid(uuid):
+    """
+    UUID로 이미지 조회
+    
+    Args:
+        uuid: 이미지 UUID 또는 'default_profile'
+    """
+    if uuid == "default_profile":
+        path = "static/default_profile.jpg"
+        folder = os.path.join(current_app.root_path, "static")
+        return send_from_directory(folder, "default_profile.jpg")
+    else:
+        image = Image.query.filter_by(uuid=uuid).first_or_404(description="이미지 없음")
+        
+        # DB: static/profile_images/2025-11-12/uuid.jpg
+        relative_path = image.directory
+        
+        # 절대 경로 생성
+        absolute_path = os.path.join(current_app.root_path, relative_path)
+        
+        folder = os.path.dirname(absolute_path)
+        filename = os.path.basename(absolute_path)
+        
+        # 파일 존재 여부 체크
+        if not os.path.exists(absolute_path):
+            return jsonify({"error": f"파일 없음: {absolute_path}"}), 404
+        
+        return send_from_directory(folder, filename)
+
+
+@bp.get("/image/user/<int:user_id>")
+def get_user_profile_image(user_id):
+    """
+    사용자 ID로 프로필 이미지 조회
+    
+    Args:
+        user_id: 사용자 ID
+    """
+    # user_id와 post_id=NULL인 이미지 찾기 (프로필 이미지)
+    image = Image.query.filter_by(user_id=user_id, post_id=None).first_or_404(description="프로필 이미지 없음")
+    
+    # DB: static/profile_images/2025-11-12/uuid.jpg
+    relative_path = image.directory
+    
+    # 절대 경로 생성
+    absolute_path = os.path.join(current_app.root_path, relative_path)
+    
+    folder = os.path.dirname(absolute_path)
+    filename = os.path.basename(absolute_path)
+    
+    # 파일 존재 여부 체크
+    if not os.path.exists(absolute_path):
+        return jsonify({"error": f"파일 없음: {absolute_path}"}), 404
+    
+    return send_from_directory(folder, filename)

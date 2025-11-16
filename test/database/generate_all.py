@@ -31,8 +31,7 @@ def test_generate_all_data(fixture_app):
     from gen_user import test_generate_users
     from gen_post import test_generate_posts
     from gen_reply import test_generate_replies
-    from gen_profile_images import test_generate_profile_images
-    from gen_images import test_generate_images
+    from gen_images import test_generate_profile_images, test_generate_images
     
     with fixture_app.app_context():
         verbosity = fixture_app.config.get('VERBOSITY', 1)

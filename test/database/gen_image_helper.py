@@ -1,6 +1,6 @@
 """
 이미지 API 업로드 헬퍼
-프로덕션 환경에서 /post/write 또는 /post/edit 엔드포인트를 통해 이미지를 업로드
+프로덕션 환경에서 API 엔드포인트를 통해 이미지를 업로드
 """
 import requests
 import io
@@ -11,8 +11,10 @@ from PIL import Image as PILImage
 # 상대 경로 import 시도
 try:
     from endpoint_helper import APIEndpoints
+    from logger import get_logger
 except ImportError:
     from test.database.endpoint_helper import APIEndpoints
+    from test.database.logger import get_logger
 
 
 class ImageAPIUploader:
@@ -32,8 +34,9 @@ class ImageAPIUploader:
         self.timeout = timeout
         self.max_retries = max_retries
         self.api = APIEndpoints(api_version)
+        self.log = get_logger()
         
-        print(f"📡 ImageAPIUploader 초기화: API {api_version.upper()}")
+        self.log.debug(f"ImageAPIUploader 초기화: API {api_version.upper()}")
         
     def upload_post_with_images(self, user_token, content, category_id, image_paths, 
                                  latitude=None, longitude=None, location_name=None):
@@ -364,3 +367,43 @@ class ImageAPIUploader:
         finally:
             if 'img_buffer' in locals():
                 img_buffer.close()
+    
+    
+    def verify_post_image(self, image_uuid):
+        """
+        게시글 이미지가 서버에 존재하는지 확인
+        
+        Args:
+            image_uuid: 이미지 UUID
+            
+        Returns:
+            bool: 이미지 조회 성공 여부
+        """
+        try:
+            # POST_IMAGE 엔드포인트 사용
+            endpoint = self.api.format_url(self.api.POST_IMAGE, uuid=image_uuid)
+            url = f"{self.base_url}{endpoint}"
+            response = requests.get(url, timeout=10)
+            return response.status_code == 200
+        except Exception:
+            return False
+    
+    
+    def verify_profile_image(self, user_id):
+        """
+        프로필 이미지가 서버에 존재하는지 확인
+        
+        Args:
+            user_id: 사용자 ID
+            
+        Returns:
+            bool: 이미지 조회 성공 여부
+        """
+        try:
+            # AUTH_IMAGE_USER 엔드포인트 사용
+            endpoint = self.api.format_url(self.api.AUTH_IMAGE_USER, user_id=user_id)
+            url = f"{self.base_url}{endpoint}"
+            response = requests.get(url, timeout=10)
+            return response.status_code == 200
+        except Exception:
+            return False
