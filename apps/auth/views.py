@@ -299,7 +299,16 @@ def update_profile():
         db.session.commit()
         print(f"[DEBUG] db.session.commit() 완료")
         
-        print(f"[DEBUG] 최종 current_user.profile_img = {current_user.profile_img}")
+        # commit 후 DB에서 다시 조회
+        db.session.refresh(current_user)
+        print(f"[DEBUG] refresh 후 current_user.profile_img = {current_user.profile_img}")
+        
+        # Image 레코드 확인
+        image_check = Image.query.filter_by(user_id=current_user.user_id, post_id=None).first()
+        print(f"[DEBUG] Image 레코드 확인: {image_check}")
+        if image_check:
+            print(f"[DEBUG]   - UUID: {image_check.uuid}")
+            print(f"[DEBUG]   - Directory: {image_check.directory}")
         
         return jsonify({
             "message": "프로필이 성공적으로 업데이트되었습니다",
