@@ -267,18 +267,17 @@ def unlike_reply(reply_id):
     """댓글 좋아요 취소"""
     current_user_id = int(get_jwt_identity())
     
-    like = ReplyLike.query.filter_by(
-        reply_id=reply_id,
-        user_id=current_user_id
-    ).first()
-    
-    if not like:
-        return jsonify({"message": "좋아요하지 않은 댓글입니다"}), 404
-    
-    db.session.delete(like)
-    db.session.commit()
-    
-    return jsonify({"message": "댓글 좋아요 취소"}), 200
+    try:
+        like = ReplyLike.query.filter_by(
+            reply_id=reply_id,
+            user_id=current_user_id
+        ).first()    
+        db.session.delete(like)
+        db.session.commit()
+    except Exception:
+        pass
+    finally:
+        return jsonify({"message": "댓글 좋아요 취소"}), 200
 
 
 @bp.get("/<int:reply_id>/replies")

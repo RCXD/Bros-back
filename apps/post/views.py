@@ -343,11 +343,12 @@ def unlike_post(post_id):
         user_id=current_user_id
     ).first()
     
-    if not like:
-        return jsonify({"message": "좋아요하지 않은 게시글입니다"}), 404
+    # if not like:
+    #     return jsonify({"message": "좋아요하지 않은 게시글입니다"}), 404
     
-    db.session.delete(like)
-    db.session.commit()
+    if like:    
+        db.session.delete(like)
+        db.session.commit()
     
     return jsonify({"message": "좋아요 취소"}), 200
 
