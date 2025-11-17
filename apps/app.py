@@ -89,6 +89,10 @@ def register_blueprints(app):
     from apps.favorite.views import bp as favorite_bp
     app.register_blueprint(favorite_bp, url_prefix="/favorite")
     
+    # 알림 모듈
+    from apps.notification.views import bp as notification_bp
+    app.register_blueprint(notification_bp, url_prefix="/notification")
+    
     # 감지기 모듈
     # from apps.detector.views import bp as detector_bp
     # app.register_blueprint(detector_bp, url_prefix="/detector")
