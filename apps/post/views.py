@@ -45,16 +45,16 @@ def get_posts():
     # 페이지네이션
     pagination = query.paginate(page=page, per_page=per_page, error_out=False)
     
-    user = User.query.get(post.user_id)
     posts = []
     for post in pagination.items:
+        user = User.query.get(post.user_id)
         like_count = PostLike.query.filter_by(post_id=post.post_id).count()
         images = Image.query.filter_by(post_id=post.post_id).all()
         posts.append({
             "post_id": post.post_id,
             "user_id": post.user_id,
-            "nickname": user.nickname,
-            "profile_img": user.profile_img,
+            "nickname": user.nickname if user else None,
+            "profile_img": user.profile_img if user else None,
             "content": post.content,
             "category": post.category.category_name if post.category else None,
             "view_counts": post.view_counts,
@@ -88,9 +88,7 @@ def create_post():
         - category_id: 필수
         - images: 선택 (다중 파일)
     """
-    from app.utils.image_storage import save_to_disk
-    from app.utils.image_compressor import compress_image
-    from app.utils.image_utils import IMAGE_EXTENSIONS
+    from apps.common.image_handlers import compress_image, save_to_disk, IMAGE_EXTENSIONS
     
     try:
         current_user = get_current_user()
@@ -98,16 +96,16 @@ def create_post():
         category_id = request.form.get("category_id", type=int)
         
         if not content:
-            return jsonify({"error": "내용은 필수입니다"}), 400
+            return jsonify({"message": "내용은 필수입니다"}), 400
         if len(content) > 2000:
-            return jsonify({"error": "게시글 내용은 2000자 이하로 입력해야 합니다."}), 400
+            return jsonify({"message": "게시글 내용은 2000자 이하로 입력해야 합니다."}), 400
         if not category_id:
-            return jsonify({"error": "카테고리는 필수입니다"}), 400
+            return jsonify({"message": "카테고리는 필수입니다"}), 400
         
         # 카테고리 존재 확인
         category = Category.query.get(category_id)
         if not category:
-            return jsonify({"error": "유효하지 않은 카테고리입니다"}), 400
+            return jsonify({"message": "유효하지 않은 카테고리입니다"}), 400
         
         # 게시글 생성
         post = Post(
@@ -168,7 +166,7 @@ def create_post():
         
     except Exception as e:
         db.session.rollback()
-        return jsonify({"error": f"게시글 작성 실패: {str(e)}"}), 400
+        return jsonify({"message": f"게시글 작성 실패: {str(e)}"}), 400
 
 
 @bp.get("/<int:post_id>")
@@ -220,7 +218,7 @@ def update_post(post_id):
         
         # 소유권 확인
         if post.user_id != current_user.user_id:
-            return jsonify({"error": "권한이 없습니다"}), 403
+            return jsonify({"message": "권한이 없습니다"}), 403
         
         content = request.form.get("content")
         if content:
@@ -279,7 +277,7 @@ def update_post(post_id):
         
     except Exception as e:
         db.session.rollback()
-        return jsonify({"error": f"게시글 수정 실패: {str(e)}"}), 400
+        return jsonify({"message": f"게시글 수정 실패: {str(e)}"}), 400
 
 
 @bp.delete("/<int:post_id>")
@@ -292,7 +290,7 @@ def delete_post(post_id):
         
         # 소유권 확인
         if post.user_id != current_user.user_id:
-            return jsonify({"error": "권한이 없습니다"}), 403
+            return jsonify({"message": "권한이 없습니다"}), 403
         
         db.session.delete(post)
         db.session.commit()
@@ -301,7 +299,7 @@ def delete_post(post_id):
         
     except Exception as e:
         db.session.rollback()
-        return jsonify({"error": f"게시글 삭제 실패: {str(e)}"}), 400
+        return jsonify({"message": f"게시글 삭제 실패: {str(e)}"}), 400
 
 
 @bp.post("/<int:post_id>/like")
@@ -319,17 +317,19 @@ def like_post(post_id):
         user_id=current_user_id
     ).first()
     
+    like_count = PostLike.query.filter_by(post_id=post_id).count()
+    
     if existing:
         # 좋아요 취소
         db.session.delete(existing)
         db.session.commit()
-        return jsonify({"message": "좋아요 취소", "liked": False}), 200
+        return jsonify({"message": "좋아요 취소", "liked": False, "like_count": like_count}), 200
     else:
         # 좋아요
         like = PostLike(post_id=post_id, user_id=current_user_id)
         db.session.add(like)
         db.session.commit()
-        return jsonify({"message": "좋아요", "liked": True}), 201
+        return jsonify({"message": "좋아요", "liked": True, "like_count": like_count}), 201
 
 
 @bp.delete("/<int:post_id>/like")
@@ -344,7 +344,7 @@ def unlike_post(post_id):
     ).first()
     
     if not like:
-        return jsonify({"error": "좋아요하지 않은 게시글입니다"}), 404
+        return jsonify({"message": "좋아요하지 않은 게시글입니다"}), 404
     
     db.session.delete(like)
     db.session.commit()

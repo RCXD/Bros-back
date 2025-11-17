@@ -23,7 +23,7 @@ def get_replies():
     """
     post_id = request.args.get("post_id", type=int)
     if not post_id:
-        return jsonify({"error": "post_id는 필수입니다"}), 400
+        return jsonify({"message": "post_id는 필수입니다"}), 400
     
     # 게시글 존재 확인
     Post.query.get_or_404(post_id)
@@ -35,6 +35,33 @@ def get_replies():
     pagination = Reply.query.filter_by(post_id=post_id, parent_id=None)\
         .order_by(Reply.created_at.asc())\
         .paginate(page=page, per_page=per_page, error_out=False)
+        
+    # 좋아요 top 3 댓글
+    top_liked_query = db.session.query(Reply, db.func.count(ReplyLike.user_id).label('like_count'))\
+        .outerjoin(ReplyLike, Reply.reply_id == ReplyLike.reply_id)\
+        .filter(Reply.post_id == post_id)\
+        .group_by(Reply.reply_id)\
+        .order_by(db.desc('like_count'))\
+        .limit(3).all()
+    
+    # top 3 댓글을 딕셔너리로 변환
+    top_liked_replies = []
+    for reply, like_count in top_liked_query:
+        author = User.query.get(reply.user_id)
+        top_liked_replies.append({
+            "reply_id": reply.reply_id,
+            "post_id": reply.post_id,
+            "user_id": reply.user_id,
+            "author": {
+                "username": author.username,
+                "nickname": author.nickname,
+                "profile_img": author.profile_img
+            } if author else None,
+            "content": reply.content,
+            "like_count": like_count,
+            "created_at": reply.created_at.isoformat(),
+            "updated_at": reply.updated_at.isoformat()
+        })
     
     replies = []
     for reply in pagination.items:
@@ -60,6 +87,7 @@ def get_replies():
         })
     
     return jsonify({
+        "top_liked_replies": top_liked_replies,
         "items": replies,
         "total": pagination.total,
         "pages": pagination.pages,
@@ -86,7 +114,7 @@ def create_reply():
         parent_id = data.get("parent_id")
         
         if not post_id or not content:
-            return jsonify({"error": "post_id와 content는 필수입니다"}), 400
+            return jsonify({"message": "post_id와 content는 필수입니다"}), 400
         
         # 게시글 존재 확인
         Post.query.get_or_404(post_id)
@@ -95,9 +123,9 @@ def create_reply():
         if parent_id:
             parent = Reply.query.get(parent_id)
             if not parent:
-                return jsonify({"error": "부모 댓글을 찾을 수 없습니다"}), 404
+                return jsonify({"message": "부모 댓글을 찾을 수 없습니다"}), 404
             if parent.post_id != post_id:
-                return jsonify({"error": "부모 댓글이 다른 게시글에 속합니다"}), 400
+                return jsonify({"message": "부모 댓글이 다른 게시글에 속합니다"}), 400
         
         reply = Reply(
             post_id=post_id,
@@ -116,7 +144,7 @@ def create_reply():
         
     except Exception as e:
         db.session.rollback()
-        return jsonify({"error": f"댓글 작성 실패: {str(e)}"}), 400
+        return jsonify({"message": f"댓글 작성 실패: {str(e)}"}), 400
 
 
 @bp.get("/<int:reply_id>")
@@ -157,13 +185,13 @@ def update_reply(reply_id):
         
         # 소유권 확인
         if reply.user_id != current_user.user_id:
-            return jsonify({"error": "권한이 없습니다"}), 403
+            return jsonify({"message": "권한이 없습니다"}), 403
         
         data = request.get_json()
         content = data.get("content")
         
         if not content:
-            return jsonify({"error": "content는 필수입니다"}), 400
+            return jsonify({"message": "content는 필수입니다"}), 400
         
         reply.content = content
         db.session.commit()
@@ -172,7 +200,7 @@ def update_reply(reply_id):
         
     except Exception as e:
         db.session.rollback()
-        return jsonify({"error": f"댓글 수정 실패: {str(e)}"}), 400
+        return jsonify({"message": f"댓글 수정 실패: {str(e)}"}), 400
 
 
 @bp.delete("/<int:reply_id>")
@@ -185,7 +213,7 @@ def delete_reply(reply_id):
         
         # 소유권 확인
         if reply.user_id != current_user.user_id:
-            return jsonify({"error": "권한이 없습니다"}), 403
+            return jsonify({"message": "권한이 없습니다"}), 403
         
         db.session.delete(reply)
         db.session.commit()
@@ -194,7 +222,7 @@ def delete_reply(reply_id):
         
     except Exception as e:
         db.session.rollback()
-        return jsonify({"error": f"댓글 삭제 실패: {str(e)}"}), 400
+        return jsonify({"message": f"댓글 삭제 실패: {str(e)}"}), 400
 
 
 @bp.post("/<int:reply_id>/like")
@@ -212,17 +240,19 @@ def like_reply(reply_id):
         user_id=current_user_id
     ).first()
     
+    like_count = ReplyLike.query.filter_by(reply_id=reply_id).count()
+    
     if existing:
         # 좋아요 취소
         db.session.delete(existing)
         db.session.commit()
-        return jsonify({"message": "댓글 좋아요 취소", "liked": False}), 200
+        return jsonify({"message": "댓글 좋아요 취소", "liked": False, "like_count": like_count}), 200
     else:
         # 좋아요
         like = ReplyLike(reply_id=reply_id, user_id=current_user_id)
         db.session.add(like)
         db.session.commit()
-        return jsonify({"message": "댓글 좋아요", "liked": True}), 201
+        return jsonify({"message": "댓글 좋아요", "liked": True, "like_count": like_count}), 201
 
 
 @bp.delete("/<int:reply_id>/like")
@@ -237,7 +267,7 @@ def unlike_reply(reply_id):
     ).first()
     
     if not like:
-        return jsonify({"error": "좋아요하지 않은 댓글입니다"}), 404
+        return jsonify({"message": "좋아요하지 않은 댓글입니다"}), 404
     
     db.session.delete(like)
     db.session.commit()

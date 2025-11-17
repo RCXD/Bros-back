@@ -202,7 +202,7 @@ def get_nearby():
     radius = request.args.get("radius", 10, type=float)
     
     if lat is None or lon is None:
-        return jsonify({"error": "lat와 lon은 필수입니다"}), 400
+        return jsonify({"message": "lat와 lon은 필수입니다"}), 400
     
     # TODO: 위치 모델 사용 가능 시 지리공간 쿼리 구현
     # 현재는 빈 결과 반환

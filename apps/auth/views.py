@@ -98,23 +98,23 @@ def signup():
         
         # 필수 필드 검증
         if not username or not password or not email:
-            return jsonify({"error": "username, password, email은 필수입니다"}), 400
+            return jsonify({"message": "username, password, email은 필수입니다"}), 400
         
         # 이메일 형식 검증
         try:
             validate_email(email)
         except EmailNotValidError:
-            return jsonify({"error": "유효하지 않은 이메일 형식입니다"}), 400
+            return jsonify({"message": "유효하지 않은 이메일 형식입니다"}), 400
         
         # 전화번호 검증 (제공된 경우)
         if phone and not is_valid_phone(phone):
-            return jsonify({"error": "유효하지 않은 전화번호 형식입니다"}), 400
+            return jsonify({"message": "유효하지 않은 전화번호 형식입니다"}), 400
         
         # 기존 사용자명/이메일 확인
         if User.query.filter_by(username=username).first():
-            return jsonify({"error": "이미 존재하는 사용자명입니다"}), 409
+            return jsonify({"message": "이미 존재하는 사용자명입니다"}), 409
         if User.query.filter_by(email=email).first():
-            return jsonify({"error": "이미 존재하는 이메일입니다"}), 409
+            return jsonify({"message": "이미 존재하는 이메일입니다"}), 409
         
         # 사용자 생성
         user = User(
@@ -144,7 +144,7 @@ def signup():
         
     except Exception as e:
         db.session.rollback()
-        return jsonify({"error": f"회원가입 실패: {str(e)}"}), 400
+        return jsonify({"message": f"회원가입 실패: {str(e)}"}), 400
 
 
 # =====================================================
@@ -166,20 +166,20 @@ def login():
         password = data.get("password")
         
         if not username or not password:
-            return jsonify({"error": "username과 password는 필수입니다"}), 400
+            return jsonify({"message": "username과 password는 필수입니다"}), 400
         
         # 사용자명으로 사용자 찾기
         user = User.query.filter_by(username=username).first()
         if not user:
-            return jsonify({"error": "잘못된 인증 정보입니다"}), 401
+            return jsonify({"message": "잘못된 인증 정보입니다"}), 401
         
         # 계정 정지 여부 확인
         if user.is_expired:
-            return jsonify({"error": "정지된 계정입니다"}), 403
+            return jsonify({"message": "정지된 계정입니다"}), 403
         
         # 비밀번호 확인
         if not user.check_password(password):
-            return jsonify({"error": "잘못된 인증 정보입니다"}), 401
+            return jsonify({"message": "잘못된 인증 정보입니다"}), 401
         
         # 마지막 로그인 시간 업데이트
         user.renew_login()
@@ -187,7 +187,7 @@ def login():
         
         # 토큰 생성
         tokens = token_provider(user.user_id,
-                                additional_claims={"usename":user.username,
+                                additional_claims={"username":user.username,
                                                    "nickname":user.nickname,
                                                    "email":user.email}
                                 )
@@ -200,13 +200,13 @@ def login():
             "email": user.email,
             "nickname": user.nickname,
             "profile_img": user.profile_img,
-            "is_admin": user.is_admin,
+            "account_type": user.account_type.name,
         }
         
         return jsonify(response_data), 200
         
     except Exception as e:
-        return jsonify({"error": f"로그인 실패: {str(e)}"}), 400
+        return jsonify({"message": f"로그인 실패: {str(e)}"}), 400
 
 
 # =====================================================
@@ -230,7 +230,7 @@ def update_profile():
     try:
         current_user = get_current_user()
         if not current_user:
-            return jsonify({"error": "사용자를 찾을 수 없습니다"}), 404
+            return jsonify({"message": "사용자를 찾을 수 없습니다"}), 404
         
         # 제공된 필드 업데이트
         email = request.form.get("email")
@@ -244,12 +244,12 @@ def update_profile():
             try:
                 validate_email(email)
             except EmailNotValidError:
-                return jsonify({"error": "유효하지 않은 이메일 형식입니다"}), 400
+                return jsonify({"message": "유효하지 않은 이메일 형식입니다"}), 400
             
             # 다른 사용자가 해당 이메일을 사용하는지 확인
             existing = User.query.filter(User.email == email, User.user_id != current_user.user_id).first()
             if existing:
-                return jsonify({"error": "이미 사용 중인 이메일입니다"}), 409
+                return jsonify({"message": "이미 사용 중인 이메일입니다"}), 409
             
             current_user.email = email
         
@@ -264,7 +264,7 @@ def update_profile():
         
         if phone:
             if not is_valid_phone(phone):
-                return jsonify({"error": "유효하지 않은 전화번호 형식입니다"}), 400
+                return jsonify({"message": "유효하지 않은 전화번호 형식입니다"}), 400
             current_user.phone = phone
         
         # 프로필 이미지 업로드 처리
@@ -328,7 +328,7 @@ def update_profile():
         
     except Exception as e:
         db.session.rollback()
-        return jsonify({"error": f"프로필 업데이트 실패: {str(e)}"}), 400
+        return jsonify({"message": f"프로필 업데이트 실패: {str(e)}"}), 400
 
 # =====================================================
 # 로그아웃
@@ -386,7 +386,7 @@ def get_me():
     """
     current_user = get_current_user()
     if not current_user:
-        return jsonify({"error": "사용자를 찾을 수 없습니다"}), 404
+        return jsonify({"message": "사용자를 찾을 수 없습니다"}), 404
     
     return jsonify(current_user.to_dict()), 200
 
@@ -446,7 +446,7 @@ def get_image_by_uuid(uuid):
         
         # 파일 존재 여부 체크
         if not os.path.exists(absolute_path):
-            return jsonify({"error": f"파일 없음: {absolute_path}"}), 404
+            return jsonify({"message": f"파일 없음: {absolute_path}"}), 404
         
         return send_from_directory(folder, filename)
 
@@ -473,6 +473,6 @@ def get_user_profile_image(user_id):
     
     # 파일 존재 여부 체크
     if not os.path.exists(absolute_path):
-        return jsonify({"error": f"파일 없음: {absolute_path}"}), 404
+        return jsonify({"message": f"파일 없음: {absolute_path}"}), 404
     
     return send_from_directory(folder, filename)

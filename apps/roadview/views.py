@@ -56,7 +56,7 @@ def check_roadview():
     data = request.get_json()
     
     if not data or 'latitude' not in data or 'longitude' not in data:
-        return jsonify({"error": "latitude and longitude are required"}), 400
+        return jsonify({"message": "latitude and longitude are required"}), 400
     
     latitude = float(data['latitude'])
     longitude = float(data['longitude'])
@@ -227,8 +227,7 @@ def check_roadview():
         db.session.commit()
         
         return jsonify({
-            "error": "Failed to check roadview",
-            "message": str(e)
+            "message": "Failed to check roadview",
         }), 500
 
 
@@ -255,7 +254,7 @@ def check_all_providers():
     data = request.get_json()
     
     if not data or 'latitude' not in data or 'longitude' not in data:
-        return jsonify({"error": "latitude and longitude are required"}), 400
+        return jsonify({"message": "latitude and longitude are required"}), 400
     
     latitude = float(data['latitude'])
     longitude = float(data['longitude'])
@@ -269,8 +268,7 @@ def check_all_providers():
     
     except Exception as e:
         return jsonify({
-            "error": "Failed to check providers",
-            "message": str(e)
+            "message": "Failed to check providers"
         }), 500
 
 
@@ -283,7 +281,7 @@ def get_roadview(roadview_id):
     roadview = db.session.get(Roadview, roadview_id)
     
     if not roadview:
-        return jsonify({"error": "Roadview not found"}), 404
+        return jsonify({"message": "Roadview not found"}), 404
     
     return jsonify(roadview.to_dict()), 200
 

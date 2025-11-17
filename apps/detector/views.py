@@ -39,7 +39,7 @@
 #         - confidence: Optional (threshold 0-1, default 0.5)
 #     """
 #     if "image" not in request.files:
-#         return jsonify({"error": "Image file is required"}), 400
+#         return jsonify({"message": "Image file is required"}), 400
     
 #     image_file = request.files["image"]
 #     image_data = image_file.read()
@@ -47,7 +47,7 @@
 #     # Validate image
 #     is_valid, error_msg = validate_image(image_data)
 #     if not is_valid:
-#         return jsonify({"error": error_msg}), 400
+#         return jsonify({"message": error_msg}), 400
     
 #     # Get parameters
 #     confidence = float(request.form.get("confidence", 0.5))
@@ -57,7 +57,7 @@
 #     try:
 #         image_path = save_uploaded_image(image_file, folder="detections")
 #     except Exception as e:
-#         return jsonify({"error": f"Failed to save image: {str(e)}"}), 500
+#         return jsonify({"message": f"Failed to save image: {str(e)}"}), 500
     
 #     # Create detection record
 #     from ..config.common import db
@@ -85,7 +85,7 @@
 #             return jsonify({
 #                 "detection_id": detection.detection_id,
 #                 "status": "failed",
-#                 "error": result['error']
+#                 "message": result['error']
 #             }), 500
         
 #         # Process results
@@ -125,7 +125,7 @@
 #         return jsonify({
 #             "detection_id": detection.detection_id,
 #             "status": "failed",
-#             "error": str(e)
+#             "message": str(e)
 #         }), 500
 
 
@@ -140,7 +140,7 @@
 #         - model: Optional (model variant to use, default "default")
 #     """
 #     if "image" not in request.files:
-#         return jsonify({"error": "Image file is required"}), 400
+#         return jsonify({"message": "Image file is required"}), 400
     
 #     image_file = request.files["image"]
 #     image_data = image_file.read()
@@ -148,7 +148,7 @@
 #     # Validate image
 #     is_valid, error_msg = validate_image(image_data)
 #     if not is_valid:
-#         return jsonify({"error": error_msg}), 400
+#         return jsonify({"message": error_msg}), 400
     
 #     # Get parameters
 #     model = request.form.get("model", "default")
@@ -158,7 +158,7 @@
 #     try:
 #         image_path = save_uploaded_image(image_file, folder="detections")
 #     except Exception as e:
-#         return jsonify({"error": f"Failed to save image: {str(e)}"}), 500
+#         return jsonify({"message": f"Failed to save image: {str(e)}"}), 500
     
 #     # Create detection record
 #     from ..config.common import db
@@ -185,7 +185,7 @@
 #             return jsonify({
 #                 "detection_id": detection.detection_id,
 #                 "status": "failed",
-#                 "error": result['error']
+#                 "message": result['error']
 #             }), 500
         
 #         # Process results
@@ -224,7 +224,7 @@
 #         return jsonify({
 #             "detection_id": detection.detection_id,
 #             "status": "failed",
-#             "error": str(e)
+#             "message": str(e)
 #         }), 500
 
 
@@ -238,7 +238,7 @@
 #         - image: Required (multipart file)
 #     """
 #     if "image" not in request.files:
-#         return jsonify({"error": "Image file is required"}), 400
+#         return jsonify({"message": "Image file is required"}), 400
     
 #     image_file = request.files["image"]
 #     image_data = image_file.read()
@@ -246,7 +246,7 @@
 #     # Validate image
 #     is_valid, error_msg = validate_image(image_data)
 #     if not is_valid:
-#         return jsonify({"error": error_msg}), 400
+#         return jsonify({"message": error_msg}), 400
     
 #     user_id = get_jwt_identity()
     
@@ -254,7 +254,7 @@
 #     try:
 #         image_path = save_uploaded_image(image_file, folder="detections")
 #     except Exception as e:
-#         return jsonify({"error": f"Failed to save image: {str(e)}"}), 500
+#         return jsonify({"message": f"Failed to save image: {str(e)}"}), 500
     
 #     # Create detection record
 #     from ..config.common import db
@@ -280,7 +280,7 @@
 #             return jsonify({
 #                 "detection_id": detection.detection_id,
 #                 "status": "failed",
-#                 "error": "Road segmentation server is currently unavailable",
+#                 "message": "Road segmentation server is currently unavailable",
 #                 "note": "Server 8889 can be skipped when malfunctioning"
 #             }), 503
         
@@ -293,7 +293,7 @@
 #             return jsonify({
 #                 "detection_id": detection.detection_id,
 #                 "status": "failed",
-#                 "error": result['error']
+#                 "message": result['error']
 #             }), 500
         
 #         # Update detection record
@@ -318,7 +318,7 @@
 #         return jsonify({
 #             "detection_id": detection.detection_id,
 #             "status": "failed",
-#             "error": str(e)
+#             "message": str(e)
 #         }), 500
 
 
@@ -334,10 +334,10 @@
 #     detection = db.session.get(Detection, detection_id)
     
 #     if not detection:
-#         return jsonify({"error": "Detection not found"}), 404
+#         return jsonify({"message": "Detection not found"}), 404
     
 #     if detection.user_id != user_id:
-#         return jsonify({"error": "Unauthorized"}), 403
+#         return jsonify({"message": "Unauthorized"}), 403
     
 #     response = detection.to_dict()
 #     response['objects'] = [obj.to_dict() for obj in detection.objects]
@@ -368,14 +368,14 @@
 #         try:
 #             query = query.filter_by(detection_type=DetectionType[detection_type.upper()])
 #         except KeyError:
-#             return jsonify({"error": "Invalid detection type"}), 400
+#             return jsonify({"message": "Invalid detection type"}), 400
     
 #     status = request.args.get('status')
 #     if status:
 #         try:
 #             query = query.filter_by(status=DetectionStatus[status.upper()])
 #         except KeyError:
-#             return jsonify({"error": "Invalid status"}), 400
+#             return jsonify({"message": "Invalid status"}), 400
     
 #     # Pagination
 #     limit = min(int(request.args.get('limit', 50)), 100)
@@ -426,9 +426,9 @@
 #             "server": "http://192.168.1.79:8888",
 #             "port": "8888",
 #             "type": "semantic_object_detection",
-#             "status": "error",
+#             "status": "message",
 #             "required": True,
-#             "error": str(e)
+#             "message": str(e)
 #         })
     
 #     # Check road segmentation server (8889 - optional)
@@ -461,10 +461,10 @@
 #             "server": "http://192.168.1.79:8889",
 #             "port": "8889",
 #             "type": "road_segmentation",
-#             "status": "error",
+#             "status": "message",
 #             "required": False,
 #             "note": "Optional - can be skipped if malfunctioning",
-#             "error": str(e)
+#             "message": str(e)
 #         })
     
 #     return jsonify({"models": models}), 200

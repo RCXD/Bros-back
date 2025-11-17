@@ -50,6 +50,8 @@ class Config:
     SQLALCHEMY_TRACK_MODIFICATIONS = get_bool('SQLALCHEMY_TRACK_MODIFICATIONS', False)
     SQLALCHEMY_ECHO = get_bool('SQLALCHEMY_ECHO', True)
     
+    print(SQLALCHEMY_DATABASE_URI)
+    
     # CORS
     CORS_ORIGINS = os.getenv('CORS_ORIGINS', '*')
     

@@ -1297,7 +1297,7 @@ POST /test/error?code=400
 **응답:**
 ```json
 {
-  "error": "잘못된 요청 테스트",
+  "message": "잘못된 요청 테스트",
   "test": true
 }
 ```
@@ -1324,7 +1324,7 @@ POST /test/error?code=400
 
 ```json
 {
-  "error": "에러 메시지"
+  "message": "에러 메시지"
 }
 ```
 

@@ -113,7 +113,7 @@ Response (503 Service Unavailable):
 {
   "detection_id": 123,
   "status": "failed",
-  "error": "Road segmentation server is currently unavailable",
+  "message": "Road segmentation server is currently unavailable",
   "note": "Server 8889 can be skipped when malfunctioning"
 }
 ```

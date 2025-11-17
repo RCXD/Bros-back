@@ -131,7 +131,7 @@ Check availability across all providers simultaneously.
   },
   "kakao": {
     "available": false,
-    "error": "No coverage"
+    "message": "No coverage"
   },
   "naver": {
     "available": true,

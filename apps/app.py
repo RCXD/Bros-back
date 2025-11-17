@@ -122,4 +122,4 @@ def create_directories(app):
 if __name__ == '__main__':
     # Development server
     app = create_app('development')
-    app.run(host='0.0.0.0', port=8001, debug=True)
+    app.run(host='0.0.0.0', port=8002, debug=True)
