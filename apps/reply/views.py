@@ -30,10 +30,16 @@ def get_replies():
     
     page = request.args.get("page", 1, type=int)
     per_page = request.args.get("per_page", 20, type=int)
+    order_by = request.args.get("order_by", "asc").lower()
+
+    if order_by == "desc":
+        order_method = Reply.created_at.desc()
+    else:
+        order_method = Reply.created_at.asc()
     
     # 최상위 댓글 조회 (부모 댓글이 없는 것)
     pagination = Reply.query.filter_by(post_id=post_id, parent_id=None)\
-        .order_by(Reply.created_at.asc())\
+        .order_by(order_method)\
         .paginate(page=page, per_page=per_page, error_out=False)
     
     replies = []
