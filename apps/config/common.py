@@ -1,16 +1,16 @@
 """
-Common configuration shared across all modules
-Loads configuration from environment variables (.env.local or .env.production)
+모든 모듈에서 공유하는 공통 설정
+환경 변수 파일에서 설정을 로드합니다 (.env.local 또는 .env.production)
 """
 from pathlib import Path
 import os
 from datetime import timedelta
 from dotenv import load_dotenv
 
-# Base directory
+# 기본 디렉토리
 basedir = Path(__file__).parent.parent.parent
 
-# Load environment variables
+# 환경 변수 로드
 env_file = basedir / '.env.local'
 if not env_file.exists():
     env_file = basedir / '.env.production'
@@ -21,13 +21,13 @@ load_dotenv(env_file)
 
 
 def get_bool(key, default=False):
-    """Convert environment variable string to boolean"""
+    """환경 변수 문자열을 불린 값으로 변환"""
     value = os.getenv(key, str(default)).lower()
     return value in ('true', '1', 'yes', 'on')
 
 
 def get_int(key, default=0):
-    """Convert environment variable string to integer"""
+    """환경 변수 문자열을 정수로 변환"""
     try:
         return int(os.getenv(key, default))
     except (ValueError, TypeError):
@@ -35,9 +35,9 @@ def get_int(key, default=0):
 
 
 class Config:
-    """Base configuration class"""
+    """기본 설정 클래스"""
     
-    # Security
+    # 보안
     SECRET_KEY = os.getenv('SECRET_KEY', os.urandom(32).hex())
     
     # Database
@@ -106,7 +106,7 @@ class TestConfig(Config):
     SQLALCHEMY_ECHO = False
 
 
-# Configuration dictionary
+# 설정 딕셔너리
 config = {
     'development': DevelopmentConfig,
     'production': ProductionConfig,
