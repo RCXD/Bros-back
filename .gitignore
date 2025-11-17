@@ -292,3 +292,8 @@ secrets.json
 apps/gen/.env.example
 /test/uploads
 test/.gen.env
+apps/.env.production
+apps/.env.local
+.env.production
+.env.local
+.env.example
