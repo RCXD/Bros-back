@@ -171,7 +171,7 @@ def login():
         # 사용자명으로 사용자 찾기
         user = User.query.filter_by(username=username).first()
         if not user:
-            return jsonify({"error": "잘못된 인증 정보입니다"}), 401
+            return jsonify({"error": "아이디 또는 비밀번호 오류입니다."}), 401
         
         # 계정 정지 여부 확인
         if user.is_expired:
@@ -179,7 +179,7 @@ def login():
         
         # 비밀번호 확인
         if not user.check_password(password):
-            return jsonify({"error": "잘못된 인증 정보입니다"}), 401
+            return jsonify({"error": "아이디 또는 비밀번호 오류입니다."}), 401
         
         # 마지막 로그인 시간 업데이트
         user.renew_login()
@@ -187,7 +187,7 @@ def login():
         
         # 토큰 생성
         tokens = token_provider(user.user_id,
-                                additional_claims={"usename":user.username,
+                                additional_claims={"username":user.username,
                                                    "nickname":user.nickname,
                                                    "email":user.email}
                                 )
