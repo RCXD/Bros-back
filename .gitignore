@@ -299,3 +299,4 @@ apps/.env.local
 .env.example
 /apps/static/post_images
 /apps/static/profile_images
+/app/static/profile_images
