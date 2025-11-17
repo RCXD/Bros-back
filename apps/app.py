@@ -90,8 +90,8 @@ def register_blueprints(app):
     app.register_blueprint(favorite_bp, url_prefix="/favorite")
     
     # Detector module
-    from apps.detector.views import bp as detector_bp
-    app.register_blueprint(detector_bp, url_prefix="/detector")
+    # from apps.detector.views import bp as detector_bp
+    # app.register_blueprint(detector_bp, url_prefix="/detector")
     
     # Security module
     from apps.report.views import bp as security_bp
@@ -102,9 +102,9 @@ def register_blueprints(app):
     app.register_blueprint(admin_bp, url_prefix="/admin")
     
     # Test module (if in development)
-    if app.config.get('DEBUG'):
-        from apps.test.views import bp as test_bp
-        app.register_blueprint(test_bp, url_prefix="/test")
+    # if app.config.get('DEBUG'):
+    #     from apps.test.views import bp as test_bp
+    #     app.register_blueprint(test_bp, url_prefix="/test")
 
 
 def create_directories(app):
@@ -122,4 +122,4 @@ def create_directories(app):
 if __name__ == '__main__':
     # Development server
     app = create_app('development')
-    app.run(host='0.0.0.0', port=8000, debug=True)
+    app.run(host='0.0.0.0', port=8001, debug=True)
