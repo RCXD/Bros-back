@@ -287,5 +287,16 @@ secrets.json
 
 # enviroments
 .env
-config.py
+/app/config.py
 /app/static/post_images
+apps/gen/.env.example
+/test/uploads
+test/.gen.env
+apps/.env.production
+apps/.env.local
+.env.production
+.env.local
+.env.example
+/apps/static/post_images
+/apps/static/profile_images
+/app/static/profile_images

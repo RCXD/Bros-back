@@ -59,7 +59,7 @@ def create_notification():
 
 
 # 내 알림 조회
-@bp.route("/mine", methods=["GET"])
+@bp.route("/me", methods=["GET"])
 @jwt_required()
 def get_my_notifications():
     current_user_id = int(get_jwt_identity())
@@ -73,7 +73,7 @@ def get_my_notifications():
 
 
 # 알림 읽음 처리
-@bp.route("/<int:notification_id>/read", methods=["PATCH"])
+@bp.route("/<int:notification_id>", methods=["PATCH"])
 @jwt_required()
 def mark_notification_as_read(notification_id):
     current_user_id = int(get_jwt_identity())

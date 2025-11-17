@@ -40,7 +40,7 @@ def write_post():
     if not content:
         return jsonify({"message": "게시글 내용은 필수입니다."}), 400
     if len(content) > 2000:
-        return jsonify({"error": "게시글 내용은 2000자 이하로 입력해야 합니다."}), 400
+        return jsonify({"message": "게시글 내용은 2000자 이하로 입력해야 합니다."}), 400
 
     files = request.files.getlist("images")
     uploaded_images = []

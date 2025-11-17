@@ -101,11 +101,11 @@ def parse_route(response):
     - routes: 비어있으면 404 반환. 요약정보(distance, duration)와 좌표 정보(geometry), 경로 세그먼트(legs) 포함.
     '''
     if "code" in response and response["code"] != "Ok":
-        return {"error": response.get("message", "Unknown error")}, 400
+        return {"message": response.get("message", "Unknown error")}, 400
 
     routes = response.get("routes", [])
     if not routes:
-        return {"error": "No routes found"}, 404
+        return {"message": "No routes found"}, 404
     
     route = routes[0]
     result = {
@@ -122,11 +122,11 @@ def parse_nearest(response):
     - waypoints: 비어있으면 404 반환. 각 좌표에 대한 최근접 도로 정보 포함.
     '''
     if "code" in response and response["code"] != "Ok":
-        return {"error": response.get("message", "Unknown error")}, 400
+        return {"message": response.get("message", "알려지지 않은 OSRM 오류")}, 400
 
     waypoints = response.get("waypoints", [])
     if not waypoints:
-        return {"error": "No waypoints found"}, 404
+        return {"message": "웨이포인트를 찾지 못했습니다."}, 404
     
     result = []
     for wp in waypoints:
@@ -143,12 +143,12 @@ def parse_table(response):
     - durations/distances: 비어있으면 404 반환. 거리 및 시간 행렬 포함.
     '''
     if "code" in response and response["code"] != "Ok":
-        return {"error": response.get("message", "Unknown error")}, 400
+        return {"message": response.get("message", "알려지지 않은 OSRM 오류")}, 400
     durations = response.get("durations", [])
     distances = response.get("distances", [])
 
     if not durations or not distances:
-        return {"error": "No duration/distance data found"}, 404
+        return {"message": "거리/시간 데이터를 찾지 못했습니다."}, 404
 
     result = {
         "durations": durations,
@@ -162,11 +162,11 @@ def parse_match(response):
     - matchings: 비어있으면 404 반환. 매칭된 경로 정보 포함.
     '''
     if "code" in response and response["code"] != "Ok":
-        return {"error": response.get("message", "Unknown error")}, 400
+        return {"message": response.get("message", "알려지지 않은 OSRM 오류")}, 400
 
     matchings = response.get("matchings", [])
     if not matchings:
-        return {"error": "No matchings found"}, 404
+        return {"message": "매칭된 경로를 찾지 못했습니다."}, 404
     
     result = []
     for match in matchings:
@@ -184,11 +184,11 @@ def parse_trip(response):
     - trips: 비어있으면 404 반환. 최적 순회 경로 정보 포함.
     '''
     if "code" in response and response["code"] != "Ok":
-        return {"error": response.get("message", "Unknown error")}, 400
+        return {"message": response.get("message", "알려지지 않은 OSRM 오류")}, 400
 
     trips = response.get("trips", [])
     if not trips:
-        return {"error": "No trips found"}, 404
+        return {"message": "최적 순회 경로를 찾지 못했습니다."}, 404
     
     result = []
     for trip in trips:

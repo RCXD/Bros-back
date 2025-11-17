@@ -8,8 +8,8 @@ from app import create_app
 from app.extensions import db
 from app.config import Config
 
-# .env 파일 로드 (test/.env)
-env_path = Path(__file__).parent / '.env'
+# .gen.env 파일 로드 (test/.gen.env)
+env_path = Path(__file__).parent / '.gen.env'
 load_dotenv(dotenv_path=env_path)
 
 # SQLAlchemy 경고 억제
@@ -38,6 +38,18 @@ def pytest_addoption(parser):
         default=False,
         help="테스트 환경 사용 (test/uploads, localhost DB)"
     )
+    parser.addoption(
+        "--reset-prev-data",
+        action="store_true",
+        default=False,
+        help="데이터 생성 전 기존 데이터를 모두 삭제합니다"
+    )
+    parser.addoption(
+        "--legacy",
+        action="store_true",
+        default=False,
+        help="레거시 API 엔드포인트 사용 (기본값: V1 API)"
+    )
 
 
 @pytest.fixture(scope="session")
@@ -46,6 +58,8 @@ def fixture_app(request):
     keep_data = request.config.getoption("--keep-data")
     clean_data = request.config.getoption("--clean-data")
     use_test_env = request.config.getoption("--use-test-env")
+    reset_prev_data = request.config.getoption("--reset-prev-data")
+    use_legacy_api = request.config.getoption("--legacy")
     
     # --keep-data가 명시되면 True, --clean-data가 명시되면 False, 둘 다 없으면 False (기본값)
     if keep_data:
@@ -53,45 +67,84 @@ def fixture_app(request):
     else:
         keep_generated_data = False
     
-    # .env 파일에서 설정 읽기
-    api_backend_url = os.getenv('API_BACKEND_URL', 'http://localhost:5000')
-    db_host = os.getenv('DB_HOST', 'localhost')
-    db_port = os.getenv('DB_PORT', '3306')
-    db_name = os.getenv('DB_NAME', '404found_test')
-    db_user = os.getenv('DB_USER', 'root')
-    db_password = os.getenv('DB_PASSWORD', '1234')
+    # API 버전 설정
+    api_version = 'legacy' if use_legacy_api else 'v1'
+    
+    # 환경에 따라 .env 설정 읽기
+    if use_test_env:
+        # 테스트 환경
+        env_prefix = 'TEST_'
+    else:
+        # 프로덕션 환경
+        env_prefix = 'PROD_'
+    
+    # Verbosity 설정
+    verbosity = int(os.getenv(f'{env_prefix}VERBOSITY', '1'))
+    
+    # 로거 초기화
+    from test.database.logger import init_logger
+    log = init_logger(verbosity)
+    
+    # 환경 정보 출력
+    if verbosity >= 1:
+        env_name = "테스트" if use_test_env else "프로덕션"
+        print(f"\n{env_name} 환경 (API: {api_version.upper()}, Verbosity: {verbosity})")
+    
+    # .env 파일에서 설정 읽기 (환경별 접두사 사용)
+    api_backend_url = os.getenv(f'{env_prefix}API_BACKEND_URL', 'http://localhost:5000')
+    db_host = os.getenv(f'{env_prefix}DB_HOST', 'localhost')
+    db_port = os.getenv(f'{env_prefix}DB_PORT', '3306')
+    db_name = os.getenv(f'{env_prefix}DB_NAME', '404found_test')
+    db_user = os.getenv(f'{env_prefix}DB_USER', 'root')
+    db_password = os.getenv(f'{env_prefix}DB_PASSWORD', '1234')
+    
+    # 사용자 생성 수
+    num_users = int(os.getenv(f'{env_prefix}NUM_USERS', '10'))
+    num_admins = int(os.getenv(f'{env_prefix}NUM_ADMINS', '2'))
+    
+    # 이미지 경로 설정
+    profile_folder = os.getenv(f'{env_prefix}PROFILE_IMG_FOLDER', 'test/uploads/profile_images')
+    post_folder = os.getenv(f'{env_prefix}POST_IMG_FOLDER', 'test/uploads/post_images')
+    dummy_data_dir = os.getenv(f'{env_prefix}DUMMY_DATA_DIR', r'D:\share\dummy data')
+    dummy_profile_img_dir = os.getenv(f'{env_prefix}DUMMY_PROFILE_IMG_DIR', r'D:\share\dummy data\profile_images')
+    dummy_post_img_dir = os.getenv(f'{env_prefix}DUMMY_POST_IMG_DIR', r'D:\share\dummy data\images')
+    
+    # Post JSON 경로
+    post_json_path = os.getenv(f'{env_prefix}POST_JSON_PATH', 'test/database/post_data.json')
     
     # 데이터베이스 URI 구성
     db_uri = f"mysql+pymysql://{db_user}:{db_password}@{db_host}:{db_port}/{db_name}"
     
-    # --use-test-env 옵션에 따라 환경 설정
-    if use_test_env:
-        # 테스트 환경
-        profile_folder = "test/uploads/profile_images"
-        post_folder = "test/uploads/post_images"
-        print("\n🔧 테스트 환경 사용")
-    else:
-        # 프로덕션 모드
-        profile_folder = "static/profile_images"
-        post_folder = "static/post_images"
-        print("\n🚀 프로덕션 환경 사용")
-    
-    # 앱 생성 전 설정 오버라이드 - 별도의 테스트 데이터베이스 사용
+    # 앱 생성 전 설정 오버라이드
     Config.TESTING = True
     Config.KEEP_GENERATED_DATA = keep_generated_data
+    Config.RESET_PREV_DATA = reset_prev_data
+    Config.API_VERSION = api_version
+    Config.VERBOSITY = verbosity
     Config.PROFILE_IMG_UPLOAD_FOLDER = profile_folder
     Config.POST_IMG_UPLOAD_FOLDER = post_folder
-    Config.DUMMY_DATA_DIR = r"D:\share\dummy data"
-    Config.DUMMY_PROFILE_IMG_DIR = r"D:\share\dummy data\profile_images"
-    Config.DUMMY_POST_IMG_DIR = r"D:\share\dummy data\images"
+    Config.DUMMY_DATA_DIR = dummy_data_dir
+    Config.DUMMY_PROFILE_IMG_DIR = dummy_profile_img_dir
+    Config.DUMMY_POST_IMG_DIR = dummy_post_img_dir
     Config.SQLALCHEMY_DATABASE_URI = db_uri
     Config.SQLALCHEMY_ECHO = False  # 테스트 중 출력 소음 감소
-    Config.API_BACKEND_URL = api_backend_url  # API 백엔드 URL 추가
+    Config.API_BACKEND_URL = api_backend_url
+    Config.NUM_USERS = num_users
+    Config.NUM_ADMINS = num_admins
+    Config.POST_JSON_PATH = post_json_path
     
-    print(f"  🌐 API 백엔드: {api_backend_url}")
-    print(f"  📁 프로필 이미지: {profile_folder}")
-    print(f"  📁 게시글 이미지: {post_folder}")
-    print(f"  💾 데이터베이스: {db_uri.split('@')[1]}")
+    # 설정 정보 출력 (verbosity에 따라)
+    if verbosity >= 2:
+        print(f"  API 백엔드: {api_backend_url}")
+        print(f"  API 버전: {api_version.upper()}")
+        print(f"  생성할 사용자: {num_users}명 (관리자: {num_admins}명)")
+        print(f"  프로필 이미지: {profile_folder}")
+        print(f"  게시글 이미지: {post_folder}")
+        print(f"  더미 데이터: {dummy_data_dir}")
+        print(f"  Post JSON: {post_json_path}")
+        print(f"  데이터베이스: {db_uri.split('@')[1]}")
+    elif verbosity >= 1:
+        print(f"  API: {api_backend_url}, DB: {db_name}, Users: {num_users}+{num_admins}")
     
     if keep_generated_data:
         print(f"  💾 데이터 유지: 예 (테스트 후 데이터 유지)\n")

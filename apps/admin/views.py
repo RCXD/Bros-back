@@ -17,7 +17,7 @@ def admin_required():
     """Decorator to check if user is admin"""
     current_user = get_current_user()
     if not current_user or current_user.account_type != AccountType.ADMIN:
-        return jsonify({"error": "관리자 권한이 필요합니다"}), 403
+        return jsonify({"message": "관리자 권한이 필요합니다"}), 403
     return None
 
 
@@ -81,7 +81,7 @@ def get_users():
         ],
         "total": pagination.total,
         "pages": pagination.pages,
-        "current_page": page,
+        "page": page,
         "per_page": per_page,
     }), 200
 
@@ -128,7 +128,7 @@ def ban_user(user_id):
     user = User.query.get_or_404(user_id)
     
     if user.account_type == AccountType.ADMIN:
-        return jsonify({"error": "관리자 계정은 정지할 수 없습니다"}), 400
+        return jsonify({"message": "관리자 계정은 정지할 수 없습니다"}), 400
     
     user.is_expired = True
     db.session.commit()
@@ -170,7 +170,7 @@ def delete_user(user_id):
     user = User.query.get_or_404(user_id)
     
     if user.account_type == AccountType.ADMIN:
-        return jsonify({"error": "관리자 계정은 삭제할 수 없습니다"}), 400
+        return jsonify({"message": "관리자 계정은 삭제할 수 없습니다"}), 400
     
     try:
         db.session.delete(user)
@@ -178,7 +178,7 @@ def delete_user(user_id):
         return jsonify({"message": f"사용자 {user.username} 삭제 완료"}), 200
     except Exception as e:
         db.session.rollback()
-        return jsonify({"error": "사용자 삭제 실패", "details": str(e)}), 400
+        return jsonify({"message": "사용자 삭제 실패", "details": str(e)}), 400
 
 
 # =====================================================
@@ -325,7 +325,7 @@ def get_reports():
         ],
         "total": pagination.total,
         "pages": pagination.pages,
-        "current_page": page,
+        "page": page,
     }), 200
 
 

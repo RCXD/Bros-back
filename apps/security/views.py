@@ -30,13 +30,13 @@ def create_report():
         reason = data.get("reason")
         
         if not all([target_type, target_id, reason]):
-            return jsonify({"error": "target_type, target_id, reason은 필수입니다"}), 400
+            return jsonify({"message": "target_type, target_id, reason은 필수입니다"}), 400
         
         # target_type 검증
         try:
             report_type = ReportType[target_type.upper()]
         except KeyError:
-            return jsonify({"error": f"유효하지 않은 target_type입니다. 다음 중 하나여야 합니다: {[t.name for t in ReportType]}"}), 400
+            return jsonify({"message": f"유효하지 않은 target_type입니다. 다음 중 하나여야 합니다: {[t.name for t in ReportType]}"}), 400
         
         # 이미 신고했는지 확인
         existing = Report.query.filter_by(
@@ -46,7 +46,7 @@ def create_report():
         ).first()
         
         if existing:
-            return jsonify({"error": "이미 신고한 콘텐츠입니다"}), 409
+            return jsonify({"message": "이미 신고한 콘텐츠입니다"}), 409
         
         report = Report(
             reporter_id=current_user.user_id,
@@ -65,7 +65,7 @@ def create_report():
         
     except Exception as e:
         db.session.rollback()
-        return jsonify({"error": f"신고 생성 실패: {str(e)}"}), 400
+        return jsonify({"message": f"신고 생성 실패: {str(e)}"}), 400
 
 
 @bp.get("/reports")
@@ -101,7 +101,7 @@ def get_report(report_id):
     
     # 소유권 확인
     if report.reporter_id != current_user_id:
-        return jsonify({"error": "권한이 없습니다"}), 403
+        return jsonify({"message": "권한이 없습니다"}), 403
     
     return jsonify({
         "report_id": report.report_id,
@@ -124,11 +124,11 @@ def cancel_report(report_id):
         
         # 소유권 확인
         if report.reporter_id != current_user_id:
-            return jsonify({"error": "권한이 없습니다"}), 403
+            return jsonify({"message": "권한이 없습니다"}), 403
         
         # 미처리 신고만 취소 가능
         if report.is_resolved:
-            return jsonify({"error": "처리 완료된 신고는 취소할 수 없습니다"}), 400
+            return jsonify({"message": "처리 완료된 신고는 취소할 수 없습니다"}), 400
         
         db.session.delete(report)
         db.session.commit()
@@ -137,7 +137,7 @@ def cancel_report(report_id):
         
     except Exception as e:
         db.session.rollback()
-        return jsonify({"error": f"신고 취소 실패: {str(e)}"}), 400
+        return jsonify({"message": f"신고 취소 실패: {str(e)}"}), 400
 
 
 @bp.post("/accidents")
@@ -160,7 +160,7 @@ def report_accident():
             "note": "AccidentReport 모델 추가 필요"
         }), 501
     except Exception as e:
-        return jsonify({"error": str(e)}), 400
+        return jsonify({"message": str(e)}), 400
 
 
 @bp.get("/accidents")

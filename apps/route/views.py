@@ -662,7 +662,7 @@ def navigate():
         profile = data.get("profile", "driving")
 
         if not all([start, end, vias]):
-            return jsonify({"error": "start_lat, start_lon, end_lat, end_lon are required"}), 400
+            return jsonify({"message": "start_lat, start_lon, end_lat, end_lon are required"}), 400
         
         # TODO: Integrate with OSRM or other routing service
         return jsonify({
@@ -675,7 +675,7 @@ def navigate():
         }), 501
         
     except Exception as e:
-        return jsonify({"error": str(e)}), 400
+        return jsonify({"message": str(e)}), 400
 
 
 @bp.get("/paths")

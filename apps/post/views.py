@@ -1,13 +1,14 @@
 """
 게시글 모듈 - 게시글 CRUD 및 상호작용
 """
-from flask import Blueprint, jsonify, request
+from flask import Blueprint, jsonify, request, send_from_directory
 from flask_jwt_extended import jwt_required, get_jwt_identity, get_current_user
 from sqlalchemy.exc import IntegrityError
 
 from apps.config.server import db
-from apps.post.models import Post, Category, PostLike
+from apps.post.models import Post, Category, PostLike, Image
 from apps.auth.models import User
+from apps.common.image_handlers import compress_image, save_to_disk, IMAGE_EXTENSIONS
 
 bp = Blueprint("post", __name__)
 
@@ -46,23 +47,34 @@ def get_posts():
     
     posts = []
     for post in pagination.items:
+        user = User.query.get(post.user_id)
         like_count = PostLike.query.filter_by(post_id=post.post_id).count()
+        images = Image.query.filter_by(post_id=post.post_id).all()
         posts.append({
             "post_id": post.post_id,
             "user_id": post.user_id,
+            "nickname": user.nickname if user else None,
+            "profile_img": user.profile_img if user else None,
             "content": post.content,
             "category": post.category.category_name if post.category else None,
             "view_counts": post.view_counts,
             "like_count": like_count,
+            "images": [{
+                "image_id": img.image_id,
+                "uuid": img.uuid,
+                "directory": img.directory,
+                "original_image_name": img.original_image_name,
+                "ext": img.ext
+            } for img in images],
             "created_at": post.created_at.isoformat(),
             "updated_at": post.updated_at.isoformat()
         })
     
     return jsonify({
-        "posts": posts,
+        "items": posts,
         "total": pagination.total,
         "pages": pagination.pages,
-        "current_page": page
+        "page": page
     }), 200
 
 
@@ -76,20 +88,24 @@ def create_post():
         - category_id: 필수
         - images: 선택 (다중 파일)
     """
+    from apps.common.image_handlers import compress_image, save_to_disk, IMAGE_EXTENSIONS
+    
     try:
         current_user = get_current_user()
         content = request.form.get("content")
         category_id = request.form.get("category_id", type=int)
         
         if not content:
-            return jsonify({"error": "내용은 필수입니다"}), 400
+            return jsonify({"message": "내용은 필수입니다"}), 400
+        if len(content) > 2000:
+            return jsonify({"message": "게시글 내용은 2000자 이하로 입력해야 합니다."}), 400
         if not category_id:
-            return jsonify({"error": "카테고리는 필수입니다"}), 400
+            return jsonify({"message": "카테고리는 필수입니다"}), 400
         
         # 카테고리 존재 확인
         category = Category.query.get(category_id)
         if not category:
-            return jsonify({"error": "유효하지 않은 카테고리입니다"}), 400
+            return jsonify({"message": "유효하지 않은 카테고리입니다"}), 400
         
         # 게시글 생성
         post = Post(
@@ -99,18 +115,58 @@ def create_post():
         )
         
         db.session.add(post)
-        db.session.commit()
+        db.session.flush()  # post_id 확보
         
-        # TODO: 이미지 업로드 처리
+        # 이미지 업로드 처리
+        files = request.files.getlist("images")
+        uploaded_images = []
+        
+        for file in files:
+            if not file or not hasattr(file, "filename"):
+                continue
+                
+            # 파일 확장자 검증
+            ext = file.filename.rsplit(".", 1)[-1].lower()
+            if ext not in IMAGE_EXTENSIONS:
+                raise ValueError(f"지원하지 않는 파일 형식: {file.filename}")
+            
+            # 이미지 압축
+            image_compressed, ext, filename = compress_image(file, image_type="post")
+            
+            # Image 레코드 생성 (UUID 자동 생성)
+            image = Image(
+                post_id=post.post_id,
+                user_id=current_user.user_id,
+                directory="",
+                original_image_name=file.filename,
+                ext=ext,
+            )
+            db.session.add(image)
+            db.session.flush()  # UUID 생성
+            
+            # UUID로 파일명 생성하여 저장
+            filename = f"{image.uuid}.{ext}"
+            rel_path = save_to_disk(image_compressed, ext, filename, category="post")
+            image.directory = rel_path
+            db.session.flush()
+            
+            uploaded_images.append({
+                "uuid": str(image.uuid),
+                "path": image.directory,
+                "original_name": image.original_image_name,
+            })
+        
+        db.session.commit()
         
         return jsonify({
             "message": "게시글이 작성되었습니다",
-            "post_id": post.post_id
+            "post_id": post.post_id,
+            "uploaded_images": uploaded_images
         }), 201
         
     except Exception as e:
         db.session.rollback()
-        return jsonify({"error": f"게시글 작성 실패: {str(e)}"}), 400
+        return jsonify({"message": f"게시글 작성 실패: {str(e)}"}), 400
 
 
 @bp.get("/<int:post_id>")
@@ -153,7 +209,8 @@ def update_post(post_id):
     게시글 수정
     Form data:
         - content: 선택
-        - images: 선택
+        - images: 선택 (새 이미지 추가)
+        - new_images: 선택 (새 이미지 추가, 'images'와 동일)
     """
     try:
         current_user = get_current_user()
@@ -161,21 +218,66 @@ def update_post(post_id):
         
         # 소유권 확인
         if post.user_id != current_user.user_id:
-            return jsonify({"error": "권한이 없습니다"}), 403
+            return jsonify({"message": "권한이 없습니다"}), 403
         
         content = request.form.get("content")
         if content:
             post.content = content
         
-        # TODO: 이미지 업데이트 처리
+        # 이미지 업로드 처리
+        files = request.files.getlist("images")
+        if not files or len(files) == 0:
+            # 'images' 키가 없으면 'new_images' 키 시도
+            files = request.files.getlist("new_images")
+        
+        uploaded_images = []
+        
+        for file in files:
+            if not file or not hasattr(file, "filename") or file.filename == '':
+                continue
+                
+            # 파일 확장자 검증
+            ext = file.filename.rsplit(".", 1)[-1].lower()
+            if ext not in IMAGE_EXTENSIONS:
+                raise ValueError(f"지원하지 않는 파일 형식: {file.filename}")
+            
+            # 이미지 압축
+            image_compressed, ext, filename = compress_image(file, image_type="post")
+            
+            # Image 레코드 생성 (UUID 자동 생성)
+            image = Image(
+                post_id=post.post_id,
+                user_id=current_user.user_id,
+                directory="",
+                original_image_name=file.filename,
+                ext=ext,
+            )
+            db.session.add(image)
+            db.session.flush()  # UUID 생성
+            
+            # UUID로 파일명 생성하여 저장
+            filename = f"{image.uuid}.{ext}"
+            rel_path = save_to_disk(image_compressed, ext, filename, category="post")
+            image.directory = rel_path
+            db.session.flush()
+            
+            uploaded_images.append({
+                "uuid": str(image.uuid),
+                "path": image.directory,
+                "original_name": image.original_image_name,
+            })
         
         db.session.commit()
         
-        return jsonify({"message": "게시글이 수정되었습니다"}), 200
+        response = {"message": "게시글이 수정되었습니다"}
+        if uploaded_images:
+            response["uploaded_images"] = uploaded_images
+        
+        return jsonify(response), 200
         
     except Exception as e:
         db.session.rollback()
-        return jsonify({"error": f"게시글 수정 실패: {str(e)}"}), 400
+        return jsonify({"message": f"게시글 수정 실패: {str(e)}"}), 400
 
 
 @bp.delete("/<int:post_id>")
@@ -188,7 +290,7 @@ def delete_post(post_id):
         
         # 소유권 확인
         if post.user_id != current_user.user_id:
-            return jsonify({"error": "권한이 없습니다"}), 403
+            return jsonify({"message": "권한이 없습니다"}), 403
         
         db.session.delete(post)
         db.session.commit()
@@ -197,7 +299,7 @@ def delete_post(post_id):
         
     except Exception as e:
         db.session.rollback()
-        return jsonify({"error": f"게시글 삭제 실패: {str(e)}"}), 400
+        return jsonify({"message": f"게시글 삭제 실패: {str(e)}"}), 400
 
 
 @bp.post("/<int:post_id>/like")
@@ -215,17 +317,19 @@ def like_post(post_id):
         user_id=current_user_id
     ).first()
     
+    like_count = PostLike.query.filter_by(post_id=post_id).count()
+    
     if existing:
         # 좋아요 취소
         db.session.delete(existing)
         db.session.commit()
-        return jsonify({"message": "좋아요 취소", "liked": False}), 200
+        return jsonify({"message": "좋아요 취소", "liked": False, "like_count": like_count}), 200
     else:
         # 좋아요
         like = PostLike(post_id=post_id, user_id=current_user_id)
         db.session.add(like)
         db.session.commit()
-        return jsonify({"message": "좋아요", "liked": True}), 201
+        return jsonify({"message": "좋아요", "liked": True, "like_count": like_count}), 201
 
 
 @bp.delete("/<int:post_id>/like")
@@ -239,11 +343,12 @@ def unlike_post(post_id):
         user_id=current_user_id
     ).first()
     
-    if not like:
-        return jsonify({"error": "좋아요하지 않은 게시글입니다"}), 404
+    # if not like:
+    #     return jsonify({"message": "좋아요하지 않은 게시글입니다"}), 404
     
-    db.session.delete(like)
-    db.session.commit()
+    if like:    
+        db.session.delete(like)
+        db.session.commit()
     
     return jsonify({"message": "좋아요 취소"}), 200
 
@@ -285,19 +390,44 @@ def get_my_posts():
     posts = []
     for post in pagination.items:
         like_count = PostLike.query.filter_by(post_id=post.post_id).count()
+        images = Image.query.filter_by(post_id=post.post_id).all()
         posts.append({
             "post_id": post.post_id,
             "content": post.content,
             "category": post.category.category_name if post.category else None,
             "view_counts": post.view_counts,
             "like_count": like_count,
+            "images": [{
+                "image_id": img.image_id,
+                "uuid": img.uuid,
+                "directory": img.directory,
+                "original_image_name": img.original_image_name,
+                "ext": img.ext
+            } for img in images],
             "created_at": post.created_at.isoformat(),
             "updated_at": post.updated_at.isoformat()
         })
     
     return jsonify({
-        "posts": posts,
+        "items": posts,
         "total": pagination.total,
         "pages": pagination.pages,
-        "current_page": page
+        "page": page
     }), 200
+
+
+@bp.get("/image/<string:uuid>")
+def get_post_image(uuid):
+    """
+    이미지 파일 조회
+    Path params:
+        - uuid: 이미지 UUID
+    Returns:
+        - 이미지 파일
+    
+    Note: /image/ 와 /images/ 모두 지원
+    """
+    image = Image.query.filter_by(uuid=uuid).first_or_404(description="이미지 없음")
+    return send_from_directory(
+        "/".join(image.directory.split("/")[:-1]), image.directory.split("/")[-1]
+    )

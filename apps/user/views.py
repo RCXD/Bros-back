@@ -31,7 +31,7 @@ def follow_user(user_id):
     current_user_id = int(get_jwt_identity())
     
     if current_user_id == user_id:
-        return jsonify({"error": "자기 자신을 팔로우할 수 없습니다"}), 400
+        return jsonify({"message": "자기 자신을 팔로우할 수 없습니다"}), 400
     
     # 대상 사용자 존재 확인
     target_user = User.query.get_or_404(user_id)
@@ -43,7 +43,7 @@ def follow_user(user_id):
     ).first()
     
     if existing:
-        return jsonify({"error": "이미 팔로우 중인 사용자입니다"}), 409
+        return jsonify({"message": "이미 팔로우 중인 사용자입니다"}), 409
     
     try:
         follow = Follow(follower_id=current_user_id, following_id=user_id)
@@ -53,7 +53,7 @@ def follow_user(user_id):
         return jsonify({"message": "팔로우 성공"}), 201
     except IntegrityError:
         db.session.rollback()
-        return jsonify({"error": "이미 팔로우 중인 사용자입니다"}), 409
+        return jsonify({"message": "이미 팔로우 중인 사용자입니다"}), 409
 
 
 @bp.delete("/<int:user_id>/follow")
@@ -68,7 +68,7 @@ def unfollow_user(user_id):
     ).first()
     
     if not follow:
-        return jsonify({"error": "팔로우 중이 아닙니다"}), 404
+        return jsonify({"message": "팔로우 중이 아닙니다"}), 404
     
     db.session.delete(follow)
     db.session.commit()
@@ -127,7 +127,7 @@ def send_friend_request(user_id):
     current_user_id = int(get_jwt_identity())
     
     if current_user_id == user_id:
-        return jsonify({"error": "자기 자신을 친구로 추가할 수 없습니다"}), 400
+        return jsonify({"message": "자기 자신을 친구로 추가할 수 없습니다"}), 400
     
     # 대상 사용자 존재 확인
     User.query.get_or_404(user_id)
@@ -139,7 +139,7 @@ def send_friend_request(user_id):
     ).first()
     
     if existing:
-        return jsonify({"error": "이미 친구입니다"}), 409
+        return jsonify({"message": "이미 친구입니다"}), 409
     
     try:
         # 양방향 친구 관계 생성
@@ -153,7 +153,7 @@ def send_friend_request(user_id):
         return jsonify({"message": "친구 추가 성공"}), 201
     except IntegrityError:
         db.session.rollback()
-        return jsonify({"error": "이미 친구입니다"}), 409
+        return jsonify({"message": "이미 친구입니다"}), 409
 
 
 @bp.delete("/<int:user_id>/friend")
@@ -173,7 +173,7 @@ def remove_friend(user_id):
     ).first()
     
     if not friend1:
-        return jsonify({"error": "친구 관계가 아닙니다"}), 404
+        return jsonify({"message": "친구 관계가 아닙니다"}), 404
     
     # 양방향 친구 관계 삭제
     if friend1:

@@ -23,7 +23,6 @@ def register_jwt_handlers(jwt):
         return (
             jsonify(
                 {
-                    "error": "authorization_required",
                     "message": "Authorization 헤더가 필요합니다.",
                 }
             ),
@@ -33,7 +32,7 @@ def register_jwt_handlers(jwt):
     @jwt.invalid_token_loader
     def invalid_token_callback(err):
         return (
-            jsonify({"error": "invalid_token", "message": "유효하지 않은 토큰입니다."}),
+            jsonify({"message": "invalid_token", "message": "유효하지 않은 토큰입니다."}),
             401,
         )
 
@@ -42,7 +41,6 @@ def register_jwt_handlers(jwt):
         return (
             jsonify(
                 {
-                    "error": "token_expired",
                     "message": "토큰이 만료되었습니다.",
                 }
             ),
@@ -54,7 +52,6 @@ def register_jwt_handlers(jwt):
         return (
             jsonify(
                 {
-                    "error": "token_revoked",
                     "message": "이미 만료되었거나 로그아웃된 토큰입니다.",
                 }
             ),
