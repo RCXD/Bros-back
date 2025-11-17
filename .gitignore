@@ -298,6 +298,4 @@ apps/.env.local
 .env.local
 .env.example
 /apps/static/post_images
-apps/static/profile_images/2025-11-17/.backup-11-17.zip
-/apps/static/profile_images/2025-11-17/.backup-11-17
 /apps/static/profile_images
