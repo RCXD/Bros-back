@@ -45,6 +45,7 @@ def get_posts():
     # 페이지네이션
     pagination = query.paginate(page=page, per_page=per_page, error_out=False)
     
+    user = User.query.get(post.user_id)
     posts = []
     for post in pagination.items:
         like_count = PostLike.query.filter_by(post_id=post.post_id).count()
@@ -52,6 +53,8 @@ def get_posts():
         posts.append({
             "post_id": post.post_id,
             "user_id": post.user_id,
+            "nickname": user.nickname,
+            "profile_img": user.profile_img,
             "content": post.content,
             "category": post.category.category_name if post.category else None,
             "view_counts": post.view_counts,
