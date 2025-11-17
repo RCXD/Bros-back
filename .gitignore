@@ -297,3 +297,4 @@ apps/.env.local
 .env.production
 .env.local
 .env.example
+/apps/static/post_images
