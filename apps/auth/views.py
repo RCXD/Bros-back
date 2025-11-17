@@ -186,11 +186,22 @@ def login():
         db.session.commit()
         
         # 토큰 생성
-        tokens = token_provider(user.user_id, access_require=True, refresh_require=True)
+        tokens = token_provider(user.user_id,
+                                additional_claims={"usename":user.username,
+                                                   "nickname":user.nickname,
+                                                   "email":user.email}
+                                )
         
         # 토큰과 사용자 데이터 반환
         response_data = tokens.get_json()
-        response_data["user"] = user.to_dict()
+        response_data["user"] = {
+            "user_id": user.user_id,
+            "username": user.username,
+            "email": user.email,
+            "nickname": user.nickname,
+            "profile_img": user.profile_img,
+            "is_admin": user.is_admin,
+        }
         
         return jsonify(response_data), 200
         
