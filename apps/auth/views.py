@@ -7,15 +7,21 @@ from flask_jwt_extended import jwt_required, get_jwt_identity, get_jwt, get_curr
 from email_validator import validate_email, EmailNotValidError
 import os
 import uuid
+import requests
 from datetime import datetime
 
 from apps.config.server import db, BLACKLIST
-from apps.auth.models import User
+from apps.auth.models import User, OauthType
 from apps.post.models import Image
 from apps.auth.utils import token_provider, is_valid_phone
 
 
 bp = Blueprint("auth", __name__)
+
+# OAuth 설정
+GOOGLE_TOKEN_INFO_URL = "https://oauth2.googleapis.com/tokeninfo"
+KAKAO_USER_INFO_URL = "https://kapi.kakao.com/v2/user/me"
+NAVER_USER_INFO_URL = "https://openapi.naver.com/v1/nid/me"
 
 
 # =====================================================
@@ -397,23 +403,257 @@ def get_me():
 
 @bp.post("/login/google")
 def google_login():
-    """Google OAuth 로그인"""
-    # TODO: Google OAuth 구현
-    return jsonify({"message": "Google OAuth - 구현 예정"}), 501
+    """
+    Google OAuth 로그인
+    
+    JSON body:
+        - token: Google ID 토큰
+    """
+    try:
+        google_token = request.json.get("token")
+        if not google_token:
+            return jsonify({"message": "토큰이 누락되었습니다"}), 400
+        
+        # Google 토큰 검증
+        resp = requests.get(GOOGLE_TOKEN_INFO_URL, params={"id_token": google_token})
+        if resp.status_code != 200:
+            return jsonify({"message": "유효하지 않은 토큰입니다"}), 401
+        
+        data = resp.json()
+        email = data.get("email")
+        social_id = data.get("sub")
+        name = data.get("name", "GoogleUser")
+        picture_url = data.get("picture")
+        
+        if not email or not social_id:
+            return jsonify({"message": "토큰에서 필요한 정보를 가져올 수 없습니다"}), 401
+        
+        # 기존 사용자 확인 또는 신규 생성
+        user = User.query.filter_by(username=social_id, oauth_type=OauthType.GOOGLE).first()
+        if not user:
+            user = User(
+                username=social_id,
+                email=email,
+                nickname=name,
+                oauth_type=OauthType.GOOGLE,
+                address="",
+                password_hash="",
+                profile_img="static/default_profile.jpg"
+            )
+            db.session.add(user)
+            db.session.commit()
+            
+            # 프로필 이미지 다운로드 (선택적)
+            if picture_url:
+                try:
+                    img_resp = requests.get(picture_url, timeout=5)
+                    if img_resp.status_code == 200:
+                        # 이미지 저장 로직 (간단 구현)
+                        pass
+                except:
+                    pass
+        
+        # 마지막 로그인 시간 업데이트
+        user.renew_login()
+        db.session.commit()
+        
+        # 토큰 생성
+        tokens = token_provider(
+            user.user_id,
+            additional_claims={
+                "username": user.username,
+                "nickname": user.nickname,
+                "email": user.email
+            }
+        )
+        
+        response_data = tokens.get_json()
+        response_data["user"] = {
+            "user_id": user.user_id,
+            "username": user.username,
+            "email": user.email,
+            "nickname": user.nickname,
+            "profile_img": user.profile_img,
+            "account_type": user.account_type.name,
+        }
+        
+        return jsonify(response_data), 200
+        
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"message": f"Google 로그인 실패: {str(e)}"}), 400
 
 
 @bp.post("/login/kakao")
 def kakao_login():
-    """Kakao OAuth 로그인"""
-    # TODO: Kakao OAuth 구현
-    return jsonify({"message": "Kakao OAuth - 구현 예정"}), 501
+    """
+    Kakao OAuth 로그인
+    
+    JSON body:
+        - token: Kakao 액세스 토큰
+    """
+    try:
+        kakao_token = request.json.get("token")
+        if not kakao_token:
+            return jsonify({"message": "토큰이 누락되었습니다"}), 400
+        
+        # Kakao 사용자 정보 조회
+        headers = {"Authorization": f"Bearer {kakao_token}"}
+        resp = requests.get(KAKAO_USER_INFO_URL, headers=headers)
+        
+        if resp.status_code != 200:
+            return jsonify({"message": "유효하지 않은 토큰입니다"}), 401
+        
+        data = resp.json()
+        kakao_id = data.get("id")
+        kakao_account = data.get("kakao_account", {})
+        email = kakao_account.get("email", f"kakao_{kakao_id}@kakao.com")
+        profile = kakao_account.get("profile", {})
+        nickname = profile.get("nickname", "KakaoUser")
+        image_url = profile.get("profile_image_url")
+        
+        if not kakao_id:
+            return jsonify({"message": "토큰에서 필요한 정보를 가져올 수 없습니다"}), 401
+        
+        # 기존 사용자 확인 또는 신규 생성
+        user = User.query.filter_by(username=str(kakao_id), oauth_type=OauthType.KAKAO).first()
+        if not user:
+            user = User(
+                username=str(kakao_id),
+                email=email,
+                nickname=nickname,
+                oauth_type=OauthType.KAKAO,
+                address="",
+                password_hash="",
+                profile_img="static/default_profile.jpg"
+            )
+            db.session.add(user)
+            db.session.commit()
+            
+            # 프로필 이미지 다운로드 (선택적)
+            if image_url:
+                try:
+                    img_resp = requests.get(image_url, timeout=5)
+                    if img_resp.status_code == 200:
+                        # 이미지 저장 로직 (간단 구현)
+                        pass
+                except:
+                    pass
+        
+        # 마지막 로그인 시간 업데이트
+        user.renew_login()
+        db.session.commit()
+        
+        # 토큰 생성
+        tokens = token_provider(
+            user.user_id,
+            additional_claims={
+                "username": user.username,
+                "nickname": user.nickname,
+                "email": user.email
+            }
+        )
+        
+        response_data = tokens.get_json()
+        response_data["user"] = {
+            "user_id": user.user_id,
+            "username": user.username,
+            "email": user.email,
+            "nickname": user.nickname,
+            "profile_img": user.profile_img,
+            "account_type": user.account_type.name,
+        }
+        
+        return jsonify(response_data), 200
+        
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"message": f"Kakao 로그인 실패: {str(e)}"}), 400
 
 
 @bp.post("/login/naver")
 def naver_login():
-    """Naver OAuth 로그인"""
-    # TODO: Naver OAuth 구현
-    return jsonify({"message": "Naver OAuth - 구현 예정"}), 501
+    """
+    Naver OAuth 로그인
+    
+    JSON body:
+        - token: Naver 액세스 토큰
+    """
+    try:
+        naver_token = request.json.get("token")
+        if not naver_token:
+            return jsonify({"message": "토큰이 누락되었습니다"}), 400
+        
+        # Naver 사용자 정보 조회
+        headers = {"Authorization": f"Bearer {naver_token}"}
+        resp = requests.get(NAVER_USER_INFO_URL, headers=headers)
+        
+        if resp.status_code != 200:
+            return jsonify({"message": "유효하지 않은 토큰입니다"}), 401
+        
+        data = resp.json().get("response", {})
+        naver_id = data.get("id")
+        email = data.get("email", f"naver_{naver_id}@naver.com")
+        nickname = data.get("nickname", "NaverUser")
+        image_url = data.get("profile_image")
+        
+        if not naver_id:
+            return jsonify({"message": "토큰에서 필요한 정보를 가져올 수 없습니다"}), 401
+        
+        # 기존 사용자 확인 또는 신규 생성
+        user = User.query.filter_by(username=str(naver_id), oauth_type=OauthType.NAVER).first()
+        if not user:
+            user = User(
+                username=str(naver_id),
+                email=email,
+                nickname=nickname,
+                oauth_type=OauthType.NAVER,
+                address="",
+                password_hash="",
+                profile_img="static/default_profile.jpg"
+            )
+            db.session.add(user)
+            db.session.commit()
+            
+            # 프로필 이미지 다운로드 (선택적)
+            if image_url:
+                try:
+                    img_resp = requests.get(image_url, timeout=5)
+                    if img_resp.status_code == 200:
+                        # 이미지 저장 로직 (간단 구현)
+                        pass
+                except:
+                    pass
+        
+        # 마지막 로그인 시간 업데이트
+        user.renew_login()
+        db.session.commit()
+        
+        # 토큰 생성
+        tokens = token_provider(
+            user.user_id,
+            additional_claims={
+                "username": user.username,
+                "nickname": user.nickname,
+                "email": user.email
+            }
+        )
+        
+        response_data = tokens.get_json()
+        response_data["user"] = {
+            "user_id": user.user_id,
+            "username": user.username,
+            "email": user.email,
+            "nickname": user.nickname,
+            "profile_img": user.profile_img,
+            "account_type": user.account_type.name,
+        }
+        
+        return jsonify(response_data), 200
+        
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"message": f"Naver 로그인 실패: {str(e)}"}), 400
 
 
 # =====================================================
