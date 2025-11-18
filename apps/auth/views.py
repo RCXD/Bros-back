@@ -162,8 +162,10 @@ def login():
     """
     try:
         data = request.get_json()
+        print(data)
         username = data.get("username")
         password = data.get("password")
+
         
         if not username or not password:
             return jsonify({"message": "username과 password는 필수입니다"}), 400

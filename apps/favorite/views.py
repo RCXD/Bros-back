@@ -6,6 +6,8 @@ from flask_jwt_extended import jwt_required, get_jwt_identity
 
 bp = Blueprint("favorite", __name__)
 
+DEFAULT_PAGE_SIZE = 20
+MAX_PAGE_SIZE = 100
 
 @bp.get("")
 @jwt_required()
@@ -16,6 +18,7 @@ def get_favorites():
         - type: Filter by type (post, product, route)
         - page: Page number
     """
+    
     # TODO: Implement when Favorite model is available
     return jsonify({"favorites": [], "message": "Favorite module not yet implemented"}), 200
 
