@@ -52,9 +52,10 @@ def get_posts():
         images = Image.query.filter_by(post_id=post.post_id).all()
         posts.append({
             "post_id": post.post_id,
-            "user_id": post.user_id,
-            "nickname": user.nickname if user else None,
-            "profile_img": user.profile_img if user else None,
+            "author": {    
+                "nickname": user.nickname if user else None,
+                "profile_img": user.profile_img if user else None,
+            },
             "content": post.content,
             "category": post.category.category_name if post.category else None,
             "view_counts": post.view_counts,
@@ -186,10 +187,7 @@ def get_post(post_id):
     
     return jsonify({
         "post_id": post.post_id,
-        "user_id": post.user_id,
         "author": {
-            "user_id": author.user_id,
-            "username": author.username,
             "nickname": author.nickname,
             "profile_img": author.profile_img
         } if author else None,
@@ -208,10 +206,13 @@ def update_post(post_id):
     """
     게시글 수정
     Form data:
-        - content: 선택
+        - content: 선택 (게시글 내용)
         - images: 선택 (새 이미지 추가)
         - new_images: 선택 (새 이미지 추가, 'images'와 동일)
+        - delete_image_ids: 선택 (삭제할 이미지 ID 목록, 쉼표로 구분)
     """
+    from apps.common.image_handlers import delete_image
+    
     try:
         current_user = get_current_user()
         post = Post.query.get_or_404(post_id)
@@ -220,11 +221,41 @@ def update_post(post_id):
         if post.user_id != current_user.user_id:
             return jsonify({"message": "권한이 없습니다"}), 403
         
+        # 내용 수정
         content = request.form.get("content")
         if content:
+            if len(content) > 2000:
+                return jsonify({"message": "게시글 내용은 2000자 이하로 입력해야 합니다."}), 400
             post.content = content
         
-        # 이미지 업로드 처리
+        deleted_images = []
+        # 이미지 삭제 처리
+        delete_image_ids = request.form.get("delete_image_ids")
+        if delete_image_ids:
+            # 쉼표로 구분된 문자열을 리스트로 변환
+            try:
+                image_ids = [int(img_id.strip()) for img_id in delete_image_ids.split(",") if img_id.strip()]
+            except ValueError:
+                return jsonify({"message": "유효하지 않은 이미지 ID 형식입니다"}), 400
+            
+            for img_id in image_ids:
+                image = Image.query.filter_by(image_id=img_id, post_id=post.post_id).first()
+                if image:
+                    # 삭제 전 정보 저장
+                    deleted_images.append({
+                        "uuid": str(image.uuid),
+                        "original_name": image.original_image_name
+                    })
+                    # 파일 시스템에서 이미지 삭제
+                    delete_image(image, category="post")
+                    # DB에서 이미지 레코드 삭제
+                    db.session.delete(image)
+                else:
+                    # 해당 게시글의 이미지가 아니거나 존재하지 않는 이미지
+                    db.session.rollback()
+                    return jsonify({"message": f"이미지 ID {img_id}를 찾을 수 없거나 권한이 없습니다"}), 404
+        
+        # 새 이미지 업로드 처리
         files = request.files.getlist("images")
         if not files or len(files) == 0:
             # 'images' 키가 없으면 'new_images' 키 시도
@@ -270,6 +301,8 @@ def update_post(post_id):
         db.session.commit()
         
         response = {"message": "게시글이 수정되었습니다"}
+        if deleted_images:
+            response["deleted_images"] = deleted_images
         if uploaded_images:
             response["uploaded_images"] = uploaded_images
         

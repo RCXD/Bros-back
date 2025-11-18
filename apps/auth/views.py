@@ -668,7 +668,7 @@ def naver_login():
 # 프로필 이미지 조회
 # =====================================================
 
-@bp.get("/image/uuid/<string:uuid>")
+@bp.get("/image/<string:uuid>")
 def get_image_by_uuid(uuid):
     """
     UUID로 이미지 조회
@@ -697,30 +697,3 @@ def get_image_by_uuid(uuid):
             return jsonify({"message": f"파일 없음: {absolute_path}"}), 404
         
         return send_from_directory(folder, filename)
-
-
-@bp.get("/image/user/<int:user_id>")
-def get_user_profile_image(user_id):
-    """
-    사용자 ID로 프로필 이미지 조회
-    
-    Args:
-        user_id: 사용자 ID
-    """
-    # user_id와 post_id=NULL인 이미지 찾기 (프로필 이미지)
-    image = Image.query.filter_by(user_id=user_id, post_id=None).first_or_404(description="프로필 이미지 없음")
-    
-    # DB: static/profile_images/2025-11-12/uuid.jpg
-    relative_path = image.directory
-    
-    # 절대 경로 생성
-    absolute_path = os.path.join(current_app.root_path, relative_path)
-    
-    folder = os.path.dirname(absolute_path)
-    filename = os.path.basename(absolute_path)
-    
-    # 파일 존재 여부 체크
-    if not os.path.exists(absolute_path):
-        return jsonify({"message": f"파일 없음: {absolute_path}"}), 404
-    
-    return send_from_directory(folder, filename)
