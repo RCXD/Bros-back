@@ -69,6 +69,8 @@ def import_all_models():
     from apps.favorite.models import Favorite, FavoriteType
     from apps.feed.models import FeedItem
     from apps.product.models import Product
+    from apps.report.models import Report
+    from apps.report.models import ReportType
     # 필요한 다른 모델들도 여기에 추가
 
 
@@ -110,6 +112,9 @@ def register_blueprints(app):
     # 알림 모듈
     from apps.notification.views import bp as notification_bp
     app.register_blueprint(notification_bp, url_prefix="/notification")
+
+    from apps.report.views import bp as report_bp
+    app.register_blueprint(report_bp, url_prefix="/report")
     
     # 감지기 모듈
     # from apps.detector.views import bp as detector_bp
