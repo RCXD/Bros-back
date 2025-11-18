@@ -359,9 +359,17 @@ def logout():
 @jwt_required()
 def remove_account():
     """
-    사용자 계정 삭제
+    사용자 계정 삭제 (연관된 모든 데이터 삭제)
     """
     current_user = get_current_user()
+    
+    # 연관된 알림 삭제 (발신/수신 모두)
+    from apps.notification.models import Notification
+    Notification.query.filter(
+        (Notification.from_user_id == current_user.user_id) | 
+        (Notification.to_user_id == current_user.user_id)
+    ).delete(synchronize_session=False)
+    
     db.session.delete(current_user)
     db.session.commit()
     return jsonify({"message": "계정이 삭제되었습니다"}), 200

@@ -292,6 +292,16 @@ def delete_post(post_id):
         if post.user_id != current_user.user_id:
             return jsonify({"message": "권한이 없습니다"}), 403
         
+        # 연관된 알림 먼저 삭제 (CASCADE가 DB에 적용되지 않은 경우 대비)
+        from apps.notification.models import Notification
+        Notification.query.filter_by(post_id=post_id).delete()
+        
+        # 댓글의 알림도 삭제 (post에 달린 모든 댓글)
+        from apps.reply.models import Reply
+        replies = Reply.query.filter_by(post_id=post_id).all()
+        for reply in replies:
+            Notification.query.filter_by(reply_id=reply.reply_id).delete()
+        
         db.session.delete(post)
         db.session.commit()
         

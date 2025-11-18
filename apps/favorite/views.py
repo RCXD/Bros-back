@@ -1,8 +1,14 @@
 """
-Favorite module - User favorites and bookmarks
+즐겨찾기 모듈 - 사용자 즐겨찾기 및 북마크
 """
 from flask import Blueprint, jsonify, request
-from flask_jwt_extended import jwt_required, get_jwt_identity
+from flask_jwt_extended import jwt_required, get_jwt_identity, get_current_user
+from sqlalchemy.exc import IntegrityError
+
+from apps.config.server import db
+from apps.favorite.models import Favorite, FavoriteType
+from apps.post.models import Post
+from apps.product.models import Product
 
 bp = Blueprint("favorite", __name__)
 
@@ -11,58 +17,165 @@ bp = Blueprint("favorite", __name__)
 @jwt_required()
 def get_favorites():
     """
-    Get current user's favorites
+    현재 사용자의 즐겨찾기 조회
     Query params:
-        - type: Filter by type (post, product, route)
-        - page: Page number
+        - item_type: 타입별 필터 (STORY, ROUTE, REVIEW, REPORT, PRODUCT)
+        - page: 페이지 번호
+        - per_page: 페이지당 항목 수
     """
-    # TODO: Implement when Favorite model is available
-    return jsonify({"favorites": [], "message": "Favorite module not yet implemented"}), 200
+    current_user_id = int(get_jwt_identity())
+    
+    item_type = request.args.get("item_type")
+    page = request.args.get("page", 1, type=int)
+    per_page = request.args.get("per_page", 20, type=int)
+    
+    query = Favorite.query.filter_by(user_id=current_user_id)
+    
+    # 타입별 필터링
+    if item_type:
+        try:
+            favorite_type = FavoriteType[item_type.upper()]
+            query = query.filter_by(item_type=favorite_type)
+        except KeyError:
+            return jsonify({"message": f"유효하지 않은 타입: {item_type}"}), 400
+    
+    # 페이지네이션
+    pagination = query.order_by(Favorite.created_at.desc()).paginate(
+        page=page, per_page=per_page, error_out=False
+    )
+    
+    favorites = [fav.to_dict() for fav in pagination.items]
+    
+    return jsonify({
+        "items": favorites,
+        "total": pagination.total,
+        "pages": pagination.pages,
+        "page": page
+    }), 200
 
 
-@bp.post("/posts/<int:post_id>")
+@bp.post("/<string:item_type>/<int:item_id>")
 @jwt_required()
-def add_post_to_favorites(post_id):
-    """Add post to favorites"""
-    # TODO: Implement when Favorite model is available
-    return jsonify({"message": "Favorite module not yet implemented"}), 501
+def add_to_favorites(item_type, item_id):
+    """
+    즐겨찾기 추가
+    Path params:
+        - item_type: post, product, route 등
+        - item_id: 아이템 ID
+    """
+    current_user_id = int(get_jwt_identity())
+    
+    # item_type을 FavoriteType으로 매핑
+    type_mapping = {
+        "story": FavoriteType.STORY,
+        "route": FavoriteType.ROUTE,
+        "review": FavoriteType.REVIEW,
+        "report": FavoriteType.REPORT,
+        "product": FavoriteType.PRODUCT,
+    }
+    
+    favorite_type = type_mapping.get(item_type.lower())
+    if not favorite_type:
+        return jsonify({"message": f"유효하지 않은 타입: {item_type}"}), 400
+    
+    # 아이템 존재 확인 (Post 또는 Product)
+    if favorite_type == FavoriteType.PRODUCT:
+        item = Product.query.get(item_id)
+    else:
+        # STORY, ROUTE, REVIEW, REPORT는 모두 Post
+        item = Post.query.get(item_id)
+    
+    if not item:
+        return jsonify({"message": "아이템을 찾을 수 없습니다"}), 404
+    
+    # 즐겨찾기 생성
+    favorite = Favorite(
+        user_id=current_user_id,
+        item_type=favorite_type,
+        item_id=item_id
+    )
+    
+    db.session.add(favorite)
+    try:
+        db.session.commit()
+        return jsonify({
+            "message": "즐겨찾기에 추가되었습니다",
+            "data": favorite.to_dict()
+        }), 201
+    except IntegrityError:
+        db.session.rollback()
+        return jsonify({"message": "이미 즐겨찾기에 추가된 아이템입니다"}), 409
 
 
-@bp.delete("/posts/<int:post_id>")
+@bp.delete("/<string:item_type>/<int:item_id>")
 @jwt_required()
-def remove_post_from_favorites(post_id):
-    """Remove post from favorites"""
-    # TODO: Implement when Favorite model is available
-    return jsonify({"message": "Favorite module not yet implemented"}), 501
+def remove_from_favorites(item_type, item_id):
+    """
+    즐겨찾기 제거
+    Path params:
+        - item_type: post, product, route 등
+        - item_id: 아이템 ID
+    """
+    current_user_id = int(get_jwt_identity())
+    
+    # item_type을 FavoriteType으로 매핑
+    type_mapping = {
+        "story": FavoriteType.STORY,
+        "route": FavoriteType.ROUTE,
+        "review": FavoriteType.REVIEW,
+        "report": FavoriteType.REPORT,
+        "product": FavoriteType.PRODUCT,
+    }
+    
+    favorite_type = type_mapping.get(item_type.lower())
+    if not favorite_type:
+        return jsonify({"message": f"유효하지 않은 타입: {item_type}"}), 400
+    
+    # 즐겨찾기 찾기
+    favorite = Favorite.query.filter_by(
+        user_id=current_user_id,
+        item_type=favorite_type,
+        item_id=item_id
+    ).first()
+    
+    if not favorite:
+        return jsonify({"message": "즐겨찾기를 찾을 수 없습니다"}), 404
+    
+    db.session.delete(favorite)
+    db.session.commit()
+    
+    return jsonify({"message": "즐겨찾기에서 제거되었습니다"}), 200
 
 
-@bp.post("/products/<int:product_id>")
+@bp.get("/check/<string:item_type>/<int:item_id>")
 @jwt_required()
-def add_product_to_favorites(product_id):
-    """Add product to favorites"""
-    # TODO: Implement when Favorite model is available
-    return jsonify({"message": "Favorite module not yet implemented"}), 501
-
-
-@bp.delete("/products/<int:product_id>")
-@jwt_required()
-def remove_product_from_favorites(product_id):
-    """Remove product from favorites"""
-    # TODO: Implement when Favorite model is available
-    return jsonify({"message": "Favorite module not yet implemented"}), 501
-
-
-@bp.post("/routes/<int:route_id>")
-@jwt_required()
-def add_route_to_favorites(route_id):
-    """Add route to favorites"""
-    # TODO: Implement when Favorite model is available
-    return jsonify({"message": "Favorite module not yet implemented"}), 501
-
-
-@bp.delete("/routes/<int:route_id>")
-@jwt_required()
-def remove_route_from_favorites(route_id):
-    """Remove route from favorites"""
-    # TODO: Implement when Favorite model is available
-    return jsonify({"message": "Favorite module not yet implemented"}), 501
+def check_favorite(item_type, item_id):
+    """
+    즐겨찾기 여부 확인
+    Path params:
+        - item_type: post, product, route 등
+        - item_id: 아이템 ID
+    """
+    current_user_id = int(get_jwt_identity())
+    
+    # item_type을 FavoriteType으로 매핑
+    type_mapping = {
+        "story": FavoriteType.STORY,
+        "route": FavoriteType.ROUTE,
+        "review": FavoriteType.REVIEW,
+        "report": FavoriteType.REPORT,
+        "product": FavoriteType.PRODUCT,
+    }
+    
+    favorite_type = type_mapping.get(item_type.lower())
+    if not favorite_type:
+        return jsonify({"message": f"유효하지 않은 타입: {item_type}"}), 400
+    
+    # 즐겨찾기 존재 확인
+    exists = Favorite.query.filter_by(
+        user_id=current_user_id,
+        item_type=favorite_type,
+        item_id=item_id
+    ).first() is not None
+    
+    return jsonify({"is_favorited": exists}), 200
