@@ -221,6 +221,17 @@ def delete_reply(reply_id):
         if reply.user_id != current_user.user_id:
             return jsonify({"message": "권한이 없습니다"}), 403
         
+        # 연관된 알림 먼저 삭제 (CASCADE가 DB에 적용되지 않은 경우 대비)
+        from apps.notification.models import Notification
+        Notification.query.filter_by(reply_id=reply_id).delete()
+        
+        # 대댓글이 있는 경우 대댓글도 삭제
+        child_replies = Reply.query.filter_by(parent_id=reply_id).all()
+        for child in child_replies:
+            # 각 대댓글의 알림도 삭제
+            Notification.query.filter_by(reply_id=child.reply_id).delete()
+            db.session.delete(child)
+        
         db.session.delete(reply)
         db.session.commit()
         

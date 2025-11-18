@@ -20,10 +20,13 @@ class Favorite(db.Model):
     __tablename__ = "favorites"
     
     favorite_id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey("users.user_id"), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey("users.user_id", ondelete="CASCADE"), nullable=False)
     item_type = db.Column(db.Enum(FavoriteType), nullable=False)
     item_id = db.Column(db.Integer, nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.now)
+    
+    # Relationships
+    user = db.relationship("User", backref=db.backref("favorites", lazy="dynamic", cascade="all, delete-orphan"))
     
     # 복합 인덱스: 같은 사용자가 같은 아이템을 중복으로 즐겨찾기하지 못하도록
     __table_args__ = (

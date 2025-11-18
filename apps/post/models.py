@@ -21,7 +21,7 @@ class Post(db.Model):
     __tablename__ = "posts"
 
     post_id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey("users.user_id"))
+    user_id = db.Column(db.Integer, db.ForeignKey("users.user_id", ondelete="CASCADE"))
     category_id = db.Column(db.Integer, db.ForeignKey("categories.category_id"))
     content = db.Column(db.Text, nullable=False)
     view_counts = db.Column(db.Integer, default=0)
@@ -44,10 +44,10 @@ class PostLike(db.Model):
     """Post likes"""
     __tablename__ = "post_likes"
 
-    post_id = db.Column(db.Integer, db.ForeignKey("posts.post_id"), primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey("users.user_id"), primary_key=True)
+    post_id = db.Column(db.Integer, db.ForeignKey("posts.post_id", ondelete="CASCADE"), primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey("users.user_id", ondelete="CASCADE"), primary_key=True)
 
-    post = db.relationship("Post", backref=db.backref("likes", lazy="dynamic"))
+    post = db.relationship("Post", backref=db.backref("likes", lazy="dynamic", cascade="all, delete-orphan"))
     user = db.relationship("User", backref=db.backref("liked_posts", lazy="dynamic"))
 
 
@@ -59,15 +59,15 @@ class Image(db.Model):
     uuid = db.Column(
         db.String(255), unique=True, nullable=False, default=lambda: str(uuid.uuid4())
     )
-    post_id = db.Column(db.Integer, db.ForeignKey("posts.post_id"), nullable=True)
-    user_id = db.Column(db.Integer, db.ForeignKey("users.user_id"), nullable=False)
+    post_id = db.Column(db.Integer, db.ForeignKey("posts.post_id", ondelete="CASCADE"), nullable=True)
+    user_id = db.Column(db.Integer, db.ForeignKey("users.user_id", ondelete="CASCADE"), nullable=False)
     directory = db.Column(db.Text, nullable=False)
     original_image_name = db.Column(db.String(255), nullable=False)
     ext = db.Column(db.String(10), nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.now)
     updated_at = db.Column(db.DateTime, default=datetime.now, onupdate=datetime.now)
 
-    post = db.relationship("Post", backref=db.backref("images", lazy="joined"))
+    post = db.relationship("Post", backref=db.backref("images", lazy="joined", cascade="all, delete-orphan"))
     user = db.relationship("User", backref=db.backref("uploaded_images", lazy="dynamic"))
 
     def __repr__(self):

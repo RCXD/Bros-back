@@ -44,6 +44,10 @@ def create_app(config_name='default'):
     # JWT 핸들러 등록
     register_jwt_handlers(jwt)
     
+    # 모든 모델 import (Flask-Migrate가 인식하도록)
+    with app.app_context():
+        import_all_models()
+    
     # 블루프린트 등록
     register_blueprints(app)
     
@@ -52,6 +56,20 @@ def create_app(config_name='default'):
         create_directories(app)
     
     return app
+
+
+def import_all_models():
+    """모든 모델을 import하여 Flask-Migrate가 인식하도록 함"""
+    from apps.auth.models import User, OauthType, AccountType
+    from apps.post.models import Post, PostLike, Category, Image
+    from apps.reply.models import Reply, ReplyLike
+    from apps.user.models import Follow, Friend
+    from apps.mention.models import Mention
+    from apps.notification.models import Notification, NotificationType
+    from apps.favorite.models import Favorite, FavoriteType
+    from apps.feed.models import FeedItem
+    from apps.product.models import Product
+    # 필요한 다른 모델들도 여기에 추가
 
 
 def register_blueprints(app):
