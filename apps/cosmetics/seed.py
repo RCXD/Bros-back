@@ -4,8 +4,66 @@ import click
 from flask.cli import with_appcontext
 
 from apps.config.server import db
-from apps.cosmetics.models import CosmeticItem
+from apps.cosmetics.models import CosmeticItem, ItemType
 
+def _bulk_import_presets(presets):
+    """Auto import preset items and save to DB fast.
+
+    - Converts string types to ItemType enum
+    - Skips items whose name already exists (name is unique)
+    - Uses a single SELECT and bulk_save_objects for speed
+    Returns (created_count, skipped_count)
+    """
+    if not presets:
+        return 0, 0
+
+    # Unique by name (model enforces unique=True on name)
+    names = {p.get("name") for p in presets if p.get("name")}
+    if not names:
+        return 0, 0
+
+    existing_names = {
+        row[0]
+        for row in db.session.query(CosmeticItem.name)
+        .filter(CosmeticItem.name.in_(names))
+        .all()
+    }
+
+    to_create = []
+    skipped = 0
+    for data in presets:
+        name = (data.get("name") or "").strip()
+        if not name or name in existing_names:
+            skipped += 1
+            continue
+
+        raw_type = data.get("type")
+        try:
+            itype = raw_type if isinstance(raw_type, ItemType) else ItemType(raw_type)
+        except Exception:
+            # Invalid type; skip
+            skipped += 1
+            continue
+
+        to_create.append(
+            CosmeticItem(
+                type=itype,
+                name=name,
+                price=int(data.get("price") or 0),
+                rarity=data.get("rarity"),
+                image_path=data.get("image_path"),
+                theme_color=data.get("theme_color"),
+                description=data.get("description"),
+            )
+        )
+
+    created = 0
+    if to_create:
+        db.session.bulk_save_objects(to_create)
+        db.session.commit()
+        created = len(to_create)
+
+    return created, skipped
 
 BORDER_PRESETS = [
     {
@@ -204,33 +262,8 @@ PRESET_ITEMS = BORDER_PRESETS + OVERLAY_PRESETS + EFFECT_PRESETS
 @with_appcontext
 def seed_cosmetics():
     """
-    기본 코스메틱 20종을 DB에 삽입하는 커맨드.
-    type + name 조합이 이미 있으면 건너뜀.
+    기본 코스메틱 프리셋을 DB에 삽입하는 커맨드.
+    name이 이미 존재하면 건너뜀. 대량 삽입 최적화 사용.
     """
-    created = 0
-    skipped = 0
-
-    for data in PRESET_ITEMS:
-        exists = CosmeticItem.query.filter_by(
-            type=data["type"],
-            name=data["name"],
-        ).first()
-
-        if exists:
-            skipped += 1
-            continue
-
-        item = CosmeticItem(
-            type=data["type"],
-            name=data["name"],
-            price=data["price"],
-            rarity=data["rarity"],
-            image_path=data["image_path"],
-            theme_color=data["theme_color"],
-            description=data["description"],
-        )
-        db.session.add(item)
-        created += 1
-
-    db.session.commit()
+    created, skipped = _bulk_import_presets(PRESET_ITEMS)
     click.echo(f"Cosmetic presets: created={created}, skipped={skipped}")
