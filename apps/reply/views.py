@@ -57,9 +57,7 @@ def get_replies():
         top_liked_replies.append({
             "reply_id": reply.reply_id,
             "post_id": reply.post_id,
-            "user_id": reply.user_id,
             "author": {
-                "username": author.username,
                 "nickname": author.nickname,
                 "profile_img": author.profile_img
             } if author else None,
@@ -80,7 +78,6 @@ def get_replies():
             "post_id": reply.post_id,
             "user_id": reply.user_id,
             "author": {
-                "username": author.username,
                 "nickname": author.nickname,
                 "profile_img": author.profile_img
             } if author else None,
@@ -163,9 +160,7 @@ def get_reply(reply_id):
     return jsonify({
         "reply_id": reply.reply_id,
         "post_id": reply.post_id,
-        "user_id": reply.user_id,
         "author": {
-            "username": author.username,
             "nickname": author.nickname,
             "profile_img": author.profile_img
         } if author else None,
@@ -298,7 +293,7 @@ def get_nested_replies(reply_id):
     Reply.query.get_or_404(reply_id)
     
     replies = Reply.query.filter_by(parent_id=reply_id)\
-        .order_by(Reply.created_at.asc()).all()
+        .order_by(Reply.created_at.desc()).all()
     
     result = []
     for reply in replies:
@@ -308,9 +303,7 @@ def get_nested_replies(reply_id):
         result.append({
             "reply_id": reply.reply_id,
             "post_id": reply.post_id,
-            "user_id": reply.user_id,
             "author": {
-                "username": author.username,
                 "nickname": author.nickname,
                 "profile_img": author.profile_img
             } if author else None,

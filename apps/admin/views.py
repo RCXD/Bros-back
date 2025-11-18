@@ -343,3 +343,62 @@ def resolve_report(report_id):
     db.session.commit()
     
     return jsonify({"message": "신고가 처리되었습니다"}), 200
+
+
+
+# TODO =====================================================
+# 관리자전용 기능으로 통계 및 관리 용도로 사용되도록 할 예정
+@bp.get("/image/user/<string:user_identifier>")
+@jwt_required()
+def get_user_profile_image(user_identifier):
+    """
+    사용자 ID 또는 username으로 프로필 이미지 조회
+    
+    Args:
+        user_identifier: 사용자 ID (숫자) 또는 username (문자열)
+    
+    Examples:
+        /auth/image/user/123       -> user_id로 조회
+        /auth/image/user/john_doe  -> username으로 조회
+    """
+    # 관리자인지 확인
+    error = admin_required()
+    if error:
+        return error
+    
+    # user_identifier가 숫자인지 확인
+    if user_identifier.isdigit():
+        # user_id로 조회
+        user_id = int(user_identifier)
+        image = Image.query.filter_by(user_id=user_id, post_id=None).first()
+        if not image:
+            # 이미지가 없으면 기본 프로필 이미지 반환
+            folder = os.path.join(current_app.root_path, "static")
+            return send_from_directory(folder, "default_profile.jpg")
+    else:
+        # username으로 조회
+        user = User.query.filter_by(username=user_identifier).first()
+        if not user:
+            return jsonify({"message": "사용자를 찾을 수 없습니다"}), 404
+        
+        image = Image.query.filter_by(user_id=user.user_id, post_id=None).first()
+        if not image:
+            # 이미지가 없으면 기본 프로필 이미지 반환
+            folder = os.path.join(current_app.root_path, "static")
+            return send_from_directory(folder, "default_profile.jpg")
+    
+    # DB: static/profile_images/2025-11-12/uuid.jpg
+    relative_path = image.directory
+    
+    # 절대 경로 생성
+    absolute_path = os.path.join(current_app.root_path, relative_path)
+    
+    folder = os.path.dirname(absolute_path)
+    filename = os.path.basename(absolute_path)
+    
+    # 파일 존재 여부 체크 (파일이 없으면 기본 이미지 반환)
+    if not os.path.exists(absolute_path):
+        folder = os.path.join(current_app.root_path, "static")
+        return send_from_directory(folder, "default_profile.jpg")
+    
+    return send_from_directory(folder, filename)
