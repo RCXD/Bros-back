@@ -191,7 +191,12 @@ def signup():
         db.session.commit()
 
         return (
-            jsonify({"message": "회원가입이 완료되었습니다", "user": user.to_dict()}),
+            jsonify(
+                {
+                    "message": "회원가입이 완료되었습니다",
+                    "user": {"user_id": user.user_id},
+                }
+            ),
             201,
         )
 
@@ -201,70 +206,182 @@ def signup():
 
 
 # =====================================================
-# 로그인
+# 통합 로그인
 # =====================================================
 
 
 @bp.post("/login")
 def login():
     """
-    사용자 로그인 엔드포인트
+    통합 로그인 엔드포인트 (일반 로그인 + OAuth)
 
     JSON body:
-        - username: 필수
-        - password: 필수
+        일반 로그인:
+            - username: 필수
+            - password: 필수
+
+        OAuth 로그인:
+            - provider: 필수 ("google", "kakao", "naver")
+            - token: 필수 (OAuth 토큰)
     """
     try:
         data = request.get_json()
-        username = data.get("username")
-        password = data.get("password")
+        provider = data.get("provider")
 
-        if not username or not password:
-            return jsonify({"message": "username과 password는 필수입니다"}), 400
+        # OAuth 로그인
+        if provider:
+            token = data.get("token")
+            if not token:
+                return jsonify({"message": "토큰이 누락되었습니다"}), 400
 
-        # 사용자명으로 사용자 찾기
-        user = User.query.filter_by(username=username).first()
-        if not user:
-            return jsonify({"message": "잘못된 인증 정보입니다"}), 401
+            # OAuth 토큰 검증 및 사용자 정보 추출
+            from apps.auth.utils import (
+                verify_oauth_token,
+                find_or_create_oauth_user,
+                generate_login_response,
+            )
 
-        # 계정 정지 여부 확인
-        if user.is_expired:
-            return jsonify({"message": "정지된 계정입니다"}), 403
+            result = verify_oauth_token(provider.lower(), token)
+            if result[0] is None:
+                return jsonify({"message": result[1]}), 401
 
-        # 비밀번호 확인
-        if not user.check_password(password):
-            return jsonify({"message": "잘못된 인증 정보입니다"}), 401
+            oauth_type, username, email, nickname, profile_img_url = result
 
-        # 마지막 로그인 시간 업데이트
-        user.renew_login()
-        db.session.commit()
+            # 사용자 찾기 또는 생성
+            user = find_or_create_oauth_user(
+                username=username,
+                email=email,
+                nickname=nickname,
+                oauth_type=oauth_type,
+                db_session=db.session,
+                profile_img_url=profile_img_url,
+            )
 
-        # 토큰 생성
-        tokens = token_provider(
-            user.user_id,
-            additional_claims={
-                "username": user.username,
-                "nickname": user.nickname,
-                "email": user.email,
-                "profile_img": user.profile_img,
-            },
-        )
+            # 로그인 응답 생성
+            response_data, status_code = generate_login_response(user, db.session)
+            return jsonify(response_data), status_code
 
-        # 토큰과 사용자 데이터 반환
-        response_data = tokens.get_json()
-        response_data["user"] = {
-            "user_id": user.user_id,
-            "username": user.username,
-            "email": user.email,
-            "nickname": user.nickname,
-            "profile_img": user.profile_img,
-            "account_type": user.account_type.name,
-        }
+        # 일반 로그인
+        else:
+            username = data.get("username")
+            password = data.get("password")
 
-        return jsonify(response_data), 200
+            if not username or not password:
+                return jsonify({"message": "username과 password는 필수입니다"}), 400
+
+            # 사용자명으로 사용자 찾기
+            user = User.query.filter_by(username=username).first()
+            if not user:
+                return jsonify({"message": "잘못된 인증 정보입니다"}), 401
+
+            # 계정 정지 여부 확인
+            if user.is_expired:
+                return jsonify({"message": "정지된 계정입니다"}), 403
+
+            # 비밀번호 확인
+            if not user.check_password(password):
+                return jsonify({"message": "잘못된 인증 정보입니다"}), 401
+
+            # 로그인 응답 생성 (토큰 + 사용자 정보)
+            from apps.auth.utils import generate_login_response
+
+            response_data, status_code = generate_login_response(user, db.session)
+            return jsonify(response_data), status_code
 
     except Exception as e:
+        db.session.rollback()
         return jsonify({"message": f"로그인 실패: {str(e)}"}), 400
+
+
+# =====================================================
+# OAuth 로그인 (Deprecated - 하위 호환성 유지)
+# =====================================================
+# 이 엔드포인트들은 /login 엔드포인트로 통합되었습니다.
+# 기존 클라이언트 호환성을 위해 유지되며, /login 사용을 권장합니다.
+
+
+@bp.post("/login/google")
+def google_login():
+    """
+    Google OAuth 로그인 (Deprecated)
+
+    대신 POST /login with {"provider": "google", "token": "..."} 사용
+    """
+    try:
+        token = request.json.get("token")
+        if not token:
+            return jsonify({"message": "토큰이 누락되었습니다"}), 400
+
+        # 통합 로그인 엔드포인트로 리다이렉트
+        return login_with_provider("google", token)
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"message": f"Google 로그인 실패: {str(e)}"}), 400
+
+
+@bp.post("/login/kakao")
+def kakao_login():
+    """
+    Kakao OAuth 로그인 (Deprecated)
+
+    대신 POST /login with {"provider": "kakao", "token": "..."} 사용
+    """
+    try:
+        token = request.json.get("token")
+        if not token:
+            return jsonify({"message": "토큰이 누락되었습니다"}), 400
+
+        # 통합 로그인 엔드포인트로 리다이렉트
+        return login_with_provider("kakao", token)
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"message": f"Kakao 로그인 실패: {str(e)}"}), 400
+
+
+@bp.post("/login/naver")
+def naver_login():
+    """
+    Naver OAuth 로그인 (Deprecated)
+
+    대신 POST /login with {"provider": "naver", "token": "..."} 사용
+    """
+    try:
+        token = request.json.get("token")
+        if not token:
+            return jsonify({"message": "토큰이 누락되었습니다"}), 400
+
+        # 통합 로그인 엔드포인트로 리다이렉트
+        return login_with_provider("naver", token)
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"message": f"Naver 로그인 실패: {str(e)}"}), 400
+
+
+def login_with_provider(provider, token):
+    """내부 헬퍼: provider별 OAuth 로그인 처리"""
+    from apps.auth.utils import (
+        verify_oauth_token,
+        find_or_create_oauth_user,
+        generate_login_response,
+    )
+
+    result = verify_oauth_token(provider, token)
+    if result[0] is None:
+        return jsonify({"message": result[1]}), 401
+
+    oauth_type, username, email, nickname, profile_img_url = result
+
+    user = find_or_create_oauth_user(
+        username=username,
+        email=email,
+        nickname=nickname,
+        oauth_type=oauth_type,
+        db_session=db.session,
+        profile_img_url=profile_img_url,
+    )
+
+    response_data, status_code = generate_login_response(user, db.session)
+    return jsonify(response_data), status_code
 
 
 # =====================================================
@@ -481,281 +598,6 @@ def get_me():
         return jsonify({"message": "사용자를 찾을 수 없습니다"}), 404
 
     return jsonify(current_user.to_dict()), 200
-
-
-# =====================================================
-# OAuth 로그인 (Google, Kakao, Naver)
-# =====================================================
-
-
-@bp.post("/login/google")
-def google_login():
-    """
-    Google OAuth 로그인
-
-    JSON body:
-        - token: Google ID 토큰
-    """
-    try:
-        google_token = request.json.get("token")
-        if not google_token:
-            return jsonify({"message": "토큰이 누락되었습니다"}), 400
-
-        # Google 토큰 검증
-        resp = requests.get(GOOGLE_TOKEN_INFO_URL, params={"id_token": google_token})
-        if resp.status_code != 200:
-            return jsonify({"message": "유효하지 않은 토큰입니다"}), 401
-
-        data = resp.json()
-        email = data.get("email")
-        social_id = data.get("sub")
-        name = data.get("name", "GoogleUser")
-        picture_url = data.get("picture")
-
-        if not email or not social_id:
-            return (
-                jsonify({"message": "토큰에서 필요한 정보를 가져올 수 없습니다"}),
-                401,
-            )
-
-        # 기존 사용자 확인 또는 신규 생성
-        user = User.query.filter_by(
-            username=social_id, oauth_type=OauthType.GOOGLE
-        ).first()
-        if not user:
-            user = User(
-                username=social_id,
-                email=email,
-                nickname=name,
-                oauth_type=OauthType.GOOGLE,
-                address="",
-                password_hash="",
-                profile_img="static/default_profile.jpg",
-            )
-            db.session.add(user)
-            db.session.commit()
-
-            # 프로필 이미지 다운로드 (선택적)
-            if picture_url:
-                try:
-                    img_resp = requests.get(picture_url, timeout=5)
-                    if img_resp.status_code == 200:
-                        # 이미지 저장 로직 (간단 구현)
-                        pass
-                except:
-                    pass
-
-        # 마지막 로그인 시간 업데이트
-        user.renew_login()
-        db.session.commit()
-
-        # 토큰 생성
-        tokens = token_provider(
-            user.user_id,
-            additional_claims={
-                "username": user.username,
-                "nickname": user.nickname,
-                "email": user.email,
-            },
-        )
-
-        response_data = tokens.get_json()
-        response_data["user"] = {
-            "user_id": user.user_id,
-            "username": user.username,
-            "email": user.email,
-            "nickname": user.nickname,
-            "profile_img": user.profile_img,
-            "account_type": user.account_type.name,
-        }
-
-        return jsonify(response_data), 200
-
-    except Exception as e:
-        db.session.rollback()
-        return jsonify({"message": f"Google 로그인 실패: {str(e)}"}), 400
-
-
-@bp.post("/login/kakao")
-def kakao_login():
-    """
-    Kakao OAuth 로그인
-
-    JSON body:
-        - token: Kakao 액세스 토큰
-    """
-    try:
-        kakao_token = request.json.get("token")
-        if not kakao_token:
-            return jsonify({"message": "토큰이 누락되었습니다"}), 400
-
-        # Kakao 사용자 정보 조회
-        headers = {"Authorization": f"Bearer {kakao_token}"}
-        resp = requests.get(KAKAO_USER_INFO_URL, headers=headers)
-
-        if resp.status_code != 200:
-            return jsonify({"message": "유효하지 않은 토큰입니다"}), 401
-
-        data = resp.json()
-        kakao_id = data.get("id")
-        kakao_account = data.get("kakao_account", {})
-        email = kakao_account.get("email", f"kakao_{kakao_id}@kakao.com")
-        profile = kakao_account.get("profile", {})
-        nickname = profile.get("nickname", "KakaoUser")
-        image_url = profile.get("profile_image_url")
-
-        if not kakao_id:
-            return (
-                jsonify({"message": "토큰에서 필요한 정보를 가져올 수 없습니다"}),
-                401,
-            )
-
-        # 기존 사용자 확인 또는 신규 생성
-        user = User.query.filter_by(
-            username=str(kakao_id), oauth_type=OauthType.KAKAO
-        ).first()
-        if not user:
-            user = User(
-                username=str(kakao_id),
-                email=email,
-                nickname=nickname,
-                oauth_type=OauthType.KAKAO,
-                address="",
-                password_hash="",
-                profile_img="static/default_profile.jpg",
-            )
-            db.session.add(user)
-            db.session.commit()
-
-            # 프로필 이미지 다운로드 (선택적)
-            if image_url:
-                try:
-                    img_resp = requests.get(image_url, timeout=5)
-                    if img_resp.status_code == 200:
-                        # 이미지 저장 로직 (간단 구현)
-                        pass
-                except:
-                    pass
-
-        # 마지막 로그인 시간 업데이트
-        user.renew_login()
-        db.session.commit()
-
-        # 토큰 생성
-        tokens = token_provider(
-            user.user_id,
-            additional_claims={
-                "username": user.username,
-                "nickname": user.nickname,
-                "email": user.email,
-            },
-        )
-
-        response_data = tokens.get_json()
-        response_data["user"] = {
-            "user_id": user.user_id,
-            "username": user.username,
-            "email": user.email,
-            "nickname": user.nickname,
-            "profile_img": user.profile_img,
-            "account_type": user.account_type.name,
-        }
-
-        return jsonify(response_data), 200
-
-    except Exception as e:
-        db.session.rollback()
-        return jsonify({"message": f"Kakao 로그인 실패: {str(e)}"}), 400
-
-
-@bp.post("/login/naver")
-def naver_login():
-    """
-    Naver OAuth 로그인
-
-    JSON body:
-        - token: Naver 액세스 토큰
-    """
-    try:
-        naver_token = request.json.get("token")
-        if not naver_token:
-            return jsonify({"message": "토큰이 누락되었습니다"}), 400
-
-        # Naver 사용자 정보 조회
-        headers = {"Authorization": f"Bearer {naver_token}"}
-        resp = requests.get(NAVER_USER_INFO_URL, headers=headers)
-
-        if resp.status_code != 200:
-            return jsonify({"message": "유효하지 않은 토큰입니다"}), 401
-
-        data = resp.json().get("response", {})
-        naver_id = data.get("id")
-        email = data.get("email", f"naver_{naver_id}@naver.com")
-        nickname = data.get("nickname", "NaverUser")
-        image_url = data.get("profile_image")
-
-        if not naver_id:
-            return (
-                jsonify({"message": "토큰에서 필요한 정보를 가져올 수 없습니다"}),
-                401,
-            )
-
-        # 기존 사용자 확인 또는 신규 생성
-        user = User.query.filter_by(
-            username=str(naver_id), oauth_type=OauthType.NAVER
-        ).first()
-        if not user:
-            user = User(
-                username=str(naver_id),
-                email=email,
-                nickname=nickname,
-                oauth_type=OauthType.NAVER,
-                address="",
-                password_hash="",
-                profile_img="static/default_profile.jpg",
-            )
-            db.session.add(user)
-            db.session.commit()
-
-            # 프로필 이미지 다운로드 (선택적)
-            if image_url:
-                try:
-                    img_resp = requests.get(image_url, timeout=5)
-                    if img_resp.status_code == 200:
-                        # 이미지 저장 로직 (간단 구현)
-                        pass
-                except:
-                    pass
-
-        # 마지막 로그인 시간 업데이트
-        user.renew_login()
-        db.session.commit()
-
-        # 토큰 생성
-        tokens = token_provider(
-            user.user_id,
-            additional_claims={
-                "username": user.username,
-                "nickname": user.nickname,
-                "email": user.email,
-            },
-        )
-
-        response_data = tokens.get_json()
-        response_data["user"] = {
-            "user_id": user.user_id,
-            "username": user.username,
-            "email": user.email,
-            "nickname": user.nickname,
-            "profile_img": user.profile_img,
-            "account_type": user.account_type.name,
-        }
-
-        return jsonify(response_data), 200
-
-    except Exception as e:
-        db.session.rollback()
-        return jsonify({"message": f"Naver 로그인 실패: {str(e)}"}), 400
 
 
 # =====================================================

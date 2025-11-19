@@ -1,6 +1,8 @@
 """
 알림 관련 API 엔드포인트
+Migrated from: app/blueprints/notification.py
 """
+
 from flask import Blueprint, jsonify, request
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from sqlalchemy.exc import IntegrityError
@@ -10,23 +12,35 @@ from apps.auth.models import User
 from apps.post.models import Post
 from apps.reply.models import Reply
 
+# === LEGACY: app/blueprints/notification.py와 동일한 모델 import 구조 유지 ===
+# from apps.mention.models import Mention  # 필요시 추가
+# === END LEGACY ===
 
 bp = Blueprint("notification", __name__, url_prefix="/notification")
 
 
-@bp.route("/", methods=["POST"])
+@bp.post("")
 @jwt_required()
 def create_notification():
-    """알림 생성 (수동 호출용)"""
+    """
+    알림 생성 (수동 호출용)
+
+    === LEGACY: app/blueprints/notification.py의 create_notification() 로직 통합 ===
+    - 기존: type을 문자열로 받아서 .upper() 처리
+    - 추가: product_id 필드 지원 (apps 버전에서 추가됨)
+    === END LEGACY ===
+    """
     data = request.get_json() or {}
     from_user_id = int(get_jwt_identity())
 
     to_user_id = data.get("to_user_id")
-    notif_type = data.get("type")
+    notif_type = data.get(
+        "type"
+    )  # === LEGACY: "MENTION", "LIKE", "COMMENT" 등 문자열 ===
     post_id = data.get("post_id")
     reply_id = data.get("reply_id")
     mention_id = data.get("mention_id")
-    product_id = data.get("product_id")
+    product_id = data.get("product_id")  # === 기존 apps 버전에서 추가된 필드 ===
 
     # 필수값 체크
     if not to_user_id or not notif_type:
@@ -34,18 +48,25 @@ def create_notification():
 
     # 자기 자신에게 알림 생성 금지
     if from_user_id == to_user_id:
-        return jsonify(success=False, message="자기 자신에게 알림을 생성할 수 없습니다."), 400
+        return (
+            jsonify(success=False, message="자기 자신에게 알림을 생성할 수 없습니다."),
+            400,
+        )
 
     # 수신자 존재 확인
     to_user = User.query.get(to_user_id)
     if not to_user:
         return jsonify(success=False, message="수신자 유저가 존재하지 않습니다."), 404
 
-    # NotificationType enum 검증
+    # === LEGACY: NotificationType enum 검증 (레거시에서는 문자열로 받음) ===
     try:
         notification_type = NotificationType[notif_type.upper()]
     except KeyError:
-        return jsonify(success=False, message=f"유효하지 않은 알림 타입: {notif_type}"), 400
+        return (
+            jsonify(success=False, message=f"유효하지 않은 알림 타입: {notif_type}"),
+            400,
+        )
+    # === END LEGACY ===
 
     notification = Notification(
         type=notification_type,
@@ -67,111 +88,121 @@ def create_notification():
         db.session.rollback()
         return jsonify(success=False, message=f"알림 생성 실패: {str(e)}"), 500
 
+    # === LEGACY: serialize() 호환 (to_dict()로 통일됨) ===
     return jsonify(success=True, data=notification.to_dict()), 201
 
 
-@bp.route("/me", methods=["GET"])
+@bp.get("")
 @jwt_required()
 def get_my_notifications():
-    """내 알림 조회"""
+    """
+    내 알림 조회
+
+    === LEGACY vs 기존 비교 ===
+    - LEGACY (app/blueprints): 페이지네이션 없이 전체 조회
+    - 기존 (apps): 페이지네이션 + unread_only 필터 지원
+    - 선택: 기존 apps 버전 유지 (더 많은 기능)
+    === END ===
+    """
     current_user_id = int(get_jwt_identity())
-    
+
     # 페이지네이션 파라미터
     page = request.args.get("page", 1, type=int)
     per_page = request.args.get("per_page", 20, type=int)
-    
+
     # 읽지 않은 알림만 조회 옵션
     unread_only = request.args.get("unread_only", "false").lower() == "true"
 
     query = Notification.query.filter_by(to_user_id=current_user_id)
-    
+
     if unread_only:
         query = query.filter_by(is_checked=False)
-    
+
     notifications = query.order_by(Notification.created_at.desc()).paginate(
         page=page, per_page=per_page, error_out=False
     )
 
     result = {
-        "notifications": [n.to_dict() for n in notifications.items],
+        "items": [n.to_dict() for n in notifications.items],
         "total": notifications.total,
-        "page": notifications.page,
-        "per_page": notifications.per_page,
-        "total_pages": notifications.pages,
+        "page": page,
+        "per_page": per_page,
+        "pages": notifications.pages,
+        "has_next": notifications.has_next,
+        "has_prev": notifications.has_prev,
     }
-    
+
     return jsonify(success=True, data=result), 200
 
 
-@bp.route("/unread-count", methods=["GET"])
+@bp.get("/unread-count")
 @jwt_required()
 def get_unread_count():
     """읽지 않은 알림 개수 조회"""
     current_user_id = int(get_jwt_identity())
-    
+
     count = Notification.query.filter_by(
-        to_user_id=current_user_id,
-        is_checked=False
+        to_user_id=current_user_id, is_checked=False
     ).count()
-    
+
     return jsonify(success=True, data={"unread_count": count}), 200
 
 
-@bp.route("/<int:notification_id>", methods=["PATCH"])
+@bp.patch("/<int:notification_id>")
 @jwt_required()
 def mark_notification_as_read(notification_id):
     """알림 읽음 처리"""
     current_user_id = int(get_jwt_identity())
-    
+
     notification = Notification.query.filter_by(
-        notification_id=notification_id,
-        to_user_id=current_user_id
+        notification_id=notification_id, to_user_id=current_user_id
     ).first()
-    
+
     if not notification:
         return jsonify(success=False, message="알림을 찾을 수 없습니다."), 404
 
     notification.is_checked = True
     db.session.commit()
-    
+
     return jsonify(success=True, data=notification.to_dict()), 200
 
 
-@bp.route("/mark-all-read", methods=["PATCH"])
+@bp.patch("/mark-all-read")
 @jwt_required()
 def mark_all_as_read():
     """모든 알림 읽음 처리"""
     current_user_id = int(get_jwt_identity())
-    
+
     updated_count = Notification.query.filter_by(
-        to_user_id=current_user_id,
-        is_checked=False
+        to_user_id=current_user_id, is_checked=False
     ).update({"is_checked": True})
-    
+
     db.session.commit()
-    
-    return jsonify(
-        success=True,
-        message=f"{updated_count}개의 알림을 읽음 처리했습니다.",
-        data={"updated_count": updated_count}
-    ), 200
+
+    return (
+        jsonify(
+            success=True,
+            message=f"{updated_count}개의 알림을 읽음 처리했습니다.",
+            data={"updated_count": updated_count},
+        ),
+        200,
+    )
 
 
-@bp.route("/<int:notification_id>", methods=["DELETE"])
+@bp.delete("/<int:notification_id>")
 @jwt_required()
 def delete_notification(notification_id):
     """알림 삭제"""
     current_user_id = int(get_jwt_identity())
-    
+
     notification = Notification.query.filter_by(
-        notification_id=notification_id,
-        to_user_id=current_user_id
+        notification_id=notification_id, to_user_id=current_user_id
     ).first()
-    
+
     if not notification:
         return jsonify(success=False, message="알림을 찾을 수 없습니다."), 404
 
     db.session.delete(notification)
     db.session.commit()
-    
+
     return jsonify(success=True, message="알림이 삭제되었습니다."), 200

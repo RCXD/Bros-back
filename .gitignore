@@ -79,6 +79,11 @@ db.sqlite3-journal
 # Flask stuff:
 instance/
 
+# Application logs
+logs/
+apps/logs/
+*.log
+
 # Scrapy stuff:
 .scrapy
 
@@ -300,3 +305,4 @@ apps/.env.local
 /apps/static/post_images
 /apps/static/profile_images
 /app/static/profile_images
+/migrations
