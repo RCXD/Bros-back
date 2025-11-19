@@ -23,7 +23,7 @@ def register_jwt_handlers(jwt):
         return (
             jsonify(
                 {
-                    "message": "Authorization 헤더가 필요합니다.",
+                    "message": "로그인 후 이용하세요.",
                 }
             ),
             401,
