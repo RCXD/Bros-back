@@ -4,6 +4,36 @@ from sqlalchemy.types import JSON
 from apps.config.server import db
 
 
+class KSLink(db.Model):
+    __tablename__ = "ks_links"
+    __table_args__ = (
+        db.Index("idx_kslink_link_osm", "link_id", "osm_edges"),
+    )
+
+    link_id = db.Column(db.String(32), primary_key=True, index=True)
+    f_node = db.Column(db.String(32))
+    t_node = db.Column(db.String(32))
+    geom = db.Column(JSON, nullable=False)
+    osm_edges = db.Column(JSON)
+
+
+class TrafficHazard(db.Model):
+    __tablename__ = "traffic_hazards"
+    __table_args__ = (
+        db.Index("idx_traffic_hazard_link", "link_id"),
+        db.Index("idx_traffic_hazard_edge", "osm_edge_id"),
+    )
+
+    id = db.Column(db.Integer, primary_key=True)
+    link_id = db.Column(db.String(32), index=True)
+    osm_edge_id = db.Column(db.String(64), index=True)
+    penalty = db.Column(db.Float, nullable=False, default=1.0)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(
+        db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow
+    )
+
+
 class MyPath(db.Model):
     __tablename__ = "my_paths"
 
