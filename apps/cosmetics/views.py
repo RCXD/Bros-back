@@ -26,6 +26,44 @@ from apps.cosmetics.utils import (
     _validate_ownership,
 )
 
+bp = Blueprint("cosmetic", __name__)
+
+
+@bp.get("/test")
+def test_cosmetic_api():
+    """Ensure the cosmetic blueprint and overlay assets are reachable."""
+    static_folder = current_app.static_folder or os.path.join(current_app.root_path, "static")
+    overlay_dir = os.path.join(static_folder, "cosmetic_overlays")
+    if not os.path.isdir(overlay_dir):
+        return jsonify({"error": "overlay_directory_missing"}), 500
+
+    try:
+        files = sorted(
+            f
+            for f in os.listdir(overlay_dir)
+            if os.path.isfile(os.path.join(overlay_dir, f))
+        )
+    except OSError as exc:
+        return jsonify({"error": "cannot_list_overlays", "detail": str(exc)}), 500
+
+    if not files:
+        return jsonify({"error": "no_overlays_found"}), 500
+
+    sample = files[0]
+    rel_path = os.path.relpath(os.path.join(overlay_dir, sample), static_folder).replace("\\", "/")
+    static_url_path = current_app.static_url_path or "/static"
+    url = f"{static_url_path.rstrip('/')}/{rel_path.lstrip('/')}"
+    return (
+        jsonify(
+            {
+                "status": "cosmetic_api_ready",
+                "overlay_image": rel_path,
+                "url": url,
+            }
+        ),
+        200,
+    )
+
 DEFAULT_PER_PAGE = 50
 MAX_PER_PAGE = 200
 
@@ -60,9 +98,6 @@ def _paginate_query(query, default_per_page=DEFAULT_PER_PAGE, max_per_page=MAX_P
     if err:
         return None, err
     return query.paginate(page=page, per_page=per_page, error_out=False), None
-
-
-bp = Blueprint("cosmetic", __name__)  
 
 def _admin_route(func):
     @wraps(func)
@@ -534,5 +569,6 @@ def upload_overlay():
     path = os.path.join(target_dir, fname)
     f.save(path)
     rel = os.path.relpath(path, base).replace("\\", "/")
-    url = f"{current_app.static_url_path}/{rel}"
+    static_url_path = current_app.static_url_path or "/static"
+    url = f"{static_url_path.rstrip('/')}/{rel.lstrip('/')}"
     return jsonify({"path": rel, "url": url}), 201
