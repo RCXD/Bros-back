@@ -1,6 +1,7 @@
 """
 Route module - Navigation and routing
 """
+
 import csv
 import math
 import os
@@ -10,12 +11,27 @@ import threading
 import requests
 from flask import Blueprint, jsonify, request
 from flask_jwt_extended import jwt_required, get_jwt_identity
-from apps.route.nav_utils import split_points
 from sqlalchemy.exc import SQLAlchemyError
 from apps.config.server import db
 from apps.route.models import Hazard, MyPath
 
 bp = Blueprint("route", __name__)
+
+
+def _split_points(s):
+    pts = [
+        list(map(float, p.split(","))) for p in s.strip("()").split(";") if p.strip()
+    ]
+
+    if not pts:
+        return {"start": None, "end": None, "vias": []}
+
+    start = pts[0]
+    end = pts[-1] if len(pts) > 1 else None
+    vias = pts[1:-1] if len(pts) > 2 else []
+
+    return {"start": start, "end": end, "vias": vias}
+
 
 def _match_osm_edge(lat, lon, session=None, base_url=None, profile=None):
     """
@@ -23,7 +39,9 @@ def _match_osm_edge(lat, lon, session=None, base_url=None, profile=None):
     Falls back to None if OSRM is unavailable.
     """
     http = session or requests.Session()
-    base = (base_url or os.getenv("OSRM_BASE_URL") or "http://localhost:5000").rstrip("/")
+    base = (base_url or os.getenv("OSRM_BASE_URL") or "http://localhost:5000").rstrip(
+        "/"
+    )
     prof = profile or os.getenv("OSRM_PROFILE") or "driving"
     url = f"{base}/nearest/v1/{prof}/{lon},{lat}?number=1"
     try:
@@ -63,13 +81,17 @@ def build_hazard_osm_edge_mapping(limit=1000, base_url=None, profile=None):
     updates = []
     misses = 0
     for hazard in hazards:
-        edge = _match_osm_edge(hazard.lat, hazard.lon, session=session, base_url=base_url, profile=profile)
+        edge = _match_osm_edge(
+            hazard.lat, hazard.lon, session=session, base_url=base_url, profile=profile
+        )
         if not edge:
             misses += 1
             continue
         current_edge = hazard.osm_edge_id or hazard.edge_id
         if current_edge != edge:
-            updates.append({"hazard_id": hazard.hazard_id, "edge_id": edge, "osm_edge_id": edge})
+            updates.append(
+                {"hazard_id": hazard.hazard_id, "edge_id": edge, "osm_edge_id": edge}
+            )
 
     if updates:
         db.session.bulk_update_mappings(Hazard, updates)
@@ -77,15 +99,21 @@ def build_hazard_osm_edge_mapping(limit=1000, base_url=None, profile=None):
         _hazard_cache(force=True)
     return {"attempted": len(hazards), "updated": len(updates), "missed": misses}
 
+
 def hazard_edge_matcher_cli(argv=None):
     """
     CLI helper to backfill hazard osm_edge_id values via OSRM nearest lookups.
     Intended for quick one-off runs: python -m apps.route.views --limit 500
     """
     import argparse
+
     parser = argparse.ArgumentParser(description="Map hazards to nearest OSM edges")
-    parser.add_argument("--limit", type=int, default=1000, help="Maximum hazards to process")
-    parser.add_argument("--osrm-base-url", dest="osrm_base_url", help="Override OSRM base URL")
+    parser.add_argument(
+        "--limit", type=int, default=1000, help="Maximum hazards to process"
+    )
+    parser.add_argument(
+        "--osrm-base-url", dest="osrm_base_url", help="Override OSRM base URL"
+    )
     parser.add_argument("--profile", help="OSRM profile (default from env)")
     args = parser.parse_args(argv)
 
@@ -98,7 +126,9 @@ def hazard_edge_matcher_cli(argv=None):
             base_url=args.osrm_base_url,
             profile=args.profile,
         )
-    print(f"attempted={summary['attempted']} updated={summary['updated']} missed={summary['missed']}")
+    print(
+        f"attempted={summary['attempted']} updated={summary['updated']} missed={summary['missed']}"
+    )
     return summary
 
 
@@ -106,8 +136,12 @@ if __name__ == "__main__":
     hazard_edge_matcher_cli()
 
 _OSRM_ARTIFACT_DIR = os.getenv("OSRM_DATA_DIR") or os.path.join(os.getcwd(), "osrm")
-_OSRM_HAZARD_CSV = os.getenv("OSRM_HAZARD_CSV") or os.path.join(_OSRM_ARTIFACT_DIR, "hazard_penalties.csv")
-_OSRM_HAZARD_LUA = os.getenv("OSRM_HAZARD_LUA") or os.path.join(_OSRM_ARTIFACT_DIR, "hazard_penalties.lua")
+_OSRM_HAZARD_CSV = os.getenv("OSRM_HAZARD_CSV") or os.path.join(
+    _OSRM_ARTIFACT_DIR, "hazard_penalties.csv"
+)
+_OSRM_HAZARD_LUA = os.getenv("OSRM_HAZARD_LUA") or os.path.join(
+    _OSRM_ARTIFACT_DIR, "hazard_penalties.lua"
+)
 
 
 def _osrm_artifact_path(path_hint, fallback):
@@ -123,9 +157,16 @@ def export_hazard_penalties_csv(csv_path=None):
     Optimized for OSRM's customize step where Lua loads penalties from disk.
     """
     path = _osrm_artifact_path(csv_path, _OSRM_HAZARD_CSV)
-    hazards = Hazard.query.filter_by(is_active=True).with_entities(
-        Hazard.osm_edge_id, Hazard.edge_id, Hazard.weight_penalty, Hazard.danger_score
-    ).all()
+    hazards = (
+        Hazard.query.filter_by(is_active=True)
+        .with_entities(
+            Hazard.osm_edge_id,
+            Hazard.edge_id,
+            Hazard.weight_penalty,
+            Hazard.danger_score,
+        )
+        .all()
+    )
 
     penalties = {}
     for osm_edge_id, edge_id, weight_penalty, danger_score in hazards:
@@ -207,9 +248,17 @@ def export_osrm_hazard_artifacts(csv_path=None, lua_path=None):
     lua_meta = render_osrm_hazard_profile(csv_meta["csv_path"], lua_path)
     payload = {"hazard_rows": csv_meta["rows"], **csv_meta, **lua_meta}
     return payload
-_OSRM_PROFILE_LUA = os.getenv("OSRM_PROFILE_LUA") or os.path.join(_OSRM_ARTIFACT_DIR, "car.lua")
-_OSRM_PBF_PATH = os.getenv("OSRM_PBF_PATH") or os.path.join(_OSRM_ARTIFACT_DIR, "map.osm.pbf")
-_OSRM_OSRM_PATH = os.getenv("OSRM_OSRM_PATH") or os.path.join(_OSRM_ARTIFACT_DIR, "map.osrm")
+
+
+_OSRM_PROFILE_LUA = os.getenv("OSRM_PROFILE_LUA") or os.path.join(
+    _OSRM_ARTIFACT_DIR, "car.lua"
+)
+_OSRM_PBF_PATH = os.getenv("OSRM_PBF_PATH") or os.path.join(
+    _OSRM_ARTIFACT_DIR, "map.osm.pbf"
+)
+_OSRM_OSRM_PATH = os.getenv("OSRM_OSRM_PATH") or os.path.join(
+    _OSRM_ARTIFACT_DIR, "map.osrm"
+)
 _OSRM_THREADS = int(os.getenv("OSRM_THREADS", "8"))
 _OSRM_CUSTOMIZE_LOCK = threading.Lock()
 _OSRM_CUSTOMIZE_RUNNING = False
@@ -224,7 +273,9 @@ def _run_osrm(cmd):
         text=True,
     )
     if proc.returncode != 0:
-        raise RuntimeError(f"{' '.join(cmd)} failed: {proc.stderr.strip() or proc.stdout.strip()}")
+        raise RuntimeError(
+            f"{' '.join(cmd)} failed: {proc.stderr.strip() or proc.stdout.strip()}"
+        )
     return proc.stdout.strip()
 
 
@@ -260,12 +311,14 @@ def trigger_osrm_customize(osrm_path=None, threads=None):
             _OSRM_CUSTOMIZE_RUNNING = True
         try:
             export_osrm_hazard_artifacts()
-            _run_osrm([
-                "osrm-customize",
-                "-t",
-                str(threads or _OSRM_THREADS),
-                osrm_file,
-            ])
+            _run_osrm(
+                [
+                    "osrm-customize",
+                    "-t",
+                    str(threads or _OSRM_THREADS),
+                    osrm_file,
+                ]
+            )
         except Exception:
             pass
         finally:
@@ -274,13 +327,17 @@ def trigger_osrm_customize(osrm_path=None, threads=None):
     threading.Thread(target=_worker, daemon=True).start()
     return True
 
+
 class _CustomizeWorker:
     """
     Debounced background worker that coalesces hazard ingests and
     runs CSV regeneration + osrm-customize without overlapping runs.
     """
+
     def __init__(self, cooldown_sec=None):
-        self.cooldown = float(cooldown_sec or os.getenv("OSRM_CUSTOMIZE_DEBOUNCE", "2.0"))
+        self.cooldown = float(
+            cooldown_sec or os.getenv("OSRM_CUSTOMIZE_DEBOUNCE", "2.0")
+        )
         self._event = threading.Event()
         self._stop = threading.Event()
         self._thread = threading.Thread(target=self._loop, daemon=True)
@@ -358,6 +415,7 @@ def _parse_point(point):
     except (TypeError, ValueError):
         return None
 
+
 _HAZARD_CACHE = {"by_edge": {}, "last_refresh": 0.0}
 _HAZARD_CACHE_TTL = 30  # seconds before reloading from DB
 _RATE_LIMIT_BUCKET = {}
@@ -369,7 +427,9 @@ _INTERPOLATE_STEPS = 12
 def _rate_limited(key):
     """Cheap sliding-window limiter keyed by IP or user."""
     now = time.time()
-    window = [ts for ts in _RATE_LIMIT_BUCKET.get(key, []) if now - ts < _RATE_LIMIT_WINDOW]
+    window = [
+        ts for ts in _RATE_LIMIT_BUCKET.get(key, []) if now - ts < _RATE_LIMIT_WINDOW
+    ]
     if len(window) >= _RATE_LIMIT_MAX:
         _RATE_LIMIT_BUCKET[key] = window
         return True
@@ -431,7 +491,10 @@ def _haversine_km(p1, p2):
     lat2, lon2 = math.radians(p2["lat"]), math.radians(p2["lon"])
     dlat = lat2 - lat1
     dlon = lon2 - lon1
-    a = math.sin(dlat / 2) ** 2 + math.cos(lat1) * math.cos(lat2) * math.sin(dlon / 2) ** 2
+    a = (
+        math.sin(dlat / 2) ** 2
+        + math.cos(lat1) * math.cos(lat2) * math.sin(dlon / 2) ** 2
+    )
     c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
     return radius_km * c
 
@@ -443,7 +506,9 @@ def _segment_edges(p1, p2, session=None, base_url=None, profile=None):
         t = step / _INTERPOLATE_STEPS
         lat = p1["lat"] + (p2["lat"] - p1["lat"]) * t
         lon = p1["lon"] + (p2["lon"] - p1["lon"]) * t
-        edge = _match_osm_edge(lat, lon, session=http, base_url=base_url, profile=profile)
+        edge = _match_osm_edge(
+            lat, lon, session=http, base_url=base_url, profile=profile
+        )
         if edge:
             edges.add(edge)
     return edges
@@ -455,7 +520,15 @@ def _collect_route_edges(points, base_url=None, profile=None):
         return edges
     session = requests.Session()
     for idx in range(len(points) - 1):
-        edges.update(_segment_edges(points[idx], points[idx + 1], session=session, base_url=base_url, profile=profile))
+        edges.update(
+            _segment_edges(
+                points[idx],
+                points[idx + 1],
+                session=session,
+                base_url=base_url,
+                profile=profile,
+            )
+        )
     return edges
 
 
@@ -529,11 +602,16 @@ def ingest_hazard():
         db.session.commit()
         _register_hazard_in_cache(hazard)
         customize_started = schedule_osrm_customize()
-        return jsonify({
-            "message": "hazard ingested",
-            "hazard": hazard.serialize(),
-            "osrm_customizing": customize_started,
-        }), 201
+        return (
+            jsonify(
+                {
+                    "message": "hazard ingested",
+                    "hazard": hazard.serialize(),
+                    "osrm_customizing": customize_started,
+                }
+            ),
+            201,
+        )
     except SQLAlchemyError as exc:
         db.session.rollback()
         return jsonify({"error": f"Failed to persist hazard: {str(exc)}"}), 400
@@ -541,14 +619,22 @@ def ingest_hazard():
 
 @bp.get("/hazard/active")
 def list_active_hazards():
-    hazards = Hazard.query.filter_by(is_active=True).order_by(Hazard.updated_at.desc()).limit(500).all()
+    hazards = (
+        Hazard.query.filter_by(is_active=True)
+        .order_by(Hazard.updated_at.desc())
+        .limit(500)
+        .all()
+    )
     return jsonify({"hazards": [h.serialize() for h in hazards]}), 200
 
 
 @bp.post("/hazard/refresh")
 def refresh_hazard_cache():
     cache = _hazard_cache(force=True)
-    return jsonify({"message": "hazard cache refreshed", "active_edges": len(cache)}), 200
+    return (
+        jsonify({"message": "hazard cache refreshed", "active_edges": len(cache)}),
+        200,
+    )
 
 
 @bp.post("/hazard/map-osm-edges")
@@ -578,7 +664,9 @@ def safe_route():
         return jsonify({"error": "start and end are required"}), 400
 
     def _osrm_route(points, base_url=None, profile=None):
-        base = (base_url or os.getenv("OSRM_BASE_URL") or "http://localhost:5000").rstrip("/")
+        base = (
+            base_url or os.getenv("OSRM_BASE_URL") or "http://localhost:5000"
+        ).rstrip("/")
         prof = profile or os.getenv("OSRM_PROFILE") or "driving"
         coords = ";".join(f"{p['lon']},{p['lat']}" for p in points)
         url = f"{base}/route/v1/{prof}/{coords}"
@@ -619,61 +707,86 @@ def safe_route():
         edges = set()
         for i in _sample_indices(len(coords), max_samples=max_samples):
             lon, lat = coords[i][0], coords[i][1]
-            edge = _match_osm_edge(lat, lon, session=session, base_url=base_url, profile=profile)
+            edge = _match_osm_edge(
+                lat, lon, session=session, base_url=base_url, profile=profile
+            )
             if edge:
                 edges.add(edge)
         return edges
 
     points = [start, *vias, end]
-    osrm_meta = _osrm_route(points, base_url=data.get("osrm_base_url"), profile=data.get("profile"))
+    osrm_meta = _osrm_route(
+        points, base_url=data.get("osrm_base_url"), profile=data.get("profile")
+    )
     if not osrm_meta:
         return jsonify({"error": "OSRM route unavailable"}), 502
 
     coords = osrm_meta["coords"]
-    edges = _edges_from_geometry(coords, base_url=data.get("osrm_base_url"), profile=data.get("profile"), max_samples=60)
+    edges = _edges_from_geometry(
+        coords,
+        base_url=data.get("osrm_base_url"),
+        profile=data.get("profile"),
+        max_samples=60,
+    )
     cache = _hazard_cache()
     hazard_penalty = sum(cache.get(edge, 0.0) for edge in edges)
     distance_km = (osrm_meta["distance_m"] or 0.0) / 1000.0
     travel_weight = distance_km + hazard_penalty
 
-    return jsonify({
-        "route": {
-            "points": points,
-            "distance_km": round(distance_km, 4),
-            "duration_s": round(osrm_meta["duration_s"], 2),
-            "hazard_penalty": round(hazard_penalty, 4),
-            "travel_weight": round(travel_weight, 4),
-            "edges_considered": len(edges),
-            "mode": data.get("mode", "safe"),
-        },
-        "hazard_overlay": [
-            {"edge_id": edge, "penalty": cache.get(edge, 0.0)}
-            for edge in edges
-            if cache.get(edge, 0.0) > 0
-        ],
-    }), 200
+    return (
+        jsonify(
+            {
+                "route": {
+                    "points": points,
+                    "distance_km": round(distance_km, 4),
+                    "duration_s": round(osrm_meta["duration_s"], 2),
+                    "hazard_penalty": round(hazard_penalty, 4),
+                    "travel_weight": round(travel_weight, 4),
+                    "edges_considered": len(edges),
+                    "mode": data.get("mode", "safe"),
+                },
+                "hazard_overlay": [
+                    {"edge_id": edge, "penalty": cache.get(edge, 0.0)}
+                    for edge in edges
+                    if cache.get(edge, 0.0) > 0
+                ],
+            }
+        ),
+        200,
+    )
+
 
 @bp.post("/navigate")
 def navigate():
     try:
         data = request.get_json()
-        
-        start, end, vias = split_points(data)
+
+        start, end, vias = _split_points(data)
         profile = data.get("profile", "driving")
 
         if not all([start, end, vias]):
-            return jsonify({"message": "start_lat, start_lon, end_lat, end_lon are required"}), 400
-        
+            return (
+                jsonify(
+                    {"message": "start_lat, start_lon, end_lat, end_lon are required"}
+                ),
+                400,
+            )
+
         # TODO: Integrate with OSRM or other routing service
-        return jsonify({
-            "message": "OSRM integration pending",
-            "route": {
-                "start": {"lat": start[0], "lon": start[1]},
-                "end": {"lat": end[0], "lon": end[1]},
-                "profile": profile
-            }
-        }), 501
-        
+        return (
+            jsonify(
+                {
+                    "message": "OSRM integration pending",
+                    "route": {
+                        "start": {"lat": start[0], "lon": start[1]},
+                        "end": {"lat": end[0], "lon": end[1]},
+                        "profile": profile,
+                    },
+                }
+            ),
+            501,
+        )
+
     except Exception as e:
         return jsonify({"message": str(e)}), 400
 
@@ -683,7 +796,9 @@ def navigate():
 def get_my_paths():
     """Get current user's saved paths"""
     user_id = get_jwt_identity()
-    paths = MyPath.query.filter_by(user_id=user_id).order_by(MyPath.created_at.desc()).all()
+    paths = (
+        MyPath.query.filter_by(user_id=user_id).order_by(MyPath.created_at.desc()).all()
+    )
     return jsonify({"paths": [p.serialize() for p in paths]}), 200
 
 
@@ -755,7 +870,9 @@ def update_path(path_id):
     data = request.get_json() or {}
     name = data.get("name", path.path_name)
 
-    update_points = any(key in data for key in ["start_location", "end_location", "waypoints"])
+    update_points = any(
+        key in data for key in ["start_location", "end_location", "waypoints"]
+    )
     points = path.points
 
     if update_points:

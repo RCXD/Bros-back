@@ -1,6 +1,7 @@
 """
 Cosmetic API - Items, Sets, User inventory/state, and uploads
 """
+
 import os
 from datetime import datetime
 from werkzeug.utils import secure_filename
@@ -29,41 +30,6 @@ from apps.cosmetics.utils import (
 bp = Blueprint("cosmetic", __name__)
 
 
-@bp.get("/test")
-def test_cosmetic_api():
-    """Ensure the cosmetic blueprint and overlay assets are reachable."""
-    static_folder = current_app.static_folder or os.path.join(current_app.root_path, "static")
-    overlay_dir = os.path.join(static_folder, "cosmetic_overlays")
-    if not os.path.isdir(overlay_dir):
-        return jsonify({"error": "overlay_directory_missing"}), 500
-
-    try:
-        files = sorted(
-            f
-            for f in os.listdir(overlay_dir)
-            if os.path.isfile(os.path.join(overlay_dir, f))
-        )
-    except OSError as exc:
-        return jsonify({"error": "cannot_list_overlays", "detail": str(exc)}), 500
-
-    if not files:
-        return jsonify({"error": "no_overlays_found"}), 500
-
-    sample = files[0]
-    rel_path = os.path.relpath(os.path.join(overlay_dir, sample), static_folder).replace("\\", "/")
-    static_url_path = current_app.static_url_path or "/static"
-    url = f"{static_url_path.rstrip('/')}/{rel_path.lstrip('/')}"
-    return (
-        jsonify(
-            {
-                "status": "cosmetic_api_ready",
-                "overlay_image": rel_path,
-                "url": url,
-            }
-        ),
-        200,
-    )
-
 DEFAULT_PER_PAGE = 50
 MAX_PER_PAGE = 200
 
@@ -79,7 +45,9 @@ def _pagination_meta(pagination):
     }
 
 
-def _get_pagination_params(default_per_page=DEFAULT_PER_PAGE, max_per_page=MAX_PER_PAGE):
+def _get_pagination_params(
+    default_per_page=DEFAULT_PER_PAGE, max_per_page=MAX_PER_PAGE
+):
     try:
         page = int(request.args.get("page", 1))
         per_page = int(request.args.get("per_page", default_per_page))
@@ -93,11 +61,14 @@ def _get_pagination_params(default_per_page=DEFAULT_PER_PAGE, max_per_page=MAX_P
     return page, per_page, None
 
 
-def _paginate_query(query, default_per_page=DEFAULT_PER_PAGE, max_per_page=MAX_PER_PAGE):
+def _paginate_query(
+    query, default_per_page=DEFAULT_PER_PAGE, max_per_page=MAX_PER_PAGE
+):
     page, per_page, err = _get_pagination_params(default_per_page, max_per_page)
     if err:
         return None, err
     return query.paginate(page=page, per_page=per_page, error_out=False), None
+
 
 def _admin_route(func):
     @wraps(func)
@@ -106,7 +77,9 @@ def _admin_route(func):
         if err:
             return err
         return func(*args, **kwargs)
+
     return wrapper
+
 
 # ---- Items (Admin) ----
 
@@ -311,7 +284,7 @@ def update_set(set_id):
         if "items" in data:
             # Replace composition
             CosmeticSetItem.query.filter_by(set_id=s.set_id).delete()
-            for iid in (data.get("items") or []):
+            for iid in data.get("items") or []:
                 db.session.add(CosmeticSetItem(set_id=s.set_id, item_id=int(iid)))
 
         db.session.commit()
@@ -374,7 +347,9 @@ def list_set_items(set_id):
 @jwt_required()
 def list_user_items():
     uid = get_jwt_identity()
-    rows_query = UserItem.query.filter_by(user_id=uid).order_by(UserItem.acquired_at.desc())
+    rows_query = UserItem.query.filter_by(user_id=uid).order_by(
+        UserItem.acquired_at.desc()
+    )
     pagination, err = _paginate_query(rows_query)
     if err:
         return err
@@ -424,7 +399,10 @@ def acquire_item():
         db.session.rollback()
         # already owned
         ui = UserItem.query.filter_by(user_id=uid, item_id=item_id).first()
-        return jsonify({"user_item_id": ui.user_item_id, "message": "already_owned"}), 200
+        return (
+            jsonify({"user_item_id": ui.user_item_id, "message": "already_owned"}),
+            200,
+        )
     except SQLAlchemyError as exc:
         db.session.rollback()
         return jsonify({"error": str(exc)}), 400
@@ -492,15 +470,22 @@ def _validate_ownership(uid, item_id, required_type=None):
 def get_user_state():
     uid = get_jwt_identity()
     st = _get_or_create_user_state(uid)
-    return jsonify({
-        "user_id": st.user_id,
-        "border_item_id": st.border_item_id,
-        "overlay_item_id": st.overlay_item_id,
-        "theme_item_id": st.theme_item_id,
-        "font_item_id": st.font_item_id,
-        "effect_item_id": st.effect_item_id,
-        "last_updated": st.last_updated.isoformat() if st.last_updated else None,
-    }), 200
+    return (
+        jsonify(
+            {
+                "user_id": st.user_id,
+                "border_item_id": st.border_item_id,
+                "overlay_item_id": st.overlay_item_id,
+                "theme_item_id": st.theme_item_id,
+                "font_item_id": st.font_item_id,
+                "effect_item_id": st.effect_item_id,
+                "last_updated": (
+                    st.last_updated.isoformat() if st.last_updated else None
+                ),
+            }
+        ),
+        200,
+    )
 
 
 @bp.put("/user/state")
