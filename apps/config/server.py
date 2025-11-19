@@ -19,6 +19,6 @@ BLACKLIST = set()
 
 @jwt.token_in_blocklist_loader
 def check_if_token_revoked(jwt_header, jwt_payload):
-    """Check if token is in blacklist"""
+    """토큰이 블랙리스트에 있는지 확인"""
     jti = jwt_payload["jti"]
     return jti in BLACKLIST

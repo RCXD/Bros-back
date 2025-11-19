@@ -46,8 +46,6 @@ def get_feed():
         posts.append({
             "post_id": post.post_id,
             "author": {
-                "user_id": author.user_id,
-                "username": author.username,
                 "nickname": author.nickname,
                 "profile_img": author.profile_img
             } if author else None,
@@ -107,9 +105,8 @@ def get_trending():
         result.append({
             "post_id": post.post_id,
             "author": {
-                "user_id": author.user_id,
-                "username": author.username,
-                "nickname": author.nickname
+                "nickname": author.nickname,
+                "profile_img": author.profile_img
             } if author else None,
             "content": post.content[:200],  # 미리보기
             "category": post.category.category_name if post.category else None,
@@ -160,8 +157,6 @@ def get_explore():
         posts.append({
             "post_id": post.post_id,
             "author": {
-                "user_id": author.user_id,
-                "username": author.username,
                 "nickname": author.nickname,
                 "profile_img": author.profile_img
             } if author else None,
