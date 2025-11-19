@@ -12,6 +12,8 @@ from apps.product.models import Product
 
 bp = Blueprint("favorite", __name__)
 
+DEFAULT_PAGE_SIZE = 20
+MAX_PAGE_SIZE = 100
 
 @bp.get("")
 @jwt_required()

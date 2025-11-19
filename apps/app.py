@@ -15,6 +15,7 @@ from flask import Flask
 from apps.config.common import config
 from apps.config.server import db, migrate, cors, jwt
 from apps.common.jwt_handlers import register_jwt_handlers
+from apps.cosmetics.seed import seed_cosmetics
 import os
 
 
@@ -33,6 +34,8 @@ def create_app(config_name="default"):
     # 설정 로드
     app.config.from_object(config[config_name])
 
+    app.cli.add_command(seed_cosmetics)
+    
     # 정적 파일 설정 (환경 변수에서 가져오기)
     app.static_folder = app.config.get("STATIC_FOLDER", "static")
     app.static_url_path = app.config.get("STATIC_URL_PATH", "/static")
@@ -116,6 +119,10 @@ def register_blueprints(app):
 
     app.register_blueprint(route_bp, url_prefix="/route")
 
+    # 코스메틱 모듈
+    from apps.cosmetics.views import bp as cosmetic_bp
+    app.register_blueprint(cosmetic_bp, url_prefix="/cosmetic")
+    
     # 제품 모듈
     from apps.product.views import bp as product_bp
 
@@ -163,9 +170,10 @@ def register_blueprints(app):
 def create_directories(app):
     """파일 업로드를 위한 필수 디렉토리 생성"""
     directories = [
-        os.path.join(app.root_path, "static", "profile_images"),
-        os.path.join(app.root_path, "static", "post_images"),
-        os.path.join(app.root_path, "static", "product_images"),
+        os.path.join(app.root_path, 'static', 'profile_images'),
+        os.path.join(app.root_path, 'static', 'post_images'),
+        os.path.join(app.root_path, 'static', 'product_images'),
+        os.path.join(app.root_path, 'static', 'cosmetic_overlays'),
     ]
 
     for directory in directories:

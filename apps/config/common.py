@@ -41,11 +41,11 @@ class Config:
     SECRET_KEY = os.getenv('SECRET_KEY', os.urandom(32).hex())
     
     # Database
-    DB_USER = os.getenv('DB_USER', 'user1')
-    DB_PASSWORD = os.getenv('DB_PASSWORD', '1234')
-    DB_HOST = os.getenv('DB_HOST', '192.168.1.79')
+    DB_USER = os.getenv('DB_USER', 'root')
+    DB_PASSWORD = os.getenv('DB_PASSWORD', 'root')
+    DB_HOST = os.getenv('DB_HOST', 'localhost')
     DB_PORT = os.getenv('DB_PORT', '3306')
-    DB_NAME = os.getenv('DB_NAME', '404found_test1')
+    DB_NAME = os.getenv('DB_NAME', 'brosback')
     SQLALCHEMY_DATABASE_URI = f"mysql+pymysql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
     SQLALCHEMY_TRACK_MODIFICATIONS = get_bool('SQLALCHEMY_TRACK_MODIFICATIONS', False)
     SQLALCHEMY_ECHO = get_bool('SQLALCHEMY_ECHO', True)
