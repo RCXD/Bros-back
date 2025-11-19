@@ -300,3 +300,5 @@ apps/.env.local
 /apps/static/post_images
 /apps/static/profile_images
 /app/static/profile_images
+apps/migrations
+
