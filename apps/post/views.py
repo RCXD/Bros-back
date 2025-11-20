@@ -6,7 +6,7 @@ from flask import Blueprint, jsonify, request, send_from_directory
 from flask_jwt_extended import jwt_required, get_jwt_identity, get_current_user
 from sqlalchemy.exc import IntegrityError
 
-from app.models.mention import Mention
+from app_legacy.models.mention import Mention
 from apps.config.server import db
 from apps.notification.models import Notification
 from apps.post.models import Post, Category, PostLike, Image
@@ -153,7 +153,7 @@ def create_post():
             ext = file.filename.rsplit(".", 1)[-1].lower()
             if ext not in IMAGE_EXTENSIONS:
                 raise ValueError(f"지원하지 않는 파일 형식: {file.filename}")
-            
+
             # Image 레코드 생성 (UUID 자동 생성)
             image = Image(
                 post_id=post.post_id,
@@ -344,7 +344,7 @@ def update_post(post_id):
             ext = file.filename.rsplit(".", 1)[-1].lower()
             if ext not in IMAGE_EXTENSIONS:
                 raise ValueError(f"지원하지 않는 파일 형식: {file.filename}")
-            
+
             # Image 레코드 생성 (UUID 자동 생성)
             image = Image(
                 post_id=post.post_id,

@@ -65,14 +65,6 @@ def check_roadview():
     preferred_provider = data.get("provider")
 
     from apps.config.server import db
-    
-    # Verify roadview loader has at least one client
-    loader = get_roadview_loader_from_env()
-    if not loader.priority:
-        return jsonify({
-            "message": "No roadview API clients configured. Please set API keys in environment variables.",
-            "required_keys": ["GOOGLE_MAPS_API_KEY", "KAKAO_REST_API_KEY", "NAVER_CLIENT_ID + NAVER_CLIENT_SECRET"]
-        }), 503
 
     # Track request
     start_time = time.time()
