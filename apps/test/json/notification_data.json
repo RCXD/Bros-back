@@ -1,0 +1,188 @@
+{
+  "notifications": [
+    {
+      "type": "FOLLOW",
+      "from_user": "user1",
+      "to_user": "user2"
+    },
+    {
+      "type": "POST_LIKE",
+      "from_user": "user3",
+      "to_user": "user1",
+      "target_post_username": "user1"
+    },
+    {
+      "type": "REPLY",
+      "from_user": "user2",
+      "to_user": "user3",
+      "target_post_username": "user3",
+      "reply_content": "완전 공감해요! 저도 그렇게 생각했어요"
+    },
+    {
+      "type": "FOLLOW",
+      "from_user": "user4",
+      "to_user": "user1"
+    },
+    {
+      "type": "REPLY_LIKE",
+      "from_user": "user5",
+      "to_user": "user2",
+      "target_post_username": "user6",
+      "target_reply_username": "user2"
+    },
+    {
+      "type": "FOLLOW",
+      "from_user": "user6",
+      "to_user": "user3"
+    },
+    {
+      "type": "POST_LIKE",
+      "from_user": "user7",
+      "to_user": "user4",
+      "target_post_username": "user4"
+    },
+    {
+      "type": "REPLY",
+      "from_user": "user8",
+      "to_user": "user5",
+      "target_post_username": "user5",
+      "reply_content": "너무 멋진 사진이네요!"
+    },
+    {
+      "type": "FOLLOW",
+      "from_user": "user9",
+      "to_user": "user7"
+    },
+    {
+      "type": "REPLY_TO_REPLY",
+      "from_user": "user10",
+      "to_user": "user8",
+      "target_post_username": "user5",
+      "parent_reply_username": "user8",
+      "reply_content": "맞아요! 완전 대박이에요"
+    },
+    {
+      "type": "POST_LIKE",
+      "from_user": "user1",
+      "to_user": "user6",
+      "target_post_username": "user6"
+    },
+    {
+      "type": "FOLLOW",
+      "from_user": "user2",
+      "to_user": "user8"
+    },
+    {
+      "type": "REPLY",
+      "from_user": "user3",
+      "to_user": "user9",
+      "target_post_username": "user9",
+      "reply_content": "이거 완전 좋은 정보네요!"
+    },
+    {
+      "type": "REPLY_LIKE",
+      "from_user": "user4",
+      "to_user": "user10",
+      "target_post_username": "user7",
+      "target_reply_username": "user10"
+    },
+    {
+      "type": "FOLLOW",
+      "from_user": "user5",
+      "to_user": "user4"
+    },
+    {
+      "type": "POST_LIKE",
+      "from_user": "user6",
+      "to_user": "user2",
+      "target_post_username": "user2"
+    },
+    {
+      "type": "REPLY",
+      "from_user": "user7",
+      "to_user": "user1",
+      "target_post_username": "user1",
+      "reply_content": "저도 가보고 싶어요!"
+    },
+    {
+      "type": "FOLLOW",
+      "from_user": "user8",
+      "to_user": "user5"
+    },
+    {
+      "type": "REPLY_TO_REPLY",
+      "from_user": "user9",
+      "to_user": "user3",
+      "target_post_username": "user9",
+      "parent_reply_username": "user3",
+      "reply_content": "감사합니다 ㅎㅎ"
+    },
+    {
+      "type": "POST_LIKE",
+      "from_user": "user10",
+      "to_user": "user7",
+      "target_post_username": "user7"
+    },
+    {
+      "type": "FOLLOW",
+      "from_user": "user1",
+      "to_user": "user9"
+    },
+    {
+      "type": "REPLY",
+      "from_user": "user2",
+      "to_user": "user10",
+      "target_post_username": "user10",
+      "reply_content": "완전 멋지네요!"
+    },
+    {
+      "type": "REPLY_LIKE",
+      "from_user": "user3",
+      "to_user": "user7",
+      "target_post_username": "user1",
+      "target_reply_username": "user7"
+    },
+    {
+      "type": "FOLLOW",
+      "from_user": "user4",
+      "to_user": "user6"
+    },
+    {
+      "type": "POST_LIKE",
+      "from_user": "user5",
+      "to_user": "user8",
+      "target_post_username": "user8"
+    },
+    {
+      "type": "REPLY",
+      "from_user": "user6",
+      "to_user": "user4",
+      "target_post_username": "user4",
+      "reply_content": "여기 완전 좋아보여요!"
+    },
+    {
+      "type": "FOLLOW",
+      "from_user": "user7",
+      "to_user": "user10"
+    },
+    {
+      "type": "REPLY_TO_REPLY",
+      "from_user": "user8",
+      "to_user": "user6",
+      "target_post_username": "user4",
+      "parent_reply_username": "user6",
+      "reply_content": "완전 인정이에요!"
+    },
+    {
+      "type": "POST_LIKE",
+      "from_user": "user9",
+      "to_user": "user3",
+      "target_post_username": "user3"
+    },
+    {
+      "type": "FOLLOW",
+      "from_user": "user10",
+      "to_user": "user2"
+    }
+  ]
+}

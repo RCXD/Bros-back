@@ -148,6 +148,11 @@ def register_blueprints(app):
 
     app.register_blueprint(report_bp, url_prefix="/report")
 
+    # 로드뷰 모듈
+    from apps.roadview.views import bp as roadview_bp
+
+    app.register_blueprint(roadview_bp, url_prefix="/roadview")
+
     # 감지기 모듈
     # from apps.detector.views import bp as detector_bp
     # app.register_blueprint(detector_bp, url_prefix="/detector")
