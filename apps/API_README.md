@@ -21,6 +21,8 @@
 10. [신고 (Report)](#10-신고-report)
 11. [관리자 (Admin)](#11-관리자-admin)
 12. [경로 (Route)](#12-경로-route)
+13. [장소 (Place)](#13-장소-place)
+14. [코스메틱 (Cosmetic)](#14-코스메틱-cosmetic)
 
 ---
 
@@ -1810,6 +1812,60 @@ Authorization: Bearer <access_token>
    - 9가지 알림 타입 지원
    - 읽음/읽지않음 필터링
    - 일괄 읽음 처리 기능
+
+---
+
+## 13. 즐겨찾기 장소 (Place)
+
+Base Path: `/place`  
+인증: JWT Bearer 헤더 필수 (`Authorization: Bearer <access_token>`)  
+CSRF: JWT 프레임워크의 기본 설정 준수, 헤더 기반 요청 시 추가 CSRF 토큰 불필요.
+
+### 13.1 장소 생성
+**Endpoint**: `POST /place`  
+**Body (application/json)**:
+```json
+{
+  "name": "Home",
+  "lat": 37.5,
+  "lon": 127.0,
+  "point": 4.5,
+  "radius": 50,
+  "description": "위치 설명",
+  "is_public": false
+}
+```
+**성공 201**:
+```json
+{
+  "message": "Place created",
+  "place": {
+    "place_id": 1,
+    "name": "Home",
+    "lat": 37.5,
+    "lon": 127.0,
+    "point": 4.5,
+    "radius": 50.0,
+    "description": "위치 설명",
+    "is_public": false,
+    "created_at": "2025-11-19T10:00:00",
+    "updated_at": "2025-11-19T10:00:00",
+    "user_id": 3
+  }
+}
+```
+**검증 실패 400**: `{"message": "Invalid input", "errors": ["lat must be >= -90", ...]}`
+
+### 13.2 목록/단건 조회
+- `GET /place?page=1&per_page=20` → 현재 사용자 즐겨찾기 목록, 페이지네이션 필드(`items`, `total`, `pages`, `page`, `per_page`).
+- `GET /place/<place_id>` → 소유자만 접근 가능, 없으면 404, 권한 없으면 403.
+
+### 13.3 수정/삭제
+- `PUT /place/<place_id>`: 부분 업데이트 허용(`name`, `lat`, `lon`, `point`, `radius`, `description`, `is_public`), 입력 검증 동일, 소유자만 200, 권한 없으면 403.
+- `DELETE /place/<place_id>`: 소유자만 삭제 가능, 성공 시 `{"message": "Place deleted"}`.
+
+입력 규칙: `name` 필수, `lat` ∈ [-90, 90], `lon` ∈ [-180, 180], `point` ∈ [0, 5], `radius` 숫자.  
+에러 시 명확한 메시지와 HTTP 400/403/404/401 상태 코드 반환.
 
 ---
 

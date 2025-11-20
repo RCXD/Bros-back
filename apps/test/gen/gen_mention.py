@@ -92,7 +92,7 @@ def create_mention_db(app, mention_data, username_to_userid, post_map, reply_map
             mentioned_user_id=mentioned_id,
             post_id=post_id,
             reply_id=reply_id,
-            created_at=datetime.utcnow() - timedelta(days=random.randint(0, 30)),
+            created_at=datetime.now() - timedelta(days=random.randint(0, 30)),
             is_checked=random.choice([True, False]),
         )
         mentions.append(mention)

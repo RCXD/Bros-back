@@ -4,7 +4,7 @@ import click
 from flask.cli import with_appcontext
 
 from apps.config.server import db
-from apps.cosmetics.models import CosmeticItem, ItemType
+from apps.cosmetic.models import CosmeticItem, ItemType
 
 def _bulk_import_presets(presets):
     """Auto import preset items and save to DB fast.

@@ -11,7 +11,7 @@ from sqlalchemy.exc import SQLAlchemyError, IntegrityError
 from functools import wraps
 
 from apps.config.server import db
-from apps.cosmetics.models import (
+from apps.cosmetic.models import (
     CosmeticItem,
     CosmeticSet,
     CosmeticSetItem,
@@ -19,13 +19,13 @@ from apps.cosmetics.models import (
     UserCosmeticState,
     ItemType,
 )
-from apps.cosmetics.utils import (
+from apps.cosmetic.utils import (
     _get_or_create_user_state,
     _item_to_dict,
-    _require_admin,
     _set_to_dict,
     _validate_ownership,
 )
+from apps.admin.views import admin_required
 
 bp = Blueprint("cosmetic", __name__)
 
@@ -70,23 +70,11 @@ def _paginate_query(
     return query.paginate(page=page, per_page=per_page, error_out=False), None
 
 
-def _admin_route(func):
-    @wraps(func)
-    def wrapper(*args, **kwargs):
-        _, err = _require_admin()
-        if err:
-            return err
-        return func(*args, **kwargs)
-
-    return wrapper
-
-
 # ---- Items (Admin) ----
 
 
 @bp.post("/items")
 @jwt_required()
-@_admin_route
 def create_item():
     data = request.get_json(silent=True) or {}
     try:
@@ -153,8 +141,10 @@ def get_item(item_id):
 
 @bp.put("/items/<int:item_id>")
 @jwt_required()
-@_admin_route
 def update_item(item_id):
+    error = admin_required()
+    if error:
+        return error
     i = CosmeticItem.query.get(item_id)
     if not i:
         return jsonify({"error": "not_found"}), 404
@@ -184,8 +174,10 @@ def update_item(item_id):
 
 @bp.delete("/items/<int:item_id>")
 @jwt_required()
-@_admin_route
 def delete_item(item_id):
+    error = admin_required()
+    if error:
+        return error
     i = CosmeticItem.query.get(item_id)
     if not i:
         return jsonify({"error": "not_found"}), 404
@@ -206,8 +198,10 @@ def delete_item(item_id):
 
 @bp.post("/sets")
 @jwt_required()
-@_admin_route
 def create_set():
+    error = admin_required()
+    if error:
+        return error
     data = request.get_json(silent=True) or {}
     name = (data.get("name") or "").strip()
     if not name:
@@ -263,8 +257,10 @@ def get_set(set_id):
 
 @bp.put("/sets/<int:set_id>")
 @jwt_required()
-@_admin_route
 def update_set(set_id):
+    error = admin_required()
+    if error:
+        return error
     s = CosmeticSet.query.get(set_id)
     if not s:
         return jsonify({"error": "not_found"}), 404
@@ -296,8 +292,10 @@ def update_set(set_id):
 
 @bp.delete("/sets/<int:set_id>")
 @jwt_required()
-@_admin_route
 def delete_set(set_id):
+    error = admin_required()
+    if error:
+        return error
     s = CosmeticSet.query.get(set_id)
     if not s:
         return jsonify({"error": "not_found"}), 404
@@ -391,7 +389,7 @@ def acquire_item():
     if not CosmeticItem.query.get(item_id):
         return jsonify({"error": "invalid_item"}), 404
     try:
-        ui = UserItem(user_id=uid, item_id=item_id, acquired_at=datetime.utcnow())
+        ui = UserItem(user_id=uid, item_id=item_id, acquired_at=datetime.now())
         db.session.add(ui)
         db.session.commit()
         return jsonify({"user_item_id": ui.user_item_id}), 201
@@ -426,7 +424,7 @@ def acquire_set():
     try:
         for iid in item_ids:
             try:
-                ui = UserItem(user_id=uid, item_id=iid, acquired_at=datetime.utcnow())
+                ui = UserItem(user_id=uid, item_id=iid, acquired_at=datetime.now())
                 db.session.add(ui)
                 db.session.flush()
                 created.append(iid)
@@ -446,7 +444,7 @@ def acquire_set():
 def _get_or_create_user_state(uid):
     st = UserCosmeticState.query.filter_by(user_id=uid).first()
     if not st:
-        st = UserCosmeticState(user_id=uid, last_updated=datetime.utcnow())
+        st = UserCosmeticState(user_id=uid, last_updated=datetime.now())
         db.session.add(st)
         db.session.commit()
     return st
@@ -526,7 +524,7 @@ def update_user_state():
     try:
         for k, v in updates.items():
             setattr(st, k, v)
-        st.last_updated = datetime.utcnow()
+        st.last_updated = datetime.now()
         db.session.commit()
         return jsonify({"message": "updated"}), 200
     except SQLAlchemyError as exc:

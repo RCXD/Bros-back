@@ -28,9 +28,9 @@ class TrafficHazard(db.Model):
     link_id = db.Column(db.String(32), index=True)
     osm_edge_id = db.Column(db.String(64), index=True)
     penalty = db.Column(db.Float, nullable=False, default=1.0)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=datetime.now)
     updated_at = db.Column(
-        db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow
+        db.DateTime, default=datetime.now, onupdate=datetime.now
     )
 
 
@@ -41,8 +41,8 @@ class MyPath(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey("users.user_id"), nullable=False, index=True)
     path_name = db.Column(db.String(100), nullable=False)
     points = db.Column(JSON, nullable=False)  # [{"lat":..,"lon":..}, ...]
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=datetime.now)
+    updated_at = db.Column(db.DateTime, default=datetime.now, onupdate=datetime.now)
 
     def serialize(self):
         return {
@@ -71,8 +71,8 @@ class Hazard(db.Model):
     edge_id = db.Column(db.String(64), index=True)
     osm_edge_id = db.Column(db.String(64), index=True)
     weight_penalty = db.Column(db.Float, nullable=False, default=0.0)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=datetime.now)
+    updated_at = db.Column(db.DateTime, default=datetime.now, onupdate=datetime.now)
 
     def serialize(self):
         return {

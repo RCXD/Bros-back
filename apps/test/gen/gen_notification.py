@@ -71,7 +71,7 @@ def create_notification_db(
                 follow = Follow(
                     follower_id=from_user_id,
                     followed_id=to_user_id,
-                    created_at=datetime.utcnow()
+                    created_at=datetime.now()
                     - timedelta(days=random.randint(0, 30)),
                 )
                 db.session.add(follow)
@@ -94,7 +94,7 @@ def create_notification_db(
                         post_like = PostLike(
                             user_id=from_user_id,
                             post_id=post_id,
-                            created_at=datetime.utcnow()
+                            created_at=datetime.now()
                             - timedelta(days=random.randint(0, 30)),
                         )
                         db.session.add(post_like)
@@ -115,7 +115,7 @@ def create_notification_db(
                         post_id=post_id,
                         parent_id=None,
                         content=reply_content,
-                        created_at=datetime.utcnow()
+                        created_at=datetime.now()
                         - timedelta(days=random.randint(0, 30)),
                     )
                     db.session.add(reply)
@@ -147,7 +147,7 @@ def create_notification_db(
                             post_id=post_id,
                             parent_id=parent_reply.reply_id,
                             content=reply_content,
-                            created_at=datetime.utcnow()
+                            created_at=datetime.now()
                             - timedelta(days=random.randint(0, 30)),
                         )
                         db.session.add(reply)
@@ -183,7 +183,7 @@ def create_notification_db(
                             reply_like = ReplyLike(
                                 user_id=from_user_id,
                                 reply_id=reply_id,
-                                created_at=datetime.utcnow()
+                                created_at=datetime.now()
                                 - timedelta(days=random.randint(0, 30)),
                             )
                             db.session.add(reply_like)
@@ -195,7 +195,7 @@ def create_notification_db(
             to_user_id=to_user_id,
             post_id=post_id,
             reply_id=reply_id,
-            created_at=datetime.utcnow() - timedelta(days=random.randint(0, 30)),
+            created_at=datetime.now() - timedelta(days=random.randint(0, 30)),
             is_checked=random.choice([True, False]),
         )
         notifications.append(notification)

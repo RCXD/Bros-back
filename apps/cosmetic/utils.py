@@ -8,7 +8,7 @@ from flask_jwt_extended import get_jwt_identity
 
 from apps.auth.models import AccountType, User
 from apps.config.server import db
-from apps.cosmetics.models import (
+from apps.cosmetic.models import (
     CosmeticItem,
     CosmeticSet,
     CosmeticSetItem,
@@ -16,18 +16,9 @@ from apps.cosmetics.models import (
     UserItem,
 )
 
-
 def _is_admin(user_id):
     u = User.query.filter_by(user_id=user_id).first()
     return bool(u and u.account_type == AccountType.ADMIN)
-
-
-def _require_admin():
-    uid = get_jwt_identity()
-    if not _is_admin(uid):
-        return None, (jsonify({"error": "admin_only"}), 403)
-    return uid, None
-
 
 def _item_to_dict(item: CosmeticItem):
     return {
@@ -68,7 +59,7 @@ def _set_to_dict(s: CosmeticSet, include_items=False):
 def _get_or_create_user_state(uid):
     st = UserCosmeticState.query.filter_by(user_id=uid).first()
     if not st:
-        st = UserCosmeticState(user_id=uid, last_updated=datetime.utcnow())
+        st = UserCosmeticState(user_id=uid, last_updated=datetime.now())
         db.session.add(st)
         db.session.commit()
     return st

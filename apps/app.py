@@ -15,7 +15,7 @@ from flask import Flask
 from apps.config.common import config
 from apps.config.server import db, migrate, cors, jwt
 from apps.common.jwt_handlers import register_jwt_handlers
-from apps.cosmetics.seed import seed_cosmetics
+from apps.cosmetic.seed import seed_cosmetics
 import os
 
 
@@ -82,6 +82,7 @@ def import_all_models():
     from apps.product.models import Product
     from apps.report.models import Report
     from apps.report.models import ReportType
+    from apps.place.models import Place
 
     # 필요한 다른 모델들도 여기에 추가
 
@@ -119,8 +120,13 @@ def register_blueprints(app):
 
     app.register_blueprint(route_bp, url_prefix="/route")
 
+    # 즐겨찾기 장소 모듈
+    from apps.place.views import bp as place_bp
+
+    app.register_blueprint(place_bp, url_prefix="/place")
+
     # 코스메틱 모듈
-    from apps.cosmetics.views import bp as cosmetic_bp
+    from apps.cosmetic.views import bp as cosmetic_bp
     app.register_blueprint(cosmetic_bp, url_prefix="/cosmetic")
     
     # 제품 모듈

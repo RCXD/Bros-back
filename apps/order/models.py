@@ -19,12 +19,12 @@ class Order(db.Model):
     tid = db.Column(db.String(255))
     status = db.Column(db.String(50), nullable=False, default="PENDING")
     created_at = db.Column(
-        db.DateTime, nullable=False, default=datetime.utcnow, server_default=func.now()
+        db.DateTime, nullable=False, default=datetime.now, server_default=func.now()
     )
     updated_at = db.Column(
         db.DateTime,
         nullable=False,
-        default=datetime.utcnow,
+        default=datetime.now,
         server_default=func.now(),
         onupdate=func.now(),
     )
@@ -50,7 +50,7 @@ class PaymentLog(db.Model):
     status = db.Column(db.String(50))
     payload = db.Column(db.Text)
     created_at = db.Column(
-        db.DateTime, nullable=False, default=datetime.utcnow, server_default=func.now()
+        db.DateTime, nullable=False, default=datetime.now, server_default=func.now()
     )
 
     order = db.relationship("Order", backref=db.backref("payment_logs", lazy="dynamic"))

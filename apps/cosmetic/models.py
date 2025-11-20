@@ -29,9 +29,9 @@ class CosmeticItem(db.Model):
     image_path = db.Column(db.String(255), nullable=True)
     theme_color = db.Column(db.String(32), nullable=True)
     description = db.Column(db.Text, nullable=True)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=datetime.now)
     updated_at = db.Column(
-        db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow
+        db.DateTime, default=datetime.now, onupdate=datetime.now
     )
 
 
@@ -45,7 +45,7 @@ class UserItem(db.Model):
     item_id = db.Column(
         db.Integer, db.ForeignKey("cosmetic_item.item_id"), nullable=False, index=True
     )
-    acquired_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+    acquired_at = db.Column(db.DateTime, default=datetime.now, nullable=False)
     is_equipped = db.Column(db.Boolean, default=False, nullable=False)
 
     __table_args__ = (
@@ -74,7 +74,7 @@ class UserCosmeticState(db.Model):
         db.Integer, db.ForeignKey("cosmetic_item.item_id"), nullable=True
     )
     last_updated = db.Column(
-        db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow
+        db.DateTime, default=datetime.now, onupdate=datetime.now
     )
 
 
@@ -86,9 +86,9 @@ class CosmeticSet(db.Model):
     price = db.Column(db.Integer, nullable=False, default=0)  # store cents
     description = db.Column(db.Text, nullable=True)
     preview_img = db.Column(db.String(255), nullable=True)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=datetime.now)
     updated_at = db.Column(
-        db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow
+        db.DateTime, default=datetime.now, onupdate=datetime.now
     )
 
 

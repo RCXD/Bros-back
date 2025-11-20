@@ -68,7 +68,7 @@ class Notification(db.Model):
     is_checked = db.Column(db.Boolean, default=False)
 
     # 생성 시각
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=datetime.now)
 
     # === 관계 설정 (LEGACY와 동일) ===
     from_user = db.relationship(

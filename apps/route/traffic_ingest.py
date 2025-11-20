@@ -92,6 +92,6 @@ def ingest_utic_items(items):
 
 def cleanup_stale_traffic(minutes=5):
     """Remove traffic hazards that have not been updated within `minutes`."""
-    cutoff = datetime.utcnow() - timedelta(minutes=minutes)
+    cutoff = datetime.now() - timedelta(minutes=minutes)
     TrafficHazard.query.filter(TrafficHazard.updated_at < cutoff).delete()
     db.session.commit()

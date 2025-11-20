@@ -13,6 +13,7 @@ class FavoriteType(enum.Enum):
     REVIEW = "REVIEW"    # Post 카테고리
     REPORT = "REPORT"    # Post 카테고리
     PRODUCT = "PRODUCT"  # 상품
+    PLACE = "PLACE"    # 장소
 
 
 class Favorite(db.Model):

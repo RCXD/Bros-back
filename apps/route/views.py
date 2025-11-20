@@ -197,7 +197,7 @@ def _collapse_hazards(hazards, traffic_entries=None):
 
 def _hydrate_cache_from_db():
     hazards = Hazard.query.filter_by(is_active=True).all()
-    cutoff = datetime.utcnow() - timedelta(minutes=5)
+    cutoff = datetime.now() - timedelta(minutes=5)
     traffic_entries = TrafficHazard.query.filter(
         TrafficHazard.updated_at >= cutoff
     ).all()
