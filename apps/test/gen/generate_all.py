@@ -4,15 +4,14 @@
 """
 
 import pytest
-from app_legacy.models.user import User, AccountType
-from app_legacy.models.post import Post
-from app_legacy.models.reply import Reply
-from app_legacy.models.category import Category
+from apps.auth.models import User, AccountType
+from apps.post.models import Post, Category
+from apps.reply.models import Reply
 
 try:
     from logger import get_logger
 except ImportError:
-    from test.database.logger import get_logger
+    from apps.common.logger import get_logger
 
 
 @pytest.mark.no_cleanup
@@ -28,11 +27,14 @@ def test_generate_all_data(fixture_app):
     if test_dir not in sys.path:
         sys.path.insert(0, test_dir)
 
-    from clear_db import test_clear_database
-    from gen_user import test_generate_users
-    from gen_post import test_generate_posts
-    from gen_reply import test_generate_replies
-    from gen_images import test_generate_profile_images, test_generate_images
+    from apps.test.gen.clear_db import test_clear_database
+    from apps.test.gen.gen_user import test_generate_users
+    from apps.test.gen.gen_post import test_generate_posts
+    from apps.test.gen.gen_reply import test_generate_replies
+    from apps.test.gen.gen_images import (
+        test_generate_profile_images,
+        test_generate_images,
+    )
 
     with fixture_app.app_context():
         verbosity = fixture_app.config.get("VERBOSITY", 1)

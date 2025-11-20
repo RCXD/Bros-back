@@ -70,7 +70,7 @@ def get_all_user_tokens_from_db(
     Returns:
         dict: {user_email: token} 매핑
     """
-    from app_legacy.models.user import User, AccountType
+    from apps.auth.models import User, AccountType
 
     with app.app_context():
         # 실제 사용자 수 확인

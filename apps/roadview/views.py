@@ -121,8 +121,7 @@ def check_roadview():
                         200,
                     )
 
-        # Load roadview from APIs
-        loader = get_roadview_loader_from_env()
+        # Load roadview from APIs (reuse loader from above)
         result = loader.load_best_roadview(
             latitude, longitude, radius, preferred_provider
         )

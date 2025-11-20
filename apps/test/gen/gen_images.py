@@ -1,10 +1,10 @@
-import os
+﻿import os
 import sys
 from pathlib import Path
 import pytest
-from app_legacy.extensions import db
-from app_legacy.models.user import User
-from app_legacy.models.image import Image
+from apps.config.server import db
+from apps.auth.models import User
+from apps.post.models import Image
 import random
 from PIL import Image as PILImage
 
@@ -18,9 +18,9 @@ try:
     from gen_user_helper import get_all_user_tokens_from_db
     from logger import get_logger
 except ImportError:
-    from test.database.gen_image_helper import ImageAPIUploader
-    from test.database.gen_user_helper import get_all_user_tokens_from_db
-    from test.database.logger import get_logger
+    from apps.test.gen.gen_image_helper import ImageAPIUploader
+    from apps.test.gen.gen_user_helper import get_all_user_tokens_from_db
+    from apps.common.logger import get_logger
 
 
 def get_config_paths(app):
@@ -451,7 +451,7 @@ def _generate_images_direct(app, dummy_image_dir, image_storage_dir):
     """테스트 환경: 직접 파일 저장"""
     log = get_logger()
 
-    from app_legacy.models.category import Category
+    from apps.post.models import Category, Post
 
     image_storage_dir.mkdir(parents=True, exist_ok=True)
 
@@ -459,8 +459,6 @@ def _generate_images_direct(app, dummy_image_dir, image_storage_dir):
     Image.query.filter(Image.post_id != None).delete()
     db.session.commit()
     log.info("기존 게시글 이미지 레코드 삭제 완료")
-
-    from app_legacy.models.post import Post
 
     posts = Post.query.all()
 
@@ -556,7 +554,7 @@ def _generate_images_direct(app, dummy_image_dir, image_storage_dir):
     db.session.commit()
 
     log.info("이미지-게시글 관계 검증 중...")
-    from app_legacy.models.post import Post
+    from apps.post.models import Post
 
     orphan_images = (
         db.session.query(Image).outerjoin(Post).filter(Post.post_id == None).count()
@@ -583,8 +581,7 @@ def _generate_images_via_api(app, dummy_image_dir):
     """프로덕션 환경: API를 통한 이미지 업로드"""
     log = get_logger()
 
-    from app_legacy.models.category import Category
-    from app_legacy.models.post import Post
+    from apps.post.models import Category, Post
 
     base_url = app.config.get("API_BACKEND_URL", "http://192.168.1.86:8002")
 

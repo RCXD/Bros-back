@@ -1,7 +1,7 @@
 import pytest
-from app_legacy.extensions import db
-from app_legacy.models.user import User, AccountType
-from app_legacy.models.post import Post
+from apps.config.server import db
+from apps.auth.models import User, AccountType
+from apps.post.models import Post
 from datetime import datetime, timedelta
 import random
 import os
@@ -14,8 +14,8 @@ try:
         create_username_to_userid_map,
     )
 except ImportError:
-    from test.database.logger import get_logger
-    from test.database.gen_post_helper import (
+    from apps.common.logger import get_logger
+    from apps.test.gen.gen_post_helper import (
         ensure_categories,
         load_posts_from_json,
         create_username_to_userid_map,
@@ -49,7 +49,7 @@ def test_generate_posts(fixture_app):
         log.debug(f"  {len(categories)}개 카테고리 준비 완료")
 
         # JSON 파일에서 게시글 데이터 로드
-        json_dir = os.path.join(os.path.dirname(__file__), "json")
+        json_dir = os.path.join(os.path.dirname(__file__), "..", "json")
         posts = []
         base_time = datetime.now() - timedelta(days=60)
         total_posts = 0

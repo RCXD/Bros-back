@@ -1,8 +1,8 @@
 import pytest
-from app_legacy.extensions import db
-from app_legacy.models.user import User, AccountType
-from app_legacy.models.post import Post
-from app_legacy.models.reply import Reply
+from apps.config.server import db
+from apps.auth.models import User, AccountType
+from apps.post.models import Post
+from apps.reply.models import Reply
 from datetime import datetime, timedelta
 import random
 
@@ -10,8 +10,8 @@ try:
     from logger import get_logger
     from gen_reply_helper import get_sample_reply_contents
 except ImportError:
-    from test.database.logger import get_logger
-    from test.database.gen_reply_helper import get_sample_reply_contents
+    from apps.common.logger import get_logger
+    from apps.test.gen.gen_reply_helper import get_sample_reply_contents
 
 
 @pytest.mark.no_cleanup

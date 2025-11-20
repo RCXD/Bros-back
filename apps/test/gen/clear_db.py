@@ -4,12 +4,12 @@
 """
 
 import pytest
-from app_legacy.extensions import db
+from apps.config.server import db
 
 try:
     from logger import get_logger
 except ImportError:
-    from test.database.logger import get_logger
+    from apps.common.logger import get_logger
 
 
 @pytest.mark.no_cleanup
@@ -48,6 +48,6 @@ def test_clear_database(fixture_app):
 
 if __name__ == "__main__":
     print("pytest를 사용하여 실행하세요:")
-    print("pytest test/database/clear_db.py -v -s --use-test-env")
+    print("pytest apps/test/gen/clear_db.py -v -s --use-test-env")
     print("또는")
-    print("pytest test/database/clear_db.py -v -s  # 프로덕션 DB")
+    print("pytest apps/test/gen/clear_db.py -v -s  # 프로덕션 DB")

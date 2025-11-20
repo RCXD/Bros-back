@@ -1,12 +1,12 @@
 import pytest
-from app_legacy.extensions import db
-from app_legacy.models.user import User, OauthType, AccountType
+from apps.config.server import db
+from apps.auth.models import User, OauthType, AccountType
 from werkzeug.security import generate_password_hash
 
 try:
     from logger import get_logger
 except ImportError:
-    from test.database.logger import get_logger
+    from apps.common.logger import get_logger
 
 
 @pytest.mark.no_cleanup
