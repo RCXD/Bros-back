@@ -64,7 +64,7 @@ def check_roadview():
     radius = int(data.get("radius", 50))
     preferred_provider = data.get("provider")
 
-    from ..config.common import db
+    from apps.config.server import db
 
     # Track request
     start_time = time.time()
