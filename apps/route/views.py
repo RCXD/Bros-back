@@ -9,6 +9,7 @@ import requests
 from datetime import datetime, timedelta
 from flask import Blueprint, jsonify, request
 from flask_jwt_extended import jwt_required, get_jwt_identity
+from sqlalchemy import func
 from sqlalchemy.exc import SQLAlchemyError
 from apps.config.server import db
 from apps.route.hazard_pipeline import penalty_from_danger, schedule_osrm_customize
@@ -151,10 +152,14 @@ def _parse_point(point):
 
 _HAZARD_CACHE = {"by_edge": {}, "last_refresh": 0.0}
 _HAZARD_CACHE_TTL = 30  # seconds before reloading from DB
+_HAZARD_VIEW_CACHE = {}
+_HAZARD_VIEW_CACHE_TTL = 180  # seconds for bbox query cache
 _RATE_LIMIT_BUCKET = {}
 _RATE_LIMIT_WINDOW = 60
 _RATE_LIMIT_MAX = 20
 _INTERPOLATE_STEPS = 12
+_DEFAULT_HAZARD_PAGE_SIZE = 100
+_MAX_HAZARD_PAGE_SIZE = 500
 
 
 def _rate_limited(key):
@@ -299,6 +304,114 @@ def _parse_points_payload(data):
     return start, end, vias
 
 
+def _parse_bbox_arg(raw):
+    if not raw:
+        return None, None
+    try:
+        min_lon, min_lat, max_lon, max_lat = [float(x) for x in raw.split(",")]
+    except (TypeError, ValueError):
+        return None, "bbox must be four comma-separated floats: min_lon,min_lat,max_lon,max_lat"
+    if min_lon > max_lon or min_lat > max_lat:
+        return None, "bbox coordinates must be ordered as min_lon,min_lat,max_lon,max_lat"
+    return {
+        "min_lon": min_lon,
+        "min_lat": min_lat,
+        "max_lon": max_lon,
+        "max_lat": max_lat,
+    }, None
+
+
+def _hazard_bbox_cache_key(bbox, page, per_page, min_score):
+    bbox_token = ""
+    if bbox:
+        bbox_token = "+".join(
+            f"{bbox[key]:.6f}" for key in ("min_lon", "min_lat", "max_lon", "max_lat")
+        )
+    score_token = "" if min_score is None else f"{min_score:.3f}"
+    return f"{bbox_token}|{page}|{per_page}|{score_token}"
+
+
+def _hazard_bbox_cache_get(key):
+    entry = _HAZARD_VIEW_CACHE.get(key)
+    if not entry:
+        return None
+    if time.time() - entry["ts"] > _HAZARD_VIEW_CACHE_TTL:
+        _HAZARD_VIEW_CACHE.pop(key, None)
+        return None
+    return entry["payload"]
+
+
+def _hazard_bbox_cache_set(key, payload):
+    _HAZARD_VIEW_CACHE[key] = {"payload": payload, "ts": time.time()}
+
+
+def _hazard_bbox_cache_clear():
+    _HAZARD_VIEW_CACHE.clear()
+
+
+@bp.get("/hazards")
+def query_hazards():
+    """Viewport-friendly hazard query supporting bbox paging and caching."""
+    bbox_arg = request.args.get("bbox")
+    bbox, bbox_error = _parse_bbox_arg(bbox_arg)
+    if bbox_error:
+        return jsonify({"error": bbox_error}), 400
+
+    try:
+        page = int(request.args.get("page", 1))
+    except (TypeError, ValueError):
+        return jsonify({"error": "page must be an integer"}), 400
+    if page < 1:
+        return jsonify({"error": "page must be >= 1"}), 400
+
+    try:
+        per_page = int(request.args.get("per_page", _DEFAULT_HAZARD_PAGE_SIZE))
+    except (TypeError, ValueError):
+        return jsonify({"error": "per_page must be an integer"}), 400
+    if per_page < 1:
+        return jsonify({"error": "per_page must be >= 1"}), 400
+    per_page = min(per_page, _MAX_HAZARD_PAGE_SIZE)
+
+    min_score_raw = request.args.get("min_score")
+    min_score = None
+    if min_score_raw is not None:
+        try:
+            min_score = float(min_score_raw)
+        except (TypeError, ValueError):
+            return jsonify({"error": "min_score must be numeric"}), 400
+        min_score = max(0.0, min(10.0, min_score))
+
+    cache_key = _hazard_bbox_cache_key(bbox, page, per_page, min_score)
+    cached = _hazard_bbox_cache_get(cache_key)
+    if cached:
+        return jsonify(cached), 200
+
+    query = Hazard.query.filter_by(is_active=True)
+    if bbox:
+        query = query.filter(
+            Hazard.lat.between(bbox["min_lat"], bbox["max_lat"]),
+            Hazard.lon.between(bbox["min_lon"], bbox["max_lon"]),
+        )
+    if min_score is not None:
+        query = query.filter(Hazard.danger_score >= min_score)
+
+    total = query.with_entities(func.count(Hazard.hazard_id)).scalar() or 0
+    offset = (page - 1) * per_page
+    hazards = (
+        query.order_by(Hazard.updated_at.desc(), Hazard.hazard_id.desc())
+        .offset(offset)
+        .limit(per_page)
+        .all()
+    )
+
+    payload = {
+        "results": [hazard.serialize() for hazard in hazards],
+        "meta": {"page": page, "per_page": per_page, "total": int(total)},
+    }
+    _hazard_bbox_cache_set(cache_key, payload)
+    return jsonify(payload), 200
+
+
 @bp.post("/hazards")
 def ingest_hazard():
     """Ingest a hazard point and keep active cache updated."""
@@ -340,6 +453,7 @@ def ingest_hazard():
         db.session.add(hazard)
         db.session.commit()
         _register_hazard_in_cache(hazard)
+        _hazard_bbox_cache_clear()
         customize_started = schedule_osrm_customize()
         return (
             jsonify(
@@ -354,6 +468,7 @@ def ingest_hazard():
     except SQLAlchemyError as exc:
         db.session.rollback()
         return jsonify({"error": f"Failed to persist hazard: {str(exc)}"}), 400
+
 
 @bp.put("/hazards/<int:hazard_id>")
 def update_hazard(hazard_id):
@@ -386,6 +501,7 @@ def update_hazard(hazard_id):
     try:
         db.session.commit()
         _hazard_cache(force=True)
+        _hazard_bbox_cache_clear()
         schedule_osrm_customize()
         return jsonify({"hazard": hazard.serialize()}), 200
     except SQLAlchemyError as exc:
@@ -407,8 +523,12 @@ def delete_hazard(hazard_id):
     try:
         db.session.commit()
         _hazard_cache(force=True)
+        _hazard_bbox_cache_clear()
         schedule_osrm_customize()
-        return jsonify({"message": "hazard_deactivated", "hazard": hazard.serialize()}), 200
+        return (
+            jsonify({"message": "hazard_deactivated", "hazard": hazard.serialize()}),
+            200,
+        )
     except SQLAlchemyError as exc:
         db.session.rollback()
         return jsonify({"error": f"Failed to deactivate hazard: {str(exc)}"}), 400

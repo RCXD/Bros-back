@@ -3,7 +3,10 @@ import re
 import json
 import time
 from functools import wraps
+
+import requests
 from flask import jsonify, g, request
+from requests import RequestException
 # from rapidfuzz import fuzz, distance
 from sqlalchemy import func, text
 
@@ -21,6 +24,7 @@ def haversine_m(lat1, lon1, lat2, lon2):
 
 _SUFFIX_CACHE = {"list": None, "ts": 0}
 _SUFFIX_CACHE_TTL = 300  # seconds
+_NOMINATIM_REVERSE_URL = "https://nominatim.openstreetmap.org/reverse"
 
 def get_common_suffixes(force: bool = False):
     """Load common suffixes from DB table `place_name_suffixes` if available.
@@ -172,7 +176,7 @@ def _build_geom(lat, lon, geojson_obj=None):
 def _nearby_candidates(lat, lon, radius_m=50, limit=10):
     # Try to use MySQL ST_Distance_Sphere if geom exists, otherwise fallback to lat/lon box.
     sql = """
-    SELECT place_id, name, lat, lon,
+    SELECT place_id, name, ST_Y(point) AS lat, ST_X(point) AS lon,
       ST_Distance_Sphere(geom, ST_GeomFromText(:point, 4326)) AS dist
     FROM place
     WHERE geom IS NOT NULL
@@ -236,6 +240,83 @@ def create_or_get_similar(payload: dict, distance_threshold_m=50, name_threshold
     if commit:
         db.session.commit()
     return place, True  # True == created
+
+
+def _safe_float(value):
+    try:
+        return float(value)
+    except (TypeError, ValueError):
+        return None
+
+
+def _extract_primary_name(data):
+    if not isinstance(data, dict):
+        return None
+    namedetails = data.get("namedetails") or {}
+    primary = namedetails.get("name") or data.get("name")
+    if primary:
+        return primary
+    display_name = data.get("display_name")
+    if isinstance(display_name, str) and display_name:
+        return display_name.split(",")[0].strip()
+    address = data.get("address") or {}
+    for key in ("road", "neighbourhood", "suburb", "city", "town", "village"):
+        if address.get(key):
+            return address[key]
+    return None
+
+
+def reverse_geocode_place(lat, lon, timeout=3, user_agent=None):
+    """Reverse geocode using Nominatim and return normalized place dict."""
+    lat_f = _safe_float(lat)
+    lon_f = _safe_float(lon)
+    if lat_f is None or lon_f is None:
+        return None
+
+    params = {
+        "lat": lat_f,
+        "lon": lon_f,
+        "format": "json",
+        "addressdetails": "1",
+        "namedetails": "1",
+        "extratags": "1",
+    }
+    headers = {
+        "User-Agent": user_agent or "bros-place-service/1.0"
+    }
+    try:
+        resp = requests.get(_NOMINATIM_REVERSE_URL, params=params, headers=headers, timeout=timeout)
+        if resp.status_code != 200:
+            return None
+        data = resp.json()
+    except (RequestException, ValueError):
+        return None
+
+    lat_val = _safe_float(data.get("lat"))
+    lon_val = _safe_float(data.get("lon"))
+    if lat_val is None or lon_val is None:
+        return None
+
+    name = _extract_primary_name(data)
+    normalized = {
+        "place_id": data.get("place_id"),
+        "id": data.get("place_id"),
+        "name": name,
+        "display_name": data.get("display_name") or name,
+        "alt_name": (data.get("namedetails") or {}).get("alt_name"),
+        "lat": lat_val,
+        "lon": lon_val,
+        "geom": {"type": "Point", "coordinates": [lon_val, lat_val]},
+        "tags": data.get("extratags") or None,
+        "extratags": data.get("extratags") or None,
+        "address": data.get("address") or None,
+        "namedetails": data.get("namedetails") or None,
+        "class": data.get("class"),
+        "type": data.get("type"),
+        "source": "nominatim",
+    }
+    return normalized
+
 
 def validate_place_exists(f):
     @wraps(f)

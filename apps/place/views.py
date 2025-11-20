@@ -6,7 +6,7 @@ from sqlalchemy.exc import SQLAlchemyError
 
 from apps.config.server import db
 from apps.place.models import Place, func
-from apps.place.utils import _build_geom
+from apps.place.utils import _build_geom, reverse_geocode_place
 from datetime import datetime
 from apps.admin.views import admin_required
 
@@ -16,31 +16,22 @@ DEFAULT_PAGE_SIZE = 20
 MAX_PAGE_SIZE = 100
 
 def _store_place_area(place, geom_obj, lat=None, lon=None):
-    """Prefer spatial geometry column when available, fall back to JSON edges."""
-    lat_val = lat if lat is not None else getattr(place, "lat", None)
-    lon_val = lon if lon is not None else getattr(place, "lon", None)
+    """Persist only area geometries (Polygon/MultiPolygon) into geom/edges."""
+    geom_type = (geom_obj or {}).get("type", "").lower() if isinstance(geom_obj, dict) else None
     has_geom_column = hasattr(Place, "geom")
     has_edges_column = hasattr(place, "edges")
 
-    if geom_obj is None:
+    if geom_type in {"polygon", "multipolygon"}:
+        stored_geom = _build_geom(None, None, geom_obj) if has_geom_column else None
         if has_geom_column:
-            place.geom = _build_geom(lat_val, lon_val)
+            place.geom = stored_geom
         if has_edges_column:
-            place.edges = None
-        return
-
-    if has_geom_column:
-        geom_value = _build_geom(lat_val, lon_val, geom_obj)
-        if geom_value is not None:
-            place.geom = geom_value
-            if has_edges_column:
-                place.edges = None
-            return
-
-    if has_edges_column:
-        place.edges = geom_obj
+            place.edges = None if has_geom_column else geom_obj
+    else:
         if has_geom_column:
             place.geom = None
+        if has_edges_column:
+            place.edges = None
 
 def _parse_float(value, field, min_value=None, max_value=None):
     if value is None:
@@ -124,6 +115,9 @@ def _validate_geojson(geom):
         return "geom must be a GeoJSON object"
     if "type" not in geom or "coordinates" not in geom:
         return "geom must contain type and coordinates"
+    geom_type = str(geom.get("type") or "").lower()
+    if geom_type not in {"polygon", "multipolygon", "point"}:
+        return "geom type must be Polygon, MultiPolygon, or Point"
     if not _coordinates_are_numeric(geom.get("coordinates")):
         return "geom coordinates must be numeric"
     return None
@@ -146,8 +140,10 @@ def create_place():
         return jsonify({"message": "Invalid input", "errors": errors}), 400
 
     geom_obj = payload.pop("geom", None)
+    lat_value = payload.get("lat")
+    lon_value = payload.get("lon")
     place = Place(**payload)
-    _store_place_area(place, geom_obj, place.lat, place.lon)
+    _store_place_area(place, geom_obj, lat_value, lon_value)
     try:
         db.session.add(place)
         db.session.commit()
@@ -230,18 +226,28 @@ def update_place(place_id):
         return jsonify({"message": "Invalid input", "errors": errors}), 400
 
     geom_obj = payload.pop("geom", None) if "geom" in payload else None
+    incoming_lat = payload.pop("lat", None) if "lat" in payload else None
+    incoming_lon = payload.pop("lon", None) if "lon" in payload else None
+
     for key, value in payload.items():
         setattr(place, key, value)
 
-    if ("geom" in data) or ("lat" in payload) or ("lon" in payload):
+    if incoming_lat is not None or incoming_lon is not None:
+        new_lat = incoming_lat if incoming_lat is not None else place.lat
+        new_lon = incoming_lon if incoming_lon is not None else place.lon
+        if new_lat is None or new_lon is None:
+            return jsonify({"message": "lat and lon are required"}), 400
+        place.set_lat_lon(new_lat, new_lon)
+
+    if ("geom" in data) or (incoming_lat is not None) or (incoming_lon is not None):
         if "geom" in data and data.get("geom") is None:
             if hasattr(place, "geom"):
                 place.geom = None
             if hasattr(place, "edges"):
                 place.edges = None
         else:
-            lat_for_geom = payload.get("lat", place.lat)
-            lon_for_geom = payload.get("lon", place.lon)
+            lat_for_geom = incoming_lat if incoming_lat is not None else place.lat
+            lon_for_geom = incoming_lon if incoming_lon is not None else place.lon
             _store_place_area(place, geom_obj, lat_for_geom, lon_for_geom)
 
     try:
@@ -295,7 +301,7 @@ def place_to_dict(place):
 
 @bp.route("/search", methods=["GET"])
 def search_places():
-    # 프론트에서 /place/search?q=키워드&bbox=lonmin,latmin,lonmax,latmax&page=1&per_page=20&tag=park
+    # 프론트에서 /place/search?page=1&per_page=1&bbox=126.9872052307129,37.5649...,126.9882...,37.5659...
     q = request.args.get("q", "").strip()
     bbox = request.args.get("bbox")
     tag = request.args.get("tag")
@@ -303,6 +309,7 @@ def search_places():
     per_page = int(request.args.get("per_page", 20))
 
     query = Place.query.filter(Place.is_active == True)
+    bbox_bounds = None
 
     if q:
         # 부분검색: 이름 또는 display_name
@@ -316,13 +323,26 @@ def search_places():
     if bbox:
         try:
             lonmin, latmin, lonmax, latmax = map(float, bbox.split(","))
+            bbox_bounds = (lonmin, latmin, lonmax, latmax)
             envelope = func.ST_MakeEnvelope(lonmin, latmin, lonmax, latmax, 4326)
             query = query.filter(func.ST_Intersects(Place.geom, envelope))
         except Exception:
-            pass
+            bbox_bounds = None
 
     total = query.count()
     places = query.order_by(Place.id.desc()).offset((page-1)*per_page).limit(per_page).all()
 
     results = [place_to_dict(p) for p in places]
+
+    if not results and bbox_bounds and not q and per_page <= 1:
+        lonmin, latmin, lonmax, latmax = bbox_bounds
+        center_lat = (latmin + latmax) / 2.0
+        center_lon = (lonmin + lonmax) / 2.0
+        timeout = current_app.config.get("NOMINATIM_TIMEOUT", 3)
+        user_agent = current_app.config.get("NOMINATIM_USER_AGENT")
+        fallback_place = reverse_geocode_place(center_lat, center_lon, timeout=timeout, user_agent=user_agent)
+        if fallback_place:
+            results = [fallback_place]
+            total = 1
+
     return jsonify({"results": results, "meta": {"page": page, "per_page": per_page, "total": total}}), 200
