@@ -16,16 +16,10 @@ from apps.common.image_handlers import compress_image, save_to_disk, IMAGE_EXTEN
 bp = Blueprint("post", __name__)
 
 
+from flask import g
+
 @bp.get("")
 def get_posts():
-    """
-    페이지네이션 및 필터링을 포함한 게시글 목록 조회
-    Query params:
-        - page: 페이지 번호
-        - per_page: 페이지당 항목 수
-        - category: 카테고리별 필터
-        - order_by: 정렬 순서 (latest, popular 등)
-    """
     page = request.args.get("page", 1, type=int)
     per_page = request.args.get("per_page", 20, type=int)
     category = request.args.get("category")
@@ -39,19 +33,25 @@ def get_posts():
         if cat:
             query = query.filter_by(category_id=cat.category_id)
 
-    # 정렬
     if order_by == "popular":
         query = query.order_by(Post.view_counts.desc())
-    else:  # latest
+    else:
         query = query.order_by(Post.created_at.desc())
 
-    # 페이지네이션
     pagination = query.paginate(page=page, per_page=per_page, error_out=False)
 
     posts = []
+    current_user_id = getattr(g, 'user_id', None)  # 현재 로그인 유저 ID
+
     for post in pagination.items:
         user = User.query.get(post.user_id)
         like_count = PostLike.query.filter_by(post_id=post.post_id).count()
+
+        # ✅ 현재 유저가 좋아요 눌렀는지 확인
+        is_liked = False
+        if current_user_id:
+            is_liked = PostLike.query.filter_by(post_id=post.post_id, user_id=current_user_id).first() is not None
+
         images = Image.query.filter_by(post_id=post.post_id).all()
         posts.append(
             {
@@ -65,6 +65,7 @@ def get_posts():
                 "category": post.category.category_name if post.category else None,
                 "view_counts": post.view_counts,
                 "like_count": like_count,
+                "isLiked": is_liked,  # ✅ 추가
                 "images": [
                     {
                         "image_id": img.image_id,
@@ -80,20 +81,18 @@ def get_posts():
             }
         )
 
-    return (
-        jsonify(
-            {
-                "items": posts,
-                "total": pagination.total,
-                "pages": pagination.pages,
-                "page": page,
-                "per_page": per_page,
-                "has_next": pagination.has_next,
-                "has_prev": pagination.has_prev,
-            }
-        ),
-        200,
-    )
+    return jsonify(
+        {
+            "items": posts,
+            "total": pagination.total,
+            "pages": pagination.pages,
+            "page": page,
+            "per_page": per_page,
+            "has_next": pagination.has_next,
+            "has_prev": pagination.has_prev,
+        }
+    ), 200
+
 
 
 @bp.post("")
