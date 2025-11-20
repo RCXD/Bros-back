@@ -6,6 +6,7 @@ from flask import Blueprint, jsonify, request
 from flask_jwt_extended import jwt_required, get_jwt_identity, get_current_user
 
 from apps.config.server import db
+from apps.notification.models import Notification, NotificationType
 from apps.reply.models import Reply, ReplyLike
 from apps.post.models import Post
 from apps.auth.models import User
@@ -165,6 +166,27 @@ def create_reply():
         )
 
         db.session.add(reply)
+
+        # 알림 발생
+        if parent_id:
+            parent_reply = Reply.query.get(parent_id)
+            if parent_reply and parent_reply.user_id != current_user.user_id:
+                # 대댓글 알림
+                notification = Notification(
+                    type=NotificationType.REPLY_TO_REPLY,
+                    from_user_id=current_user.user_id,
+                    to_user_id=parent_reply.user_id,
+                    reply_id=reply.reply_id,
+                )
+        else:
+            # 댓글 알림
+            notification = Notification(
+                type=NotificationType.REPLY,
+                from_user_id=current_user.user_id,
+                to_user_id=Post.query.get(post_id).user_id,
+                reply_id=reply.reply_id,
+            )
+        db.session.add(notification)
         db.session.commit()
 
         return (
@@ -344,7 +366,7 @@ def get_nested_replies(reply_id):
 
     page = request.args.get("page", 1, type=int)
     per_page = request.args.get("per_page", 20, type=int)
-    order_by = request.args.get("order_by", "desc").lower()
+    order_by = request.args.get("order_by", "asc").lower()
 
     if order_by == "desc":
         order_method = Reply.created_at.desc()

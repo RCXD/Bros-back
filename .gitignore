@@ -292,6 +292,7 @@ secrets.json
 
 # enviroments
 .env
+*.env
 /app/config.py
 /app/static/post_images
 apps/gen/.env.example
