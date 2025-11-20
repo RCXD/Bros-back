@@ -153,10 +153,7 @@ def create_post():
             ext = file.filename.rsplit(".", 1)[-1].lower()
             if ext not in IMAGE_EXTENSIONS:
                 raise ValueError(f"지원하지 않는 파일 형식: {file.filename}")
-
-            # 이미지 압축
-            image_compressed, ext, filename = compress_image(file, image_type="post")
-
+            
             # Image 레코드 생성 (UUID 자동 생성)
             image = Image(
                 post_id=post.post_id,
@@ -170,7 +167,7 @@ def create_post():
 
             # UUID로 파일명 생성하여 저장
             filename = f"{image.uuid}.{ext}"
-            rel_path = save_to_disk(image_compressed, ext, filename, category="post")
+            rel_path = save_to_disk(file, ext, filename, category="post")
             image.directory = rel_path
             db.session.flush()
 
@@ -347,10 +344,7 @@ def update_post(post_id):
             ext = file.filename.rsplit(".", 1)[-1].lower()
             if ext not in IMAGE_EXTENSIONS:
                 raise ValueError(f"지원하지 않는 파일 형식: {file.filename}")
-
-            # 이미지 압축
-            image_compressed, ext, filename = compress_image(file, image_type="post")
-
+            
             # Image 레코드 생성 (UUID 자동 생성)
             image = Image(
                 post_id=post.post_id,
@@ -364,7 +358,7 @@ def update_post(post_id):
 
             # UUID로 파일명 생성하여 저장
             filename = f"{image.uuid}.{ext}"
-            rel_path = save_to_disk(image_compressed, ext, filename, category="post")
+            rel_path = save_to_disk(file, ext, filename, category="post")
             image.directory = rel_path
             db.session.flush()
 
