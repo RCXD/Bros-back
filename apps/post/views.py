@@ -6,7 +6,7 @@ from flask import Blueprint, jsonify, request, send_from_directory
 from flask_jwt_extended import jwt_required, get_jwt_identity, get_current_user
 from sqlalchemy.exc import IntegrityError
 
-from app_legacy.models.mention import Mention
+from apps.mention.models import Mention
 from apps.config.server import db
 from apps.notification.models import Notification
 from apps.post.models import Post, Category, PostLike, Image
