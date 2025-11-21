@@ -28,7 +28,6 @@ def get_posts():
 
     query = Post.query
 
-    # 카테고리별 필터링
     if category:
         cat = Category.query.filter_by(category_name=category).first()
         if cat:
@@ -42,14 +41,7 @@ def get_posts():
     pagination = query.paginate(page=page, per_page=per_page, error_out=False)
 
     posts = []
-
-    # ✅ JWT 토큰에서 현재 유저 ID 추출 (비로그인 유저는 None)
-    current_user_id = None
-    try:
-        if request.headers.get("Authorization"):
-            current_user_id = int(get_jwt_identity())
-    except:
-        pass
+    current_user_id = getattr(g, "user_id", None)  # 현재 로그인 유저 ID
 
     for post in pagination.items:
         user = User.query.get(post.user_id)
@@ -78,7 +70,7 @@ def get_posts():
                 "category": post.category.category_name if post.category else None,
                 "view_counts": post.view_counts,
                 "like_count": like_count,
-                "isLiked": is_liked,  # ✅ 정확한 좋아요 상태
+                "isLiked": is_liked,
                 "images": [
                     {
                         "image_id": img.image_id,
@@ -246,6 +238,18 @@ def get_post(post_id):
     # 작성자 정보 조회
     author = User.query.get(post.user_id)
 
+    # ✅ 현재 유저가 좋아요 눌렀는지 확인
+    is_liked = False
+    current_user_id = getattr(g, "user_id", None)  # 현재 로그인 유저 ID
+
+    if current_user_id:
+        is_liked = (
+            PostLike.query.filter_by(
+                post_id=post_id, user_id=current_user_id
+            ).first()
+            is not None
+        )
+
     return (
         jsonify(
             {
@@ -259,6 +263,7 @@ def get_post(post_id):
                 "category": post.category.category_name if post.category else None,
                 "view_counts": post.view_counts,
                 "like_count": like_count,
+                "isLiked": is_liked,
                 "created_at": post.created_at.isoformat(),
                 "updated_at": post.updated_at.isoformat(),
             }
@@ -535,6 +540,15 @@ def get_my_posts():
     posts = []
     for post in pagination.items:
         like_count = PostLike.query.filter_by(post_id=post.post_id).count()
+        
+        # ✅ 현재 유저가 좋아요 눌렀는지 확인
+        is_liked = (
+            PostLike.query.filter_by(
+                post_id=post.post_id, user_id=current_user_id
+            ).first()
+            is not None
+        )
+        
         images = Image.query.filter_by(post_id=post.post_id).all()
         posts.append(
             {
@@ -543,6 +557,7 @@ def get_my_posts():
                 "category": post.category.category_name if post.category else None,
                 "view_counts": post.view_counts,
                 "like_count": like_count,
+                "isLiked": is_liked,
                 "images": [
                     {
                         "image_id": img.image_id,
