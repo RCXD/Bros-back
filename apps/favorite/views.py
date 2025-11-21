@@ -16,6 +16,7 @@ bp = Blueprint("favorite", __name__)
 DEFAULT_PAGE_SIZE = 20
 MAX_PAGE_SIZE = 100
 
+
 @bp.get("")
 @jwt_required()
 def get_favorites():
@@ -64,11 +65,11 @@ def get_favorites():
 
 @bp.post("/<string:item_type>/<int:item_id>")
 @jwt_required()
-def add_to_favorites(item_type, item_id):
+def toggle_favorite(item_type, item_id):
     """
-    즐겨찾기 추가
+    즐겨찾기 토글 (추가/제거)
     Path params:
-        - item_type: post, product, route 등
+        - item_type: story, product, route 등
         - item_id: 아이템 ID
     """
     current_user_id = int(get_jwt_identity())
@@ -80,44 +81,45 @@ def add_to_favorites(item_type, item_id):
         "review": FavoriteType.REVIEW,
         "report": FavoriteType.REPORT,
         "product": FavoriteType.PRODUCT,
-        "0": FavoriteType.STORY,
-        "1": FavoriteType.ROUTE,
-        "2": FavoriteType.REVIEW,
-        "3": FavoriteType.REPORT,
-        "4": FavoriteType.PRODUCT,
     }
 
     favorite_type = type_mapping.get(item_type.lower())
     if not favorite_type:
         return jsonify({"message": f"유효하지 않은 타입: {item_type}"}), 400
 
-    # 아이템 존재 확인 (Post 또는 Product)
+    # 아이템 존재 확인
     if favorite_type == FavoriteType.PRODUCT:
         item = Product.query.get(item_id)
     else:
-        # STORY, ROUTE, REVIEW, REPORT는 모두 Post
         item = Post.query.get(item_id)
 
     if not item:
         return jsonify({"message": "아이템을 찾을 수 없습니다"}), 404
 
-    # 즐겨찾기 생성
-    favorite = Favorite(
+    # 이미 즐겨찾기 했는지 확인
+    existing = Favorite.query.filter_by(
         user_id=current_user_id, item_type=favorite_type, item_id=item_id
-    )
+    ).first()
 
-    db.session.add(favorite)
-    try:
+    if existing:
+        # 이미 즐겨찾기 → 제거
+        db.session.delete(existing)
         db.session.commit()
         return (
-            jsonify(
-                {"message": "즐겨찾기에 추가되었습니다", "data": favorite.to_dict()}
-            ),
+            jsonify({"message": "즐겨찾기에서 제거되었습니다", "is_favorited": False}),
+            200,
+        )
+    else:
+        # 즐겨찾기 추가
+        favorite = Favorite(
+            user_id=current_user_id, item_type=favorite_type, item_id=item_id
+        )
+        db.session.add(favorite)
+        db.session.commit()
+        return (
+            jsonify({"message": "즐겨찾기에 추가되었습니다", "is_favorited": True}),
             201,
         )
-    except IntegrityError:
-        db.session.rollback()
-        return jsonify({"message": "이미 즐겨찾기에 추가된 아이템입니다"}), 409
 
 
 @bp.delete("/<string:item_type>/<int:item_id>")
