@@ -44,26 +44,26 @@ def create_notification():
 
     # 필수값 체크
     if not to_user_id or not notif_type:
-        return jsonify(success=False, message="to_user_id와 type은 필수입니다."), 400
+        return jsonify({"message": "to_user_id와 type은 필수입니다."}), 400
 
     # 자기 자신에게 알림 생성 금지
     if from_user_id == to_user_id:
         return (
-            jsonify(success=False, message="자기 자신에게 알림을 생성할 수 없습니다."),
+            jsonify({"message": "자기 자신에게 알림을 생성할 수 없습니다."}),
             400,
         )
 
     # 수신자 존재 확인
     to_user = User.query.get(to_user_id)
     if not to_user:
-        return jsonify(success=False, message="수신자 유저가 존재하지 않습니다."), 404
+        return jsonify({"message": "수신자 유저가 존재하지 않습니다."}), 404
 
     # === LEGACY: NotificationType enum 검증 (레거시에서는 문자열로 받음) ===
     try:
         notification_type = NotificationType[notif_type.upper()]
     except KeyError:
         return (
-            jsonify(success=False, message=f"유효하지 않은 알림 타입: {notif_type}"),
+            jsonify({"message": f"유효하지 않은 알림 타입: {notif_type}"}),
             400,
         )
     # === END LEGACY ===
@@ -83,13 +83,13 @@ def create_notification():
         db.session.commit()
     except IntegrityError as e:
         db.session.rollback()
-        return jsonify(success=False, message=f"DB 제약조건 오류: {str(e)}"), 400
+        return jsonify({"message": f"DB 제약조건 오류: {str(e)}"}), 400
     except Exception as e:
         db.session.rollback()
-        return jsonify(success=False, message=f"알림 생성 실패: {str(e)}"), 500
+        return jsonify({"message": f"알림 생성 실패: {str(e)}"}), 500
 
     # === LEGACY: serialize() 호환 (to_dict()로 통일됨) ===
-    return jsonify(success=True, data=notification.to_dict()), 201
+    return jsonify(notification.to_dict()), 201
 
 
 @bp.get("")
@@ -132,7 +132,7 @@ def get_my_notifications():
         "has_prev": notifications.has_prev,
     }
 
-    return jsonify(success=True, data=result), 200
+    return jsonify(result), 200
 
 
 @bp.get("/unread-count")
@@ -145,7 +145,7 @@ def get_unread_count():
         to_user_id=current_user_id, is_checked=False
     ).count()
 
-    return jsonify(success=True, data={"unread_count": count}), 200
+    return jsonify({"unread_count": count}), 200
 
 
 @bp.patch("/<int:notification_id>")
@@ -159,12 +159,12 @@ def mark_notification_as_read(notification_id):
     ).first()
 
     if not notification:
-        return jsonify(success=False, message="알림을 찾을 수 없습니다."), 404
+        return jsonify({"message": "알림을 찾을 수 없습니다."}), 404
 
     notification.is_checked = True
     db.session.commit()
 
-    return jsonify(success=True, data=notification.to_dict()), 200
+    return jsonify(notification.to_dict()), 200
 
 
 @bp.patch("/mark-all-read")
@@ -181,9 +181,10 @@ def mark_all_as_read():
 
     return (
         jsonify(
-            success=True,
-            message=f"{updated_count}개의 알림을 읽음 처리했습니다.",
-            data={"updated_count": updated_count},
+            {
+                "message": f"{updated_count}개의 알림을 읽음 처리했습니다.",
+                "updated_count": updated_count,
+            },
         ),
         200,
     )
@@ -200,9 +201,9 @@ def delete_notification(notification_id):
     ).first()
 
     if not notification:
-        return jsonify(success=False, message="알림을 찾을 수 없습니다."), 404
+        return jsonify({"message": "알림을 찾을 수 없습니다."}), 404
 
     db.session.delete(notification)
     db.session.commit()
 
-    return jsonify(success=True, message="알림이 삭제되었습니다."), 200
+    return jsonify({"message": "알림이 삭제되었습니다."}), 200

@@ -1,5 +1,5 @@
 r"""
-🧰 네트워크 공유 영상용 GIF 변환 도구
+네트워크 공유 영상용 GIF 변환 도구
 
 이 도구는 '\\192.168.1.89\share\movie' 경로에 있는 영상 파일을
 직접 선택한 뒤, 일정 구간을 잘라내고 늘어난 화면 영역을 크롭해서
@@ -25,7 +25,8 @@ import tempfile
 from pathlib import Path
 from typing import List, Optional, Tuple
 
-NETWORK_SHARE_DIR = Path(r"\\192.168.1.89\share\movie")
+# NETWORK_SHARE_DIR = Path(r"\\192.168.1.89\share\movie")
+NETWORK_SHARE_DIR = Path(r"C:\Users\M\video")
 VIDEO_EXTENSIONS = {".mp4", ".mov", ".mkv", ".avi", ".webm", ".flv"}
 
 
