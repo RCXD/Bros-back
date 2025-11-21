@@ -6,9 +6,9 @@ from apps.config.server import db
 
 class KSLink(db.Model):
     __tablename__ = "ks_links"
-    __table_args__ = (
-        db.Index("idx_kslink_link_osm", "link_id", "osm_edges"),
-    )
+    # __table_args__ = (
+    #     db.Index("idx_kslink_link_osm", "link_id", "osm_edges"),
+    # ) 호환성문제 발생해서 주석처리
 
     link_id = db.Column(db.String(32), primary_key=True, index=True)
     f_node = db.Column(db.String(32))
@@ -29,16 +29,16 @@ class TrafficHazard(db.Model):
     osm_edge_id = db.Column(db.String(64), index=True)
     penalty = db.Column(db.Float, nullable=False, default=1.0)
     created_at = db.Column(db.DateTime, default=datetime.now)
-    updated_at = db.Column(
-        db.DateTime, default=datetime.now, onupdate=datetime.now
-    )
+    updated_at = db.Column(db.DateTime, default=datetime.now, onupdate=datetime.now)
 
 
 class MyPath(db.Model):
     __tablename__ = "my_paths"
 
     path_id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey("users.user_id"), nullable=False, index=True)
+    user_id = db.Column(
+        db.Integer, db.ForeignKey("users.user_id"), nullable=False, index=True
+    )
     path_name = db.Column(db.String(100), nullable=False)
     points = db.Column(JSON, nullable=False)  # [{"lat":..,"lon":..}, ...]
     created_at = db.Column(db.DateTime, default=datetime.now)

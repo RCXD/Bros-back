@@ -494,10 +494,21 @@ def like_post(post_id):
         )
 
 
-@bp.get("/<int:post_id>/likes")
+@bp.get("/me/liked-posts")
+@jwt_required()
+def get_my_likes_posts():
+    """내가 좋아요 누른 포스트 번호 조회"""
+    current_user_id = int(get_jwt_identity())
+    likes = PostLike.query.filter_by(user_id=current_user_id).all()
+
+    liked_post_ids = [like.post_id for like in likes]
+
+    return jsonify({"liked_post_ids": liked_post_ids}), 200
+
+
+@bp.get("/<int:post_id>/who-likes")
 def get_post_likes(post_id):
     """게시글에 좋아요한 사용자 목록 조회"""
-    # 게시글 존재 확인
     Post.query.get_or_404(post_id)
 
     likes = PostLike.query.filter_by(post_id=post_id).all()
@@ -515,7 +526,7 @@ def get_post_likes(post_id):
                 }
             )
 
-    return jsonify({"likes": result, "count": len(result)}), 200
+    return jsonify({"people_who_likes": result, "count": len(result)}), 200
 
 
 @bp.get("/me")

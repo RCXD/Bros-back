@@ -112,8 +112,8 @@ def get_user_detail(user_id):
     # Get user statistics
     post_count = Post.query.filter_by(user_id=user_id).count()
     reply_count = Reply.query.filter_by(user_id=user_id).count()
-    following_count = Follow.query.filter_by(follower_id=user_id).count()
-    follower_count = Follow.query.filter_by(following_id=user_id).count()
+    following_count = Follow.query.filter_by(from_user_id=user_id).count()
+    follower_count = Follow.query.filter_by(to_user_id=user_id).count()
 
     return (
         jsonify(

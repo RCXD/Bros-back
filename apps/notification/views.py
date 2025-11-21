@@ -11,6 +11,7 @@ from apps.notification.models import Notification, NotificationType
 from apps.auth.models import User
 from apps.post.models import Post
 from apps.reply.models import Reply
+from apps.user.models import Follow, Friend
 
 # === LEGACY: app/blueprints/notification.py와 동일한 모델 import 구조 유지 ===
 # from apps.mention.models import Mention  # 필요시 추가
@@ -113,6 +114,9 @@ def get_my_notifications():
     # 읽지 않은 알림만 조회 옵션
     unread_only = request.args.get("unread_only", "false").lower() == "true"
 
+    # 팔로우 상태 정보 조회 옵션
+    follow_state = request.args.get("follow_state", "false").lower() == "true"
+
     query = Notification.query.filter_by(to_user_id=current_user_id)
 
     if unread_only:
@@ -121,6 +125,31 @@ def get_my_notifications():
     notifications = query.order_by(Notification.created_at.desc()).paginate(
         page=page, per_page=per_page, error_out=False
     )
+
+    if follow_state:
+        follow_state_list = []
+        for notification_ in notifications.items:
+            from_user = User.query.filter_by(user_id=notification_.from_user_id).first()
+            # if not from_user:
+            #     follow_state_list.append({"following": False, "followed": False})
+            #     continue
+            follow_state_ = {
+                "following": Follow.query.filter_by(
+                    from_user_id=current_user_id,
+                    to_user_id=from_user.user_id,
+                ).count()
+                > 0,  # 팔로잉 (내가 그 사람을 팔로우)
+                "followed": Follow.query.filter_by(
+                    from_user_id=from_user.user_id,
+                    to_user_id=current_user_id,
+                ).count()
+                > 0,  # 팔로우 당함 (나를 팔로우 하는 사람)
+                # followed==True인 상태에서 following==False이면 버튼 상태: 맞팔로우 / following==True이면 맞팔로잉(회색)
+                # followed==False인 상태에서 following==False이면 버튼 상태: 팔로우 / following==True이면 팔로잉(회색)
+            }
+            print("###########follow_state_: ", follow_state_)  # 디버깅용
+
+            follow_state_list.append(follow_state_)
 
     result = {
         "items": [n.to_dict() for n in notifications.items],
@@ -131,6 +160,8 @@ def get_my_notifications():
         "has_next": notifications.has_next,
         "has_prev": notifications.has_prev,
     }
+    if follow_state:
+        result["follow_state"] = {"items": follow_state_list}
 
     return jsonify(result), 200
 

@@ -64,15 +64,14 @@ def create_notification_db(
         # FOLLOW: 팔로우 관계 생성
         if notification_type == NotificationType.FOLLOW:
             existing_follow = Follow.query.filter_by(
-                follower_id=from_user_id, followed_id=to_user_id
+                from_user_id=from_user_id, to_user_id=to_user_id
             ).first()
 
             if not existing_follow:
                 follow = Follow(
-                    follower_id=from_user_id,
-                    followed_id=to_user_id,
-                    created_at=datetime.now()
-                    - timedelta(days=random.randint(0, 30)),
+                    from_user_id=from_user_id,
+                    to_user_id=to_user_id,
+                    created_at=datetime.now() - timedelta(days=random.randint(0, 30)),
                 )
                 db.session.add(follow)
 

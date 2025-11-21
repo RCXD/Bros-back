@@ -17,6 +17,49 @@ DEFAULT_PAGE_SIZE = 20
 MAX_PAGE_SIZE = 100
 
 
+# 개발용 엔드포인트. 추후 삭제 필요
+@bp.get("/api_info")
+def api_info():
+    """
+    즐겨찾기 API 정보 제공
+    """
+    info = {
+        "endpoints": {
+            "get_favorites": {
+                "method": "GET",
+                "path": "/favorite",
+                "description": "현재 사용자의 즐겨찾기 조회",
+                "query_params": {
+                    "item_type": "타입별 필터 (STORY, ROUTE, REVIEW, REPORT, PRODUCT)",
+                    "page": "페이지 번호",
+                    "per_page": "페이지당 항목 수",
+                },
+            },
+            "get_favorites_by_type": {
+                "method": "GET",
+                "path": "/favorite/me/<string:item_type>",
+                "description": "현재 사용자의 특정 타입 즐겨찾기 조회",
+            },
+            "toggle_favorite": {
+                "method": "PATCH",
+                "path": "/favorite/<string:item_type>/<int:item_id>",
+                "description": "즐겨찾기 토글 (추가/제거)",
+            },
+            "remove_from_favorites": {
+                "method": "DELETE",
+                "path": "/favorite/<string:item_type>/<int:item_id>",
+                "description": "즐겨찾기 제거",
+            },
+            "check_favorite": {
+                "method": "GET",
+                "path": "/favorite/check/<string:item_type>/<int:item_id>",
+                "description": "즐겨찾기 여부 확인",
+            },
+        }
+    }
+    return jsonify(info), 200
+
+
 @bp.get("")
 @jwt_required()
 def get_favorites():
@@ -63,7 +106,40 @@ def get_favorites():
     )
 
 
-@bp.post("/<string:item_type>/<int:item_id>")
+@bp.get("/me/<string:item_type>")
+def get_favorites_by_type(item_type):
+    """
+    현재 사용자의 특정 타입 즐겨찾기 조회
+    Path params:
+        - item_type: story, product, route 등
+    """
+    current_user_id = int(get_jwt_identity())
+
+    # item_type을 FavoriteType으로 매핑
+    type_mapping = {
+        "story": FavoriteType.STORY,
+        "route": FavoriteType.ROUTE,
+        "review": FavoriteType.REVIEW,
+        "report": FavoriteType.REPORT,
+        "product": FavoriteType.PRODUCT,
+    }
+
+    favorite_type = type_mapping.get(item_type.lower())
+    if not favorite_type:
+        return jsonify({"message": f"유효하지 않은 타입: {item_type}"}), 400
+
+    favorites = (
+        Favorite.query.filter_by(user_id=current_user_id, item_type=favorite_type)
+        .order_by(Favorite.created_at.desc())
+        .all()
+    )
+
+    favorites_list = [fav.to_dict() for fav in favorites]
+
+    return jsonify({"items": favorites_list, "count": len(favorites_list)}), 200
+
+
+@bp.patch("/<string:item_type>/<int:item_id>")
 @jwt_required()
 def toggle_favorite(item_type, item_id):
     """
@@ -116,8 +192,21 @@ def toggle_favorite(item_type, item_id):
         )
         db.session.add(favorite)
         db.session.commit()
+
+        result = []
+        # item_type별 item_id의 리스트 반환
+        for favorite_type_ in FavoriteType:
+            # 특정 favorite type의 item_id 리스트
+            favorite_ = Favorite.query.filter_by(
+                user_id=current_user_id, item_type=favorite_type_
+            ).all()
+            item_ids = []
+            for fav in favorite_:
+                item_ids.append(fav.item_id)
+            result.append({favorite_type_.name: item_ids})
+
         return (
-            jsonify({"message": "즐겨찾기에 추가되었습니다", "is_favorited": True}),
+            jsonify({"message": "즐겨찾기에 추가되었습니다", "item_ids": result}),
             201,
         )
 
