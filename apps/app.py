@@ -126,6 +126,7 @@ def register_blueprints(app):
     app.register_blueprint(place_bp, url_prefix="/place")
 
     # 코스메틱 모듈
+<<<<<<< Updated upstream
     from apps.cosmetic.views import bp as cosmetic_bp
     app.register_blueprint(cosmetic_bp, url_prefix="/cosmetic")
 
