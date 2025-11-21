@@ -40,14 +40,14 @@ def follow_user(user_id):
 
     # 이미 팔로우 중인지 확인
     existing = Follow.query.filter_by(
-        follower_id=current_user_id, following_id=user_id
+        from_user_id=current_user_id, to_user_id=user_id
     ).first()
 
     if existing:
         return jsonify({"message": "이미 팔로우 중인 사용자입니다"}), 409
 
     try:
-        follow = Follow(follower_id=current_user_id, following_id=user_id)
+        follow = Follow(from_user_id=current_user_id, to_user_id=user_id)
         db.session.add(follow)
         db.session.commit()
 
@@ -64,7 +64,7 @@ def unfollow_user(user_id):
     current_user_id = int(get_jwt_identity())
 
     follow = Follow.query.filter_by(
-        follower_id=current_user_id, following_id=user_id
+        from_user_id=current_user_id, to_user_id=user_id
     ).first()
 
     if not follow:
@@ -82,11 +82,11 @@ def get_followers(user_id):
     # 사용자 존재 확인
     User.query.get_or_404(user_id)
 
-    followers = Follow.query.filter_by(following_id=user_id).all()
+    followers = Follow.query.filter_by(to_user_id=user_id).all()
 
     result = []
     for follow in followers:
-        user = User.query.get(follow.follower_id)
+        user = User.query.get(follow.from_user_id)
         if user:
             result.append(
                 {
@@ -106,11 +106,11 @@ def get_following(user_id):
     # 사용자 존재 확인
     User.query.get_or_404(user_id)
 
-    following = Follow.query.filter_by(follower_id=user_id).all()
+    following = Follow.query.filter_by(from_user_id=user_id).all()
 
     result = []
     for follow in following:
-        user = User.query.get(follow.following_id)
+        user = User.query.get(follow.to_user_id)
         if user:
             result.append(
                 {
