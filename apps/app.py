@@ -35,7 +35,7 @@ def create_app(config_name="default"):
     app.config.from_object(config[config_name])
 
     app.cli.add_command(seed_cosmetics)
-    
+
     # 정적 파일 설정 (환경 변수에서 가져오기)
     app.static_folder = app.config.get("STATIC_FOLDER", "static")
     app.static_url_path = app.config.get("STATIC_URL_PATH", "/static")
@@ -128,7 +128,7 @@ def register_blueprints(app):
     # 코스메틱 모듈
     from apps.cosmetic.views import bp as cosmetic_bp
     app.register_blueprint(cosmetic_bp, url_prefix="/cosmetic")
-    
+
     # 제품 모듈
     from apps.product.views import bp as product_bp
 
@@ -155,9 +155,10 @@ def register_blueprints(app):
     app.register_blueprint(report_bp, url_prefix="/report")
 
     # 로드뷰 모듈
-    from apps.roadview.views import bp as roadview_bp
+    from apps.roadview.views import bp as roadview_bp, init_roadview_models
 
     app.register_blueprint(roadview_bp, url_prefix="/roadview")
+    init_roadview_models(db)  # Initialize roadview models
 
     # 감지기 모듈
     # from apps.detector.views import bp as detector_bp
@@ -181,10 +182,10 @@ def register_blueprints(app):
 def create_directories(app):
     """파일 업로드를 위한 필수 디렉토리 생성"""
     directories = [
-        os.path.join(app.root_path, 'static', 'profile_images'),
-        os.path.join(app.root_path, 'static', 'post_images'),
-        os.path.join(app.root_path, 'static', 'product_images'),
-        os.path.join(app.root_path, 'static', 'cosmetic_overlays'),
+        os.path.join(app.root_path, "static", "profile_images"),
+        os.path.join(app.root_path, "static", "post_images"),
+        os.path.join(app.root_path, "static", "product_images"),
+        os.path.join(app.root_path, "static", "cosmetic_overlays"),
     ]
 
     for directory in directories:
