@@ -2,10 +2,13 @@
 Roadview Views - API endpoints for roadview services
 """
 
-from flask import Blueprint, jsonify, request
+from flask import Blueprint, jsonify, request, send_file
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from datetime import datetime, timedelta
 import time
+import requests
+import os
+from pathlib import Path
 
 from .models import RoadviewProvider, RoadviewStatus, init_models
 from .utils import (
@@ -66,17 +69,41 @@ def check_roadview():
 
     from apps.config.server import db
 
+    # Verify roadview loader has at least one client
+    loader = get_roadview_loader_from_env()
+    if not loader.priority:
+        return (
+            jsonify(
+                {
+                    "message": "No roadview API clients configured. Please set API keys in environment variables.",
+                    "required_keys": [
+                        "GOOGLE_MAPS_API_KEY",
+                        "KAKAO_REST_API_KEY",
+                        "NAVER_CLIENT_ID + NAVER_CLIENT_SECRET",
+                    ],
+                }
+            ),
+            503,
+        )
+
     # Track request
     start_time = time.time()
+
+    # Convert provider name to enum
+    preferred_provider_enum = None
+    if preferred_provider:
+        provider_map = {
+            "google": RoadviewProvider.GOOGLE_STREET_VIEW,
+            "kakao": RoadviewProvider.KAKAO_ROADVIEW,
+            "naver": RoadviewProvider.NAVER_STREET_VIEW,
+        }
+        preferred_provider_enum = provider_map.get(preferred_provider.lower())
+
     rv_request = RoadviewRequest(
         user_id=user_id,
         latitude=latitude,
         longitude=longitude,
-        preferred_provider=(
-            RoadviewProvider[preferred_provider.upper().replace(" ", "_")]
-            if preferred_provider
-            else None
-        ),
+        preferred_provider=preferred_provider_enum,
     )
     db.session.add(rv_request)
     db.session.commit()
@@ -132,16 +159,13 @@ def check_roadview():
         rv_request.success = result["success"]
 
         if result["success"]:
-            # Create roadview record
-            provider_enum = (
-                RoadviewProvider[
-                    result["provider"].upper().replace(" ", "_") + "_STREET_VIEW"
-                ]
-                if result["provider"] == "google"
-                else RoadviewProvider[
-                    f"{result['provider'].upper()}_{'ROADVIEW' if result['provider'] == 'kakao' else 'STREET_VIEW'}"
-                ]
-            )
+            # Create roadview record - convert provider name to enum
+            provider_map_response = {
+                "google": RoadviewProvider.GOOGLE_STREET_VIEW,
+                "kakao": RoadviewProvider.KAKAO_ROADVIEW,
+                "naver": RoadviewProvider.NAVER_STREET_VIEW,
+            }
+            provider_enum = provider_map_response.get(result["provider"])
 
             metadata = result["metadata"]
             roadview = Roadview(
@@ -440,3 +464,263 @@ def update_api_usage(
         usage.estimated_cost += 0.007  # $7 per 1000 requests
 
     db.session.commit()
+
+
+@bp.route("/location-info", methods=["POST"])
+@jwt_required()
+def get_location_info():
+    """
+    Google Places API를 사용하여 위치의 상세 정보 조회
+
+    Request JSON:
+        {
+            "latitude": 37.5665,
+            "longitude": 126.9780
+        }
+
+    Response:
+        {
+            "name": "음식점 이름",
+            "address": "주소",
+            "rating": 4.5,
+            "reviews_count": 123,
+            "phone": "010-xxxx-xxxx",
+            "website": "https://example.com",
+            "opening_hours": {...},
+            "types": ["restaurant", "food"],
+            "reviews": [...],
+            "photos": [...]
+        }
+    """
+    data = request.get_json()
+
+    if not data or "latitude" not in data or "longitude" not in data:
+        return jsonify({"message": "latitude and longitude are required"}), 400
+
+    latitude = float(data["latitude"])
+    longitude = float(data["longitude"])
+
+    try:
+        api_key = os.getenv("GOOGLE_MAPS_API_KEY")
+        if not api_key:
+            return jsonify({"message": "Google Maps API key not configured"}), 503
+
+        # Nearby Search API 호출하여 가장 가까운 장소 찾기
+        nearby_url = "https://maps.googleapis.com/maps/api/place/nearbysearch/json"
+        nearby_params = {
+            "location": f"{latitude},{longitude}",
+            "radius": 50,
+            "key": api_key,
+        }
+
+        nearby_response = requests.get(nearby_url, params=nearby_params, timeout=10)
+        nearby_response.raise_for_status()
+        nearby_data = nearby_response.json()
+
+        if nearby_data.get("status") != "OK":
+            status = nearby_data.get("status")
+            error_msg = nearby_data.get("error_message", "Unknown error")
+            return (
+                jsonify(
+                    {
+                        "message": f"Google Nearby Search failed: {status}",
+                        "google_status": status,
+                        "google_error": error_msg,
+                    }
+                ),
+                500,
+            )
+
+        if not nearby_data.get("results"):
+            return jsonify({"message": "No location found at this coordinates"}), 404
+
+        # 가장 가까운 장소의 place_id 획득
+        place_id = nearby_data["results"][0]["place_id"]
+
+        # Place Details API 호출하여 상세 정보 조회
+        details_url = "https://maps.googleapis.com/maps/api/place/details/json"
+        details_params = {
+            "place_id": place_id,
+            "fields": "name,formatted_address,formatted_phone_number,website,rating,user_ratings_total,opening_hours,types,reviews,photos,geometry",
+            "reviews_sort": "newest",
+            "language": "ko",
+            "key": api_key,
+        }
+
+        details_response = requests.get(details_url, params=details_params, timeout=10)
+        details_response.raise_for_status()
+        details_data = details_response.json()
+
+        if details_data.get("status") != "OK":
+            status = details_data.get("status")
+            error_msg = details_data.get("error_message", "Unknown error")
+            return (
+                jsonify(
+                    {
+                        "message": f"Failed to fetch location details: {status}",
+                        "google_status": status,
+                        "google_error": error_msg,
+                    }
+                ),
+                500,
+            )
+
+        result = details_data.get("result", {})
+
+        # 응답 데이터 정리
+        location_info = {
+            "name": result.get("name"),
+            "address": result.get("formatted_address"),
+            "phone": result.get("formatted_phone_number"),
+            "website": result.get("website"),
+            "rating": result.get("rating"),
+            "reviews_count": result.get("user_ratings_total"),
+            "types": result.get("types", []),
+            "opening_hours": result.get("opening_hours", {}),
+            "coordinates": result.get("geometry", {}).get("location", {}),
+            "reviews": [],
+            "photos": [],
+        }
+
+        # 리뷰 정보 추출
+        if "reviews" in result:
+            for review in result["reviews"][:5]:  # 최근 5개 리뷰
+                location_info["reviews"].append(
+                    {
+                        "author": review.get("author_name"),
+                        "rating": review.get("rating"),
+                        "text": review.get("text"),
+                        "time": review.get("relative_time_description"),
+                        "language": review.get("language"),
+                    }
+                )
+
+        # 사진 정보 추출
+        if "photos" in result:
+            for photo in result["photos"][:5]:  # 최대 5개 사진
+                location_info["photos"].append(
+                    {
+                        "attribution": photo.get("html_attributions", []),
+                        "height": photo.get("height"),
+                        "width": photo.get("width"),
+                    }
+                )
+
+        return jsonify(location_info), 200
+
+    except requests.exceptions.Timeout:
+        return jsonify({"message": "Google API request timeout"}), 504
+    except requests.exceptions.RequestException as e:
+        return jsonify({"message": f"Google API error: {str(e)}"}), 500
+    except Exception as e:
+        return jsonify({"message": f"Error fetching location info: {str(e)}"}), 500
+
+
+@bp.route("/get-image", methods=["POST"])
+@jwt_required()
+def get_roadview_image():
+    """
+    Download Google Street View image and save to disk
+
+    Request JSON:
+        {
+            "latitude": 37.5665,
+            "longitude": 126.9780,
+            "heading": 90,
+            "pitch": 0,
+            "fov": 90,
+            "width": 640,
+            "height": 640
+        }
+
+    Response:
+        {
+            "success": true,
+            "file_path": "./downloads/roadview/2025-11-20/image_123456.jpg",
+            "metadata": {...}
+        }
+    """
+    data = request.get_json()
+
+    if not data or "latitude" not in data or "longitude" not in data:
+        return jsonify({"message": "latitude and longitude are required"}), 400
+
+    latitude = float(data["latitude"])
+    longitude = float(data["longitude"])
+    heading = int(data.get("heading", 0))
+    pitch = int(data.get("pitch", 0))
+    fov = int(data.get("fov", 90))
+    width = int(data.get("width", 640))
+    height = int(data.get("height", 640))
+
+    try:
+        api_key = os.getenv("GOOGLE_MAPS_API_KEY")
+        if not api_key:
+            return jsonify({"message": "Google Maps API key not configured"}), 503
+
+        # Create directory structure
+        today = datetime.now().strftime("%Y-%m-%d")
+        download_dir = Path("downloads") / "roadview" / today
+        download_dir.mkdir(parents=True, exist_ok=True)
+
+        # Generate filename
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        filename = f"roadview_{timestamp}.jpg"
+        file_path = download_dir / filename
+
+        # Build Street View Static API URL
+        streetview_url = "https://maps.googleapis.com/maps/api/streetview"
+        params = {
+            "size": f"{width}x{height}",
+            "location": f"{latitude},{longitude}",
+            "heading": heading,
+            "pitch": pitch,
+            "fov": fov,
+            "key": api_key,
+        }
+
+        # Download image
+        response = requests.get(streetview_url, params=params, timeout=15)
+        response.raise_for_status()
+
+        # Check if valid image (not error page)
+        if len(response.content) < 1000:
+            return (
+                jsonify({"message": "No Street View image available at this location"}),
+                404,
+            )
+
+        # Save image to disk
+        with open(file_path, "wb") as f:
+            f.write(response.content)
+
+        metadata = {
+            "latitude": latitude,
+            "longitude": longitude,
+            "heading": heading,
+            "pitch": pitch,
+            "fov": fov,
+            "width": width,
+            "height": height,
+            "file_size": len(response.content),
+            "timestamp": datetime.now().isoformat(),
+        }
+
+        return (
+            jsonify(
+                {
+                    "success": True,
+                    "file_path": str(file_path),
+                    "filename": filename,
+                    "metadata": metadata,
+                }
+            ),
+            200,
+        )
+
+    except requests.exceptions.Timeout:
+        return jsonify({"message": "Google API request timeout"}), 504
+    except requests.exceptions.RequestException as e:
+        return jsonify({"message": f"Google API error: {str(e)}"}), 500
+    except Exception as e:
+        return jsonify({"message": f"Error downloading roadview image: {str(e)}"}), 500
