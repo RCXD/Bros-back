@@ -36,7 +36,6 @@ def create_app(config_name="default"):
 
     app.cli.add_command(seed_cosmetics)
 
-
     # 정적 파일 설정 (환경 변수에서 가져오기)
     app.static_folder = app.config.get("STATIC_FOLDER", "static")
     app.static_url_path = app.config.get("STATIC_URL_PATH", "/static")
@@ -127,10 +126,9 @@ def register_blueprints(app):
     app.register_blueprint(place_bp, url_prefix="/place")
 
     # 코스메틱 모듈
-<<<<<<< Updated upstream
     from apps.cosmetic.views import bp as cosmetic_bp
-    app.register_blueprint(cosmetic_bp, url_prefix="/cosmetic")
 
+    app.register_blueprint(cosmetic_bp, url_prefix="/cosmetic")
 
     # 제품 모듈
     from apps.product.views import bp as product_bp
@@ -159,10 +157,8 @@ def register_blueprints(app):
 
     # 로드뷰 모듈
     from apps.roadview.views import bp as roadview_bp, init_roadview_models
-    from apps.roadview.views import bp as roadview_bp, init_roadview_models
 
     app.register_blueprint(roadview_bp, url_prefix="/roadview")
-    init_roadview_models(db)  # Initialize roadview models
     init_roadview_models(db)  # Initialize roadview models
 
     # 감지기 모듈
