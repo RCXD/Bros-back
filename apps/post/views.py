@@ -18,6 +18,7 @@ bp = Blueprint("post", __name__)
 
 from flask import g
 
+
 @bp.get("")
 def get_posts():
     page = request.args.get("page", 1, type=int)
@@ -41,7 +42,7 @@ def get_posts():
     pagination = query.paginate(page=page, per_page=per_page, error_out=False)
 
     posts = []
-    current_user_id = getattr(g, 'user_id', None)  # 현재 로그인 유저 ID
+    current_user_id = getattr(g, "user_id", None)  # 현재 로그인 유저 ID
 
     for post in pagination.items:
         user = User.query.get(post.user_id)
@@ -50,7 +51,12 @@ def get_posts():
         # ✅ 현재 유저가 좋아요 눌렀는지 확인
         is_liked = False
         if current_user_id:
-            is_liked = PostLike.query.filter_by(post_id=post.post_id, user_id=current_user_id).first() is not None
+            is_liked = (
+                PostLike.query.filter_by(
+                    post_id=post.post_id, user_id=current_user_id
+                ).first()
+                is not None
+            )
 
         images = Image.query.filter_by(post_id=post.post_id).all()
         posts.append(
@@ -81,18 +87,20 @@ def get_posts():
             }
         )
 
-    return jsonify(
-        {
-            "items": posts,
-            "total": pagination.total,
-            "pages": pagination.pages,
-            "page": page,
-            "per_page": per_page,
-            "has_next": pagination.has_next,
-            "has_prev": pagination.has_prev,
-        }
-    ), 200
-
+    return (
+        jsonify(
+            {
+                "items": posts,
+                "total": pagination.total,
+                "pages": pagination.pages,
+                "page": page,
+                "per_page": per_page,
+                "has_next": pagination.has_next,
+                "has_prev": pagination.has_prev,
+            }
+        ),
+        200,
+    )
 
 
 @bp.post("")
@@ -432,27 +440,33 @@ def like_post(post_id):
         post_id=post_id, user_id=current_user_id
     ).first()
 
-    like_count = PostLike.query.filter_by(post_id=post_id).count()
-
     if existing:
         # 좋아요 취소
         db.session.delete(existing)
         db.session.commit()
-        return (
-            jsonify(
-                {"message": "좋아요 취소", "liked": False, "like_count": like_count}
-            ),
-            200,
-        )
     else:
         # 좋아요
         like = PostLike(post_id=post_id, user_id=current_user_id)
         db.session.add(like)
         db.session.commit()
-        return (
-            jsonify({"message": "좋아요", "liked": True, "like_count": like_count}),
-            201,
-        )
+
+    # ✅ 커밋 후에 최종 상태 조회
+    like_count = PostLike.query.filter_by(post_id=post_id).count()
+    is_liked = (
+        PostLike.query.filter_by(post_id=post_id, user_id=current_user_id).first()
+        is not None
+    )
+
+    return (
+        jsonify(
+            {
+                "message": "좋아요" if is_liked else "좋아요 취소",
+                "liked": is_liked,
+                "like_count": like_count,
+            }
+        ),
+        200,
+    )
 
 
 @bp.delete("/<int:post_id>/like")
