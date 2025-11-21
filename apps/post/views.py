@@ -42,7 +42,14 @@ def get_posts():
     pagination = query.paginate(page=page, per_page=per_page, error_out=False)
 
     posts = []
-    current_user_id = getattr(g, "user_id", None)  # 현재 로그인 유저 ID
+
+    # ✅ JWT 토큰에서 현재 유저 ID 추출 (비로그인 유저는 None)
+    current_user_id = None
+    try:
+        if request.headers.get("Authorization"):
+            current_user_id = int(get_jwt_identity())
+    except:
+        pass
 
     for post in pagination.items:
         user = User.query.get(post.user_id)
@@ -71,7 +78,7 @@ def get_posts():
                 "category": post.category.category_name if post.category else None,
                 "view_counts": post.view_counts,
                 "like_count": like_count,
-                "isLiked": is_liked,  # ✅ 추가
+                "isLiked": is_liked,  # ✅ 정확한 좋아요 상태
                 "images": [
                     {
                         "image_id": img.image_id,
