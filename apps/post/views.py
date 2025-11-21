@@ -42,6 +42,7 @@ def get_posts():
 
     posts = []
     current_user_id = getattr(g, "user_id", None)  # 현재 로그인 유저 ID
+    current_user_id = getattr(g, "user_id", None)  # 현재 로그인 유저 ID
 
     for post in pagination.items:
         user = User.query.get(post.user_id)
@@ -50,6 +51,12 @@ def get_posts():
         # ✅ 현재 유저가 좋아요 눌렀는지 확인
         is_liked = False
         if current_user_id:
+            is_liked = (
+                PostLike.query.filter_by(
+                    post_id=post.post_id, user_id=current_user_id
+                ).first()
+                is not None
+            )
             is_liked = (
                 PostLike.query.filter_by(
                     post_id=post.post_id, user_id=current_user_id
@@ -86,6 +93,20 @@ def get_posts():
             }
         )
 
+    return (
+        jsonify(
+            {
+                "items": posts,
+                "total": pagination.total,
+                "pages": pagination.pages,
+                "page": page,
+                "per_page": per_page,
+                "has_next": pagination.has_next,
+                "has_prev": pagination.has_prev,
+            }
+        ),
+        200,
+    )
     return (
         jsonify(
             {
@@ -244,9 +265,7 @@ def get_post(post_id):
 
     if current_user_id:
         is_liked = (
-            PostLike.query.filter_by(
-                post_id=post_id, user_id=current_user_id
-            ).first()
+            PostLike.query.filter_by(post_id=post_id, user_id=current_user_id).first()
             is not None
         )
 
@@ -438,7 +457,7 @@ def delete_post(post_id):
         return jsonify({"message": f"게시글 삭제 실패: {str(e)}"}), 400
 
 
-@bp.post("/<int:post_id>/like")
+@bp.patch("/<int:post_id>/like")
 @jwt_required()
 def like_post(post_id):
     """게시글 좋아요 (토글)"""
@@ -456,47 +475,23 @@ def like_post(post_id):
         # 좋아요 취소
         db.session.delete(existing)
         db.session.commit()
+        like_count = PostLike.query.filter_by(post_id=post_id).count()
+        return (
+            jsonify(
+                {"message": "좋아요 취소", "liked": False, "like_count": like_count}
+            ),
+            200,
+        )
     else:
         # 좋아요
         like = PostLike(post_id=post_id, user_id=current_user_id)
         db.session.add(like)
         db.session.commit()
-
-    # ✅ 커밋 후에 최종 상태 조회
-    like_count = PostLike.query.filter_by(post_id=post_id).count()
-    is_liked = (
-        PostLike.query.filter_by(post_id=post_id, user_id=current_user_id).first()
-        is not None
-    )
-
-    return (
-        jsonify(
-            {
-                "message": "좋아요" if is_liked else "좋아요 취소",
-                "liked": is_liked,
-                "like_count": like_count,
-            }
-        ),
-        200,
-    )
-
-
-@bp.delete("/<int:post_id>/like")
-@jwt_required()
-def unlike_post(post_id):
-    """게시글 좋아요 취소"""
-    current_user_id = int(get_jwt_identity())
-
-    like = PostLike.query.filter_by(post_id=post_id, user_id=current_user_id).first()
-
-    # if not like:
-    #     return jsonify({"message": "좋아요하지 않은 게시글입니다"}), 404
-
-    if like:
-        db.session.delete(like)
-        db.session.commit()
-
-    return jsonify({"message": "좋아요 취소"}), 200
+        like_count = PostLike.query.filter_by(post_id=post_id).count()
+        return (
+            jsonify({"message": "좋아요", "liked": True, "like_count": like_count}),
+            201,
+        )
 
 
 @bp.get("/<int:post_id>/likes")
@@ -540,7 +535,7 @@ def get_my_posts():
     posts = []
     for post in pagination.items:
         like_count = PostLike.query.filter_by(post_id=post.post_id).count()
-        
+
         # ✅ 현재 유저가 좋아요 눌렀는지 확인
         is_liked = (
             PostLike.query.filter_by(
@@ -548,7 +543,7 @@ def get_my_posts():
             ).first()
             is not None
         )
-        
+
         images = Image.query.filter_by(post_id=post.post_id).all()
         posts.append(
             {
