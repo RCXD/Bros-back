@@ -20,6 +20,87 @@ from apps.user.models import Follow, Friend
 bp = Blueprint("notification", __name__, url_prefix="/notification")
 
 
+NOTIFICATION_API_DOC = {
+    "title": "Notification API",
+    "base_path": "/notification",
+    "authentication": "Bearer JWT (Authorization header) required for every endpoint except /docs.",
+    "notification_types": [nt.value for nt in NotificationType],
+    "endpoints": [
+        {
+            "name": "Create notification",
+            "method": "POST",
+            "path": "",
+            "description": "Emit a notification from the authenticated user to another user after an action like a like, reply, follow etc.",
+            "request_body": {
+                "to_user_id": "integer (required) - recipient user_id",
+                "type": "string (required) - one of NotificationType values",
+                "post_id": "integer (optional) - related post",
+                "reply_id": "integer (optional) - related reply",
+                "mention_id": "integer (optional)",
+                "product_id": "integer (optional) - legacy field from the original apps version"
+            },
+            "responses": {
+                "201": "notification object from Notification.to_dict()",
+                "400": "missing parameters or invalid notification type",
+                "404": "target user not found",
+                "500": "unexpected failure when persisting the notification"
+            }
+        },
+        {
+            "name": "List my notifications",
+            "method": "GET",
+            "path": "",
+            "description": "Page through the authenticated user’s notifications with optional filters.",
+            "query_parameters": {
+                "page": "integer (default: 1)",
+                "per_page": "integer (default: 20)",
+                "unread_only": "boolean string (true/false) - only return unchecked notifications when true",
+                "follow_state": "boolean string - when true, adds following/followed flags for the sender on each item"
+            },
+            "responses": {
+                "200": "paged response with 'items', 'total', 'pages', etc."
+            }
+        },
+        {
+            "name": "Unread notification count",
+            "method": "GET",
+            "path": "/unread-count",
+            "description": "Return the count of unchecked notifications for the authenticated user.",
+            "responses": {"200": "{\"unread_count\": <int>}"},
+        },
+        {
+            "name": "Mark notification as read",
+            "method": "PATCH",
+            "path": "/<notification_id>",
+            "description": "Set the checked flag on a single notification belonging to the current user.",
+            "responses": {"200": "notification object", "404": "notification not found"},
+        },
+        {
+            "name": "Mark all notifications as read",
+            "method": "PATCH",
+            "path": "/mark-all-read",
+            "description": "Set every unchecked notification to checked for the current user.",
+            "responses": {
+                "200": "{\"message\": \"...\", \"updated_count\": <int>}"
+            },
+        },
+        {
+            "name": "Delete notification",
+            "method": "DELETE",
+            "path": "/<notification_id>",
+            "description": "Remove one notification belonging to the current user.",
+            "responses": {"200": "{\"message\": \"...\"}", "404": "notification not found"},
+        },
+    ],
+}
+
+
+@bp.get("/docs")
+def notification_docs():
+    """Return inline documentation for the notification module."""
+    return jsonify(NOTIFICATION_API_DOC), 200
+
+
 @bp.post("")
 @jwt_required()
 def create_notification():
@@ -92,6 +173,8 @@ def create_notification():
     # === LEGACY: serialize() 호환 (to_dict()로 통일됨) ===
     return jsonify(notification.to_dict()), 201
 
+# TODO: check Follow.py and fix function also write expected return
+
 @bp.get("")
 @jwt_required()
 def get_my_notifications():
@@ -105,7 +188,7 @@ def get_my_notifications():
     === END ===
     """
     current_user_id = int(get_jwt_identity())
-    
+
     # 페이지네이션 파라미터
     page = request.args.get("page", 1, type=int)
     per_page = request.args.get("per_page", 20, type=int)
@@ -138,40 +221,39 @@ def get_my_notifications():
     follow_state_map = {}
     if follow_state:
         from_user_ids = {
-            notification_.from_user_id
-            for notification_ in notifications.items
-            if notification_.from_user_id
+            n.from_user_id
+            for n in notifications.items
+            if n.from_user_id is not None
         }
 
-        following = set()
-        followed = set()
+        follow_state_map = {}
         if from_user_ids:
+            # 내가 상대를 팔로우하고 있는 경우 (내가 following)
             following = {
-                to_user_id
-                for (to_user_id,) in Follow.query.with_entities(
-                    Follow.to_user_id
-                ).filter(
+                row.to_user_id
+                for row in Follow.query.filter(
                     Follow.from_user_id == current_user_id,
                     Follow.to_user_id.in_(from_user_ids),
-                )
-            }
-            followed = {
-                from_user_id
-                for (from_user_id,) in Follow.query.with_entities(
-                    Follow.from_user_id
-                ).filter(
-                    Follow.to_user_id == current_user_id,
-                    Follow.from_user_id.in_(from_user_ids),
-                )
+                ).all()
             }
 
-        follow_state_map = {
-            user_id: {
-                "following": user_id in following,
-                "followed": user_id in followed,
+            # 상대가 나를 팔로우하고 있는 경우 (내가 followed)
+            followed = {
+                row.from_user_id
+                for row in Follow.query.filter(
+                    Follow.to_user_id == current_user_id,
+                    Follow.from_user_id.in_(from_user_ids),
+                ).all()
             }
-            for user_id in from_user_ids
-        }
+
+            follow_state_map = {
+                uid: {
+                    "following": uid in following,
+                    "followed": uid in followed,
+                }
+                for uid in from_user_ids
+            }
+
 
     for notification_ in notifications.items:
         item_dict = notification_.to_dict()
