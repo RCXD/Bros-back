@@ -135,7 +135,7 @@ def get_my_notifications():
             "has_next": notifications.has_next,
             "has_prev": notifications.has_prev,
         }
-
+    
     if follow_state:
         from_user_ids = {
             notification_.from_user_id
@@ -167,11 +167,9 @@ def get_my_notifications():
 
         for notification_ in notifications.items:
             item_dict = notification_.to_dict()
-
-            if follow_state:
-                from_user_id = notification_.from_user_id
-                item_dict["following"] = from_user_id in following
-                item_dict["followed"] = from_user_id in followed
+            # from_user_id = notification_.from_user_id
+            item_dict["following"] = following
+            item_dict["followed"] = followed
 
             result["items"].append(item_dict)
     # if follow_state:
