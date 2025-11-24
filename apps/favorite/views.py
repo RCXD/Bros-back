@@ -107,6 +107,7 @@ def get_favorites():
 
 
 @bp.get("/me/<string:item_type>")
+@jwt_required()
 def get_favorites_by_type(item_type):
     """
     현재 사용자의 특정 타입 즐겨찾기 조회
