@@ -125,17 +125,17 @@ def get_my_notifications():
     notifications = query.order_by(Notification.created_at.desc()).paginate(
         page=page, per_page=per_page, error_out=False
     )
-    if not follow_state:
-        result = {
-            "items": [n.to_dict() for n in notifications.items],
-            "total": notifications.total,
-            "page": page,
-            "per_page": per_page,
-            "pages": notifications.pages,
-            "has_next": notifications.has_next,
-            "has_prev": notifications.has_prev,
-        }
 
+    result = {
+        "items": [n.to_dict() for n in notifications.items],
+        "total": notifications.total,
+        "page": page,
+        "per_page": per_page,
+        "pages": notifications.pages,
+        "has_next": notifications.has_next,
+        "has_prev": notifications.has_prev,
+    }
+    
     if follow_state:
         from_user_ids = {
             notification_.from_user_id
@@ -174,7 +174,6 @@ def get_my_notifications():
                 item_dict["from_user_id"] = from_user_id in followed
 
             result["items"].append(item_dict)
-
     # if follow_state:
     #     result["follow_state"] = {"items": follow_state_list}
     return jsonify(result), 200
