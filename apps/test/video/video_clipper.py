@@ -12,6 +12,15 @@ FFPROBE_CMD = "ffprobe"
 VIDEO_STORAGE_DIR = Path(r"\\192.168.1.86\static\video")
 
 
+def _normalize_extension(ext: Optional[str], fallback: str) -> str:
+    normalized_fallback = (
+        fallback if fallback.startswith(".") else f".{fallback.lstrip('.')}"
+    )
+    if not ext:
+        return normalized_fallback
+    return ext if ext.startswith(".") else f".{ext}"
+
+
 def _run_command(arguments: List[str], error_hint: str) -> None:
     result = subprocess.run(arguments, capture_output=True, text=True)
     if result.returncode != 0:
@@ -65,6 +74,9 @@ def clip_video(
     extra_args: Optional[List[str]] = None,
     overwrite: bool = True,
     default_output_dir: Optional[Path] = None,
+    scale_width: Optional[int] = None,
+    quality: Optional[int] = None,
+    output_ext: Optional[str] = None,
 ) -> ClipResult:
     path = Path(video_path)
     if not path.is_absolute():
@@ -75,41 +87,54 @@ def clip_video(
     if start < 0 or end <= start:
         raise ValueError("시작 시간은 0 이상이고 종료 시간은 시작 시간보다 커야 합니다")
 
+    extension = _normalize_extension(output_ext, path.suffix)
     duration = end - start
+
+    if scale_width and codec == "copy":
+        raise ValueError("스케일을 적용하려면 재인코딩 설정(--reencode)을 사용하세요")
+    if quality is not None and codec == "copy":
+        raise ValueError("CRF 화질은 재인코딩 모드에서만 설정 가능합니다")
+
     if output_path:
         output_path_candidate = Path(output_path)
         if output_path_candidate.is_dir():
             output_path_candidate.mkdir(parents=True, exist_ok=True)
             final_output = (
                 output_path_candidate
-                / f"{path.stem}_{int(start)}-{int(end)}{path.suffix}"
+                / f"{path.stem}_{int(start)}-{int(end)}{extension}"
             )
         else:
             output_path_candidate.parent.mkdir(parents=True, exist_ok=True)
-            final_output = output_path_candidate
+            final_output = (
+                output_path_candidate.with_suffix(extension)
+                if output_ext
+                else output_path_candidate
+            )
     else:
         target_dir = default_output_dir if default_output_dir else path.parent
         target_dir.mkdir(parents=True, exist_ok=True)
-        final_output = target_dir / f"{path.stem}_{int(start)}-{int(end)}{path.suffix}"
+        final_output = target_dir / f"{path.stem}_{int(start)}-{int(end)}{extension}"
 
     _ensure_tool_available(FFMPEG_CMD)
     _ensure_tool_available(FFPROBE_CMD)
 
     flags = ["-y"] if overwrite else ["-n"]
-    cmd = (
-        [FFMPEG_CMD]
-        + flags
-        + [
-            "-ss",
-            _format_time(start),
-            "-i",
-            str(path),
-            "-t",
-            _format_time(duration),
-            "-c",
-            codec,
-        ]
-    )
+    cmd = [
+        FFMPEG_CMD,
+        *flags,
+        "-ss",
+        _format_time(start),
+        "-i",
+        str(path),
+        "-t",
+        _format_time(duration),
+        "-c",
+        codec,
+    ]
+    if quality is not None:
+        cmd += ["-crf", str(quality)]
+    if scale_width:
+        cmd += ["-vf", f"scale={scale_width}:-2"]
     if extra_args:
         cmd.extend(extra_args)
     cmd.append(str(final_output))
@@ -155,6 +180,9 @@ def interactive_clip(
     codec: str = "copy",
     extra_args: Optional[List[str]] = None,
     overwrite: bool = True,
+    scale_width: Optional[int] = None,
+    quality: Optional[int] = None,
+    output_ext: Optional[str] = None,
 ) -> ClipResult:
     print("\n=== 대화형 클리핑 모드 ===")
     while True:
@@ -194,6 +222,24 @@ def interactive_clip(
     output_raw = input("출력 파일 경로 (엔터=기본): ").strip()
     output_path = output_raw if output_raw else None
 
+    scale_raw = input("출력 너비(px, 엔터=기본): ").strip()
+    if scale_raw:
+        try:
+            scale_width = int(scale_raw)
+        except ValueError:
+            print("숫자로 입력하세요. 무시하고 기존값 유지합니다.")
+
+    quality_raw = input("화질(CRF 0-51, 엔터=기본): ").strip()
+    if quality_raw:
+        try:
+            quality = int(quality_raw)
+        except ValueError:
+            print("정수를 입력하세요. 무시하고 기존값 유지합니다.")
+
+    ext_raw = input("출력 확장자 (예: mp4, gif, 엔터=입력과 동일): ").strip()
+    if ext_raw:
+        output_ext = ext_raw
+
     return clip_video(
         video_path=str(video_path),
         start=start,
@@ -203,6 +249,9 @@ def interactive_clip(
         extra_args=extra_args,
         overwrite=overwrite,
         default_output_dir=default_output_dir,
+        scale_width=scale_width,
+        quality=quality,
+        output_ext=output_ext,
     )
 
 
@@ -228,6 +277,22 @@ def _parse_arguments(
         "--reencode", action="store_true", help="copy가 아닌 재인코딩 libx264를 사용"
     )
     parser.add_argument(
+        "--scale",
+        type=int,
+        help="출력 너비(px, 비율 유지)",
+    )
+    parser.add_argument(
+        "--quality",
+        type=int,
+        choices=list(range(0, 52)),
+        metavar="CRF",
+        help="x264/crf 화질 값 (0-51, 낮을수록 고품질)",
+    )
+    parser.add_argument(
+        "--ext",
+        help="출력 확장자 (예: mp4, gif). 기본은 입력과 동일",
+    )
+    parser.add_argument(
         "--no-overwrite", action="store_true", help="기존 출력 파일을 덮어쓰지 않음"
     )
     parser.add_argument("--extra", nargs=argparse.REMAINDER, help="FFmpeg 추가 옵션")
@@ -247,7 +312,14 @@ def main(argv: Optional[List[str]] = None) -> int:
     overwrite = not args.no_overwrite
 
     if args.interactive:
-        results = interactive_clip(codec=codec, extra_args=extra, overwrite=overwrite)
+        results = interactive_clip(
+            codec=codec,
+            extra_args=extra,
+            overwrite=overwrite,
+            scale_width=args.scale,
+            quality=args.quality,
+            output_ext=args.ext,
+        )
     else:
         if not args.input or args.start is None or args.end is None:
             parser.error(
@@ -261,6 +333,9 @@ def main(argv: Optional[List[str]] = None) -> int:
             codec=codec,
             extra_args=extra,
             overwrite=overwrite,
+            scale_width=args.scale,
+            quality=args.quality,
+            output_ext=args.ext,
         )
 
     print(f"✅ 클립 생성 완료: {results.output_path} ({results.duration:.2f}s)")
