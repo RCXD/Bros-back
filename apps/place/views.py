@@ -813,6 +813,21 @@ def search_places():
     print(results)
 
     results = [place_to_dict(p) for p in places]
+    if (
+        not results
+        and q
+        and page == 1
+        and tag is None
+        and point_filter is None
+    ):
+        _, normalized, _, db_error = _ingest_nominatim_places(q, per_page)
+        if normalized:
+            results = [_serialize_transient_place(payload) for payload in normalized]
+            total = len(results)
+            if db_error:
+                current_app.logger.warning(
+                    "Nominatim search results could not be persisted; returning transient data"
+                )
     return (
         jsonify(
             {
