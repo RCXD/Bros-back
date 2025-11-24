@@ -92,7 +92,6 @@ def create_notification():
     # === LEGACY: serialize() 호환 (to_dict()로 통일됨) ===
     return jsonify(notification.to_dict()), 201
 
-
 @bp.get("")
 @jwt_required()
 def get_my_notifications():
@@ -106,7 +105,7 @@ def get_my_notifications():
     === END ===
     """
     current_user_id = int(get_jwt_identity())
-    # TODO: Follow여부를 받아오기
+    
     # 페이지네이션 파라미터
     page = request.args.get("page", 1, type=int)
     per_page = request.args.get("per_page", 20, type=int)
@@ -125,17 +124,18 @@ def get_my_notifications():
     notifications = query.order_by(Notification.created_at.desc()).paginate(
         page=page, per_page=per_page, error_out=False
     )
-    if not follow_state:
-        result = {
-            "items": [n.to_dict() for n in notifications.items],
-            "total": notifications.total,
-            "page": page,
-            "per_page": per_page,
-            "pages": notifications.pages,
-            "has_next": notifications.has_next,
-            "has_prev": notifications.has_prev,
-        }
-    
+
+    result = {
+        "items": [],
+        "total": notifications.total,
+        "page": page,
+        "per_page": per_page,
+        "pages": notifications.pages,
+        "has_next": notifications.has_next,
+        "has_prev": notifications.has_prev,
+    }
+
+    follow_state_map = {}
     if follow_state:
         from_user_ids = {
             notification_.from_user_id
@@ -165,15 +165,23 @@ def get_my_notifications():
                 )
             }
 
-        for notification_ in notifications.items:
-            item_dict = notification_.to_dict()
-            # from_user_id = notification_.from_user_id
-            item_dict["following"] = following
-            item_dict["followed"] = followed
+        follow_state_map = {
+            user_id: {
+                "following": user_id in following,
+                "followed": user_id in followed,
+            }
+            for user_id in from_user_ids
+        }
 
-            result["items"].append(item_dict)
-    # if follow_state:
-    #     result["follow_state"] = {"items": follow_state_list}
+    for notification_ in notifications.items:
+        item_dict = notification_.to_dict()
+        if follow_state:
+            item_dict["follow_state"] = follow_state_map.get(
+                notification_.from_user_id,
+                {"following": False, "followed": False},
+            )
+        result["items"].append(item_dict)
+
     return jsonify(result), 200
 
 
