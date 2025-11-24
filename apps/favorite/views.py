@@ -158,8 +158,11 @@ def get_favorites_by_type(item_type):
     else:
         for fav in favorites:
             post = Post.query.get(fav.item_id)
-            if post:
-                user = post.author
+            if post and post.category:
+                # Post의 실제 카테고리와 요청한 타입이 일치하는지 확인
+                if post.category.category_name.upper() != favorite_type.name.upper():
+                    continue
+                
                 like_count = PostLike.query.filter_by(post_id=post.post_id).count()
                 is_liked = (
                     PostLike.query.filter_by(
@@ -172,7 +175,7 @@ def get_favorites_by_type(item_type):
                 items_list.append({
                     "post_id": post.post_id,
                     "content": post.content,
-                    "category": post.category.category_name if post.category else None,
+                    "category": post.category.category_name,
                     "view_counts": post.view_counts,
                     "like_count": like_count,
                     "isLiked": is_liked,
@@ -218,18 +221,30 @@ def toggle_favorite(item_type, item_id):
     if not favorite_type:
         return jsonify({"message": f"유효하지 않은 타입: {item_type}"}), 400
 
-    # 아이템 존재 확인
+    # 아이템 존재 확인 및 실제 타입 결정
     if favorite_type == FavoriteType.PRODUCT:
         item = Product.query.get(item_id)
+        if not item:
+            return jsonify({"message": "상품을 찾을 수 없습니다"}), 404
+        actual_favorite_type = FavoriteType.PRODUCT
     else:
+        # Post인 경우 실제 카테고리 확인
         item = Post.query.get(item_id)
+        if not item:
+            return jsonify({"message": "게시글을 찾을 수 없습니다"}), 404
+        
+        if not item.category:
+            return jsonify({"message": "게시글 카테고리가 없습니다"}), 400
+        
+        # Post의 실제 카테고리로 FavoriteType 결정
+        try:
+            actual_favorite_type = FavoriteType[item.category.category_name.upper()]
+        except KeyError:
+            return jsonify({"message": f"유효하지 않은 카테고리: {item.category.category_name}"}), 400
 
-    if not item:
-        return jsonify({"message": "아이템을 찾을 수 없습니다"}), 404
-
-    # 이미 즐겨찾기 했는지 확인
+    # 이미 즐겨찾기 했는지 확인 (실제 타입으로)
     existing = Favorite.query.filter_by(
-        user_id=current_user_id, item_type=favorite_type, item_id=item_id
+        user_id=current_user_id, item_type=actual_favorite_type, item_id=item_id
     ).first()
 
     if existing:
@@ -241,9 +256,9 @@ def toggle_favorite(item_type, item_id):
             200,
         )
     else:
-        # 즐겨찾기 추가
+        # 즐겨찾기 추가 (실제 카테고리로 저장)
         favorite = Favorite(
-            user_id=current_user_id, item_type=favorite_type, item_id=item_id
+            user_id=current_user_id, item_type=actual_favorite_type, item_id=item_id
         )
         db.session.add(favorite)
         db.session.commit()
