@@ -8,7 +8,7 @@ from sqlalchemy.exc import IntegrityError
 
 from apps.config.server import db
 from apps.favorite.models import Favorite, FavoriteType
-from apps.post.models import Post
+from apps.post.models import Post, PostLike, Image, Category
 from apps.product.models import Product
 
 bp = Blueprint("favorite", __name__)
@@ -110,9 +110,9 @@ def get_favorites():
 @jwt_required()
 def get_favorites_by_type(item_type):
     """
-    현재 사용자의 특정 타입 즐겨찾기 조회
+    현재 사용자의 특정 타입 즐겨찾기 조회 (실제 Post/Product 목록 반환)
     Path params:
-        - item_type: story, product, route 등
+        - item_type: story, route, review, report, product
     """
     current_user_id = int(get_jwt_identity())
 
@@ -129,15 +129,69 @@ def get_favorites_by_type(item_type):
     if not favorite_type:
         return jsonify({"message": f"유효하지 않은 타입: {item_type}"}), 400
 
+    # 즐겨찾기 목록 조회
     favorites = (
         Favorite.query.filter_by(user_id=current_user_id, item_type=favorite_type)
         .order_by(Favorite.created_at.desc())
         .all()
     )
 
-    favorites_list = [fav.to_dict() for fav in favorites]
+    items_list = []
 
-    return jsonify({"items": favorites_list, "count": len(favorites_list)}), 200
+    # Product 타입인 경우
+    if favorite_type == FavoriteType.PRODUCT:
+        for fav in favorites:
+            product = Product.query.get(fav.item_id)
+            if product:
+                items_list.append({
+                    "product_id": product.product_id,
+                    "name": product.name,
+                    "description": product.description,
+                    "price": float(product.price),
+                    "stock": product.stock,
+                    "is_active": product.is_active,
+                    "created_at": product.created_at.isoformat(),
+                    "updated_at": product.updated_at.isoformat(),
+                    "favorited_at": fav.created_at.isoformat()
+                })
+    # Post 타입인 경우 (story, route, review, report)
+    else:
+        for fav in favorites:
+            post = Post.query.get(fav.item_id)
+            if post:
+                user = post.author
+                like_count = PostLike.query.filter_by(post_id=post.post_id).count()
+                is_liked = (
+                    PostLike.query.filter_by(
+                        post_id=post.post_id, user_id=current_user_id
+                    ).first()
+                    is not None
+                )
+                images = Image.query.filter_by(post_id=post.post_id).all()
+
+                items_list.append({
+                    "post_id": post.post_id,
+                    "content": post.content,
+                    "category": post.category.category_name if post.category else None,
+                    "view_counts": post.view_counts,
+                    "like_count": like_count,
+                    "isLiked": is_liked,
+                    "images": [
+                        {
+                            "image_id": img.image_id,
+                            "uuid": img.uuid,
+                            "directory": img.directory,
+                            "original_image_name": img.original_image_name,
+                            "ext": img.ext,
+                        }
+                        for img in images
+                    ],
+                    "created_at": post.created_at.isoformat(),
+                    "updated_at": post.updated_at.isoformat(),
+                    "favorited_at": fav.created_at.isoformat()
+                })
+
+    return jsonify({"items": items_list, "count": len(items_list)}), 200
 
 
 @bp.patch("/<string:item_type>/<int:item_id>")
