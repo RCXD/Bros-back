@@ -1,10 +1,51 @@
 from datetime import datetime
 import json
 from sqlalchemy import func
-# from sqlalchemy.dialects.mysql import GEOMETRY
+from geoalchemy2 import Geometry
+from sqlalchemy.ext.hybrid import hybrid_property
+from sqlalchemy.orm import reconstructor
+import struct
+from sqlalchemy import func
+from geoalchemy2 import Geometry
+from geoalchemy2.elements import WKTElement
 from sqlalchemy.types import JSON
 
 from apps.config.server import db
+
+
+def point_from_lat_lon(lat, lon):
+    if lat is None or lon is None:
+        return None
+    return WKTElement(f"POINT({lon} {lat})", srid=4326)
+
+
+def coordinate_to_lat_lon(value):
+    if value is None:
+        return (None, None)
+    data = getattr(value, "data", None)
+    if data is None:
+        # accept tuples or dicts for flexibility
+        if isinstance(value, (list, tuple)) and len(value) >= 2:
+            return (value[1], value[0])
+        if isinstance(value, dict) and {"lat", "lon"}.issubset(value.keys()):
+            return (value.get("lat"), value.get("lon"))
+        return (None, None)
+    buffer = bytes(data)
+    if not buffer:
+        return (None, None)
+    endian_flag = buffer[0]
+    fmt = "<" if endian_flag == 1 else ">"
+    type_code = struct.unpack(fmt + "I", buffer[1:5])[0]
+    has_srid = bool(type_code & 0x20000000)
+    bbox_type = type_code & 0xFF
+    offset = 5
+    if has_srid:
+        offset += 4
+    if bbox_type != 1 or len(buffer) < offset + 16:
+        return (None, None)
+    x = struct.unpack(fmt + "d", buffer[offset : offset + 8])[0]
+    y = struct.unpack(fmt + "d", buffer[offset + 8 : offset + 16])[0]
+    return (y, x)
 
 
 class Place(db.Model):
@@ -46,7 +87,6 @@ class Place(db.Model):
             "lon": self.lon,
             # "geom": geom_json,
             "description": self.description,
-            "tags": self.tags,
             "created_at": self.created_at.isoformat() if self.created_at else None,
             "updated_at": self.updated_at.isoformat() if self.updated_at else None,
         }

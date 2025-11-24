@@ -4,11 +4,12 @@ import json
 import time
 from functools import wraps
 from flask import jsonify, g, request
-# from rapidfuzz import fuzz, distance
+from requests import RequestException
+from rapidfuzz import fuzz, distance
 from sqlalchemy import func, text
 
 from apps.config.server import db
-from apps.place.models import Place
+from apps.place.models import Place, point_from_lat_lon, coordinate_to_lat_lon
 
 # haversine distance in meters
 def haversine_m(lat1, lon1, lat2, lon2):
@@ -115,16 +116,16 @@ def dice_coef_bigrams(a: str, b: str):
     dice = (2.0 * inter) / (len(A) + len(B))
     return dice
 
-# def name_similarity_ko(a: str, b: str) -> float:
-#     a_n = normalize_ko(a)
-#     b_n = normalize_ko(b)
-#     if not a_n or not b_n:
-#         return 0.0
-#     jw = distance.JaroWinkler.similarity(a_n, b_n) / 100.0
-#     bigram = dice_coef_bigrams(a_n, b_n)
-#     token = fuzz.token_set_ratio(a_n, b_n) / 100.0
-#     score = 0.5 * bigram + 0.3 * jw + 0.2 * token
-#     return score
+def name_similarity_ko(a: str, b: str) -> float:
+    a_n = normalize_ko(a)
+    b_n = normalize_ko(b)
+    if not a_n or not b_n:
+        return 0.0
+    jw = distance.JaroWinkler.similarity(a_n, b_n) / 100.0
+    bigram = dice_coef_bigrams(a_n, b_n)
+    token = fuzz.token_set_ratio(a_n, b_n) / 100.0
+    score = 0.5 * bigram + 0.3 * jw + 0.2 * token
+    return score
 
 def dynamic_name_threshold_ko(name: str, base=0.82) -> float:
     n = normalize_ko(name)
@@ -140,7 +141,7 @@ def dynamic_name_threshold_ko(name: str, base=0.82) -> float:
     return max(0.65, base - 0.08)
 
 def is_name_similar_ko(a, b, lat_a=None, lon_a=None, lat_b=None, lon_b=None, base_threshold=0.82):
-    # score = name_similarity_ko(a, b)
+    score = name_similarity_ko(a, b)
     thr_a = dynamic_name_threshold_ko(a, base=base_threshold)
     thr_b = dynamic_name_threshold_ko(b, base=base_threshold)
     threshold = max(thr_a, thr_b)
@@ -151,11 +152,11 @@ def is_name_similar_ko(a, b, lat_a=None, lon_a=None, lat_b=None, lon_b=None, bas
         elif d <= 50:
             threshold = max(0.55, threshold - 0.10)
             
-    return (False, 0.0, threshold)
-    # return (score >= threshold, score, threshold)
+    # return (False, 0.0, threshold)
+    return (score >= threshold, score, threshold)
 
 
-def _build_geom(lat, lon, geojson_obj=None):
+def _build_bbox(lat, lon, geojson_obj=None):
     """Build a geometry value using GeoJSON when provided, otherwise POINT(lon lat)."""
     if geojson_obj:
         try:
@@ -172,11 +173,14 @@ def _build_geom(lat, lon, geojson_obj=None):
 def _nearby_candidates(lat, lon, radius_m=50, limit=10):
     # Try to use MySQL ST_Distance_Sphere if geom exists, otherwise fallback to lat/lon box.
     sql = """
-    SELECT place_id, name, lat, lon,
-      ST_Distance_Sphere(geom, ST_GeomFromText(:point, 4326)) AS dist
+    SELECT place_id,
+           name,
+           ST_Y(coordinate) AS lat,
+           ST_X(coordinate) AS lon,
+           ST_Distance_Sphere(coordinate, ST_GeomFromText(:point, 4326)) AS dist
     FROM place
-    WHERE geom IS NOT NULL
-      AND ST_Distance_Sphere(geom, ST_GeomFromText(:point,4326)) <= :radius
+    WHERE coordinate IS NOT NULL
+      AND ST_Distance_Sphere(coordinate, ST_GeomFromText(:point,4326)) <= :radius
     ORDER BY dist ASC
     LIMIT :limit
     """
@@ -190,13 +194,31 @@ def _nearby_candidates(lat, lon, radius_m=50, limit=10):
         # DB may not support ST_Distance_Sphere or geom is not populated; fallback below
         db.session.rollback()
 
-    # fallback: bounding box filter (approx). convert radius to degrees ~ radius/111000
-    delta = radius_m / 111000.0
-    q = Place.query.filter(
-        Place.lat.between(lat - delta, lat + delta),
-        Place.lon.between(lon - delta, lon + delta)
-    ).limit(limit)
-    return [ {"place_id": p.place_id, "name": p.name, "lat": p.lat, "lon": p.lon, "dist": haversine_m(lat, lon, p.lat, p.lon)} for p in q ]
+    fallback_limit = max(limit * 5, limit)
+    query = (
+        Place.query.filter(Place.coordinate.isnot(None))
+        .order_by(Place.updated_at.desc())
+        .limit(fallback_limit)
+    )
+    results = []
+    for p in query:
+        plat, plon = coordinate_to_lat_lon(p.coordinate)
+        if plat is None or plon is None:
+            continue
+        dist = haversine_m(lat, lon, plat, plon)
+        if dist <= radius_m:
+            results.append(
+                {
+                    "place_id": p.place_id,
+                    "name": p.name,
+                    "lat": plat,
+                    "lon": plon,
+                    "dist": dist,
+                }
+            )
+            if len(results) >= limit:
+                break
+    return results
 
 def find_similar(lat, lon, name, distance_threshold_m=50, name_threshold=0.75, limit=10):
     candidates = _nearby_candidates(lat, lon, distance_threshold_m, limit)
@@ -226,12 +248,11 @@ def create_or_get_similar(payload: dict, distance_threshold_m=50, name_threshold
     place = Place(
         name=name,
         alt_name=payload.get("alt_name"),
-        lat=lat,
-        lon=lon,
         description=payload.get("description"),
         tags=payload.get("tags"),
-        geom=_build_geom(lat, lon, payload.get("geom")),
     )
+    place.coordinate = point_from_lat_lon(lat, lon)
+    place.geom = _build_bbox(lat, lon, payload.get("geom"))
     db.session.add(place)
     if commit:
         db.session.commit()

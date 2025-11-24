@@ -1,4 +1,7 @@
-"""지정 시간 구간을 기준으로 영상을 자르는 도구"""
+"""
+지정 시간 구간을 기준으로 영상을 자르는 도구
+시스템 요구사항 : ffmpeg 설치 필요, 시스템 환경 변수의 path에 ffmpeg 경로 추가 필요
+"""
 
 import argparse
 import subprocess
@@ -9,11 +12,13 @@ from typing import List, Optional, Tuple
 
 FFMPEG_CMD = "ffmpeg"
 FFPROBE_CMD = "ffprobe"
-VIDEO_STORAGE_DIR = Path(r"\\192.168.1.86\static\video")
+VIDEO_STORAGE_DIR = Path(r"C:\Users\lst24\Downloads")
 
 
 def _run_command(arguments: List[str], error_hint: str) -> None:
-    result = subprocess.run(arguments, capture_output=True, text=True)
+    result = subprocess.run(
+        arguments, capture_output=True, text=True, encoding="utf-8", errors="ignore"
+    )
     if result.returncode != 0:
         raise RuntimeError(f"{error_hint}: {result.stderr.strip()}")
 
