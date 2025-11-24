@@ -23,7 +23,7 @@ def _match_osm_edge(lat, lon, session, base_url=None, profile=None):
         Edge identifier string (prefixed with ``osm:`` or ``osrm:``) on success, ``None`` if the
         request fails or no edge data is available.
     """
-    base = (base_url or os.getenv("OSRM_BASE_URL") or "http://localhost:5000").rstrip(
+    base = (base_url or os.getenv("OSRM_BASE_URL") or "http://localhost:8000").rstrip(
         "/"
     )
     prof = profile or os.getenv("OSRM_PROFILE") or "driving"

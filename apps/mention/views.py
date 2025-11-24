@@ -140,7 +140,7 @@ def get_my_mentions():
     }
     """
     current_user_id = get_jwt_identity()
-
+    # TODO: 
     mentions = Mention.query.filter_by(mentioned_user_id=current_user_id)\
         .order_by(Mention.created_at.desc()).all()
 

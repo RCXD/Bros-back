@@ -10,6 +10,7 @@ from apps.config.server import db
 from apps.favorite.models import Favorite, FavoriteType
 from apps.post.models import Post, PostLike, Image, Category
 from apps.product.models import Product
+from apps.place.models import Place
 
 bp = Blueprint("favorite", __name__)
 
@@ -123,6 +124,7 @@ def get_favorites_by_type(item_type):
         "review": FavoriteType.REVIEW,
         "report": FavoriteType.REPORT,
         "product": FavoriteType.PRODUCT,
+        "place": FavoriteType.PLACE,
     }
 
     favorite_type = type_mapping.get(item_type.lower())
@@ -215,6 +217,7 @@ def toggle_favorite(item_type, item_id):
         "review": FavoriteType.REVIEW,
         "report": FavoriteType.REPORT,
         "product": FavoriteType.PRODUCT,
+        "place": FavoriteType.PLACE,
     }
 
     favorite_type = type_mapping.get(item_type.lower())
@@ -227,6 +230,8 @@ def toggle_favorite(item_type, item_id):
         if not item:
             return jsonify({"message": "상품을 찾을 수 없습니다"}), 404
         actual_favorite_type = FavoriteType.PRODUCT
+    elif favorite_type == FavoriteType.PLACE:
+        item = Place.query.get(item_id)
     else:
         # Post인 경우 실제 카테고리 확인
         item = Post.query.get(item_id)
@@ -299,6 +304,7 @@ def remove_from_favorites(item_type, item_id):
         "review": FavoriteType.REVIEW,
         "report": FavoriteType.REPORT,
         "product": FavoriteType.PRODUCT,
+        "place": FavoriteType.PLACE,
     }
 
     favorite_type = type_mapping.get(item_type.lower())
