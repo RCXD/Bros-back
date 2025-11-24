@@ -104,40 +104,45 @@ class Notification(db.Model):
     # mention = db.relationship("Mention", backref=db.backref("mention_notifications", ...))
     # === END REMOVED ===
 
-    def to_dict(self):
+    def to_dict(self, follow_state_map=None):
         """
-        알림 정보를 딕셔너리로 변환
+        알림 정보를 직렬화
 
         === LEGACY vs 기존 비교 ===
-        - LEGACY (serialize): from_user 정보 없이 단순 필드만 반환
+        - LEGACY (serialize): from_user 정보 거의 그대로 반환
         - 기존 (to_dict): from_user 상세 정보 포함
-        - 선택: 기존 apps 버전 유지 (더 많은 정보 제공)
-        === 변경사항 ===
-        - profile_image -> profile_img (필드명 통일)
+        - 선택: 기존 apps 버전 유지 (정보 많이 제공)
+        === 변경사항===
+        - profile_image -> profile_img (필드명 변경)
         - nickname 필드 추가
+        - follow_state_map 제공 시 from_user에 follow_state 추가
         === END ===
         """
+        if self.from_user:
+            from_user_info = {
+                "user_id": self.from_user.user_id,
+                "username": self.from_user.username,
+                "nickname": getattr(self.from_user, "nickname", None),
+                "profile_img": getattr(self.from_user, "profile_img", None),
+            }
+        else:
+            from_user_info = None
+
+        if from_user_info and follow_state_map:
+            follow_state = follow_state_map.get(self.from_user_id)
+            if follow_state:
+                from_user_info["follow_state"] = follow_state
+
         return {
             "notification_id": self.notification_id,
             "type": self.type.value,
             "from_user_id": self.from_user_id,
-            "from_user": (
-                {
-                    "user_id": self.from_user.user_id,
-                    "username": self.from_user.username,
-                    "nickname": getattr(self.from_user, "nickname", None),
-                    "profile_img": getattr(
-                        self.from_user, "profile_img", None
-                    ),  # LEGACY: profile_image -> profile_img
-                }
-                if self.from_user
-                else None
-            ),
+            "from_user": from_user_info,
             "to_user_id": self.to_user_id,
             "post_id": self.post_id,
             "reply_id": self.reply_id,
             "mention_id": self.mention_id,
-            "product_id": self.product_id,  # LEGACY에 없던 필드 (apps에서 추가)
+            "product_id": self.product_id,  # LEGACY에서 쓰던 필드 (apps에서 추가)
             "is_checked": self.is_checked,
             "created_at": self.created_at.isoformat() if self.created_at else None,
         }

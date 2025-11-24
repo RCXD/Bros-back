@@ -173,8 +173,7 @@ def create_notification():
     # === LEGACY: serialize() 호환 (to_dict()로 통일됨) ===
     return jsonify(notification.to_dict()), 201
 
-# TODO: check Follow.py and fix function also write expected return
-
+# TODO: 현재 쿼리를 이중으로 반환함 && 
 @bp.get("")
 @jwt_required()
 def get_my_notifications():
@@ -219,6 +218,7 @@ def get_my_notifications():
     }
 
     follow_state_map = {}
+    follow_state_map_for_items = None
     if follow_state:
         from_user_ids = {
             n.from_user_id
@@ -226,9 +226,7 @@ def get_my_notifications():
             if n.from_user_id is not None
         }
 
-        follow_state_map = {}
         if from_user_ids:
-            # 내가 상대를 팔로우하고 있는 경우 (내가 following)
             following = {
                 row.to_user_id
                 for row in Follow.query.filter(
@@ -237,7 +235,6 @@ def get_my_notifications():
                 ).all()
             }
 
-            # 상대가 나를 팔로우하고 있는 경우 (내가 followed)
             followed = {
                 row.from_user_id
                 for row in Follow.query.filter(
@@ -254,14 +251,10 @@ def get_my_notifications():
                 for uid in from_user_ids
             }
 
+        follow_state_map_for_items = follow_state_map
 
     for notification_ in notifications.items:
-        item_dict = notification_.to_dict()
-        if follow_state:
-            item_dict["follow_state"] = follow_state_map.get(
-                notification_.from_user_id,
-                {"following": False, "followed": False},
-            )
+        item_dict = notification_.to_dict(follow_state_map_for_items)
         result["items"].append(item_dict)
 
     return jsonify(result), 200
