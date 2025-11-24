@@ -170,8 +170,8 @@ def get_my_notifications():
 
             if follow_state:
                 from_user_id = notification_.from_user_id
-                item_dict["is_following"] = from_user_id in following
-                item_dict["is_followed"] = from_user_id in followed
+                item_dict["to_user_id"] = from_user_id in following
+                item_dict["from_user_id"] = from_user_id in followed
 
             result["items"].append(item_dict)
 
