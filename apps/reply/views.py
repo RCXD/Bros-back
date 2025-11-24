@@ -148,7 +148,7 @@ def create_reply():
             return jsonify({"message": "post_id와 content는 필수입니다"}), 400
 
         # 게시글 존재 확인
-        Post.query.get_or_404(post_id)
+        post = Post.query.get_or_404(post_id)
 
         # 부모 댓글 검증 (제공된 경우)
         if parent_id:
@@ -166,12 +166,15 @@ def create_reply():
         )
 
         db.session.add(reply)
+        db.session.flush()  # reply_id 생성을 위해 flush
 
-        # 알림 발생
+        # 알림 발생 (notification 변수를 항상 None으로 초기화)
+        notification = None
+
         if parent_id:
             parent_reply = Reply.query.get(parent_id)
+            # 자기 자신의 댓글에 대댓글을 다는 경우 알림 생성하지 않음
             if parent_reply and parent_reply.user_id != current_user.user_id:
-                # 대댓글 알림
                 notification = Notification(
                     type=NotificationType.REPLY_TO_REPLY,
                     from_user_id=current_user.user_id,
@@ -179,14 +182,19 @@ def create_reply():
                     reply_id=reply.reply_id,
                 )
         else:
-            # 댓글 알림
-            notification = Notification(
-                type=NotificationType.REPLY,
-                from_user_id=current_user.user_id,
-                to_user_id=Post.query.get(post_id).user_id,
-                reply_id=reply.reply_id,
-            )
-        db.session.add(notification)
+            # 자기 자신의 게시글에 댓글을 다는 경우 알림 생성하지 않음
+            if post.user_id != current_user.user_id:
+                notification = Notification(
+                    type=NotificationType.REPLY,
+                    from_user_id=current_user.user_id,
+                    to_user_id=post.user_id,
+                    reply_id=reply.reply_id,
+                )
+
+        # notification이 생성된 경우에만 추가
+        if notification:
+            db.session.add(notification)
+
         db.session.commit()
 
         return (

@@ -26,10 +26,10 @@ def get_user(user_id):
     return jsonify(user.to_dict()), 200
 
 
-@bp.post("/<int:user_id>/follow")
+@bp.patch("/<int:user_id>/follow")
 @jwt_required()
 def follow_user(user_id):
-    """사용자 팔로우"""
+    """사용자 팔로우 토글"""
     current_user_id = int(get_jwt_identity())
 
     if current_user_id == user_id:
@@ -38,42 +38,65 @@ def follow_user(user_id):
     # 대상 사용자 존재 확인
     target_user = User.query.get_or_404(user_id)
 
-    # 이미 팔로우 중인지 확인
-    existing = Follow.query.filter_by(
-        follower_id=current_user_id, following_id=user_id
+    # 현재 팔로우 상태 확인
+    i_follow_them = Follow.query.filter_by(
+        from_user_id=current_user_id, to_user_id=user_id
     ).first()
 
-    if existing:
-        return jsonify({"message": "이미 팔로우 중인 사용자입니다"}), 409
+    they_follow_me = Follow.query.filter_by(
+        from_user_id=user_id, to_user_id=current_user_id
+    ).first()
 
     try:
-        follow = Follow(follower_id=current_user_id, following_id=user_id)
-        db.session.add(follow)
-        db.session.commit()
+        if i_follow_them:
+            # 언팔로우
+            db.session.delete(i_follow_them)
+            db.session.commit()
 
-        return jsonify({"message": "팔로우 성공"}), 201
+            # 상태 결정
+            if they_follow_me:
+                status_message = "맞팔로우"  # 내가 팔로우 해제, 상대는 나를 팔로우
+            else:
+                status_message = "팔로우"  # 서로 팔로우하지 않음
+
+            return (
+                jsonify(
+                    {
+                        "message": "언팔로우 성공",
+                        "following": False,
+                        "followed": they_follow_me is not None,
+                        "status_message": status_message,
+                    }
+                ),
+                200,
+            )
+        else:
+            # 팔로우
+            follow = Follow(from_user_id=current_user_id, to_user_id=user_id)
+            db.session.add(follow)
+            db.session.commit()
+
+            # 상태 결정
+            if they_follow_me:
+                status_message = "맞팔로잉"  # 서로 팔로우
+            else:
+                status_message = "팔로잉"  # 내가 상대를 팔로우, 상대는 나를 팔로우 안함
+
+            return (
+                jsonify(
+                    {
+                        "message": "팔로우 성공",
+                        "following": True,
+                        "followed": they_follow_me is not None,
+                        "status_message": status_message,
+                    }
+                ),
+                201,
+            )
+
     except IntegrityError:
         db.session.rollback()
-        return jsonify({"message": "이미 팔로우 중인 사용자입니다"}), 409
-
-
-@bp.delete("/<int:user_id>/follow")
-@jwt_required()
-def unfollow_user(user_id):
-    """사용자 언팔로우"""
-    current_user_id = int(get_jwt_identity())
-
-    follow = Follow.query.filter_by(
-        follower_id=current_user_id, following_id=user_id
-    ).first()
-
-    if not follow:
-        return jsonify({"message": "팔로우 중이 아닙니다"}), 404
-
-    db.session.delete(follow)
-    db.session.commit()
-
-    return jsonify({"message": "언팔로우 성공"}), 200
+        return jsonify({"message": "팔로우 처리 중 오류가 발생했습니다"}), 500
 
 
 @bp.get("/<int:user_id>/followers")
@@ -82,11 +105,11 @@ def get_followers(user_id):
     # 사용자 존재 확인
     User.query.get_or_404(user_id)
 
-    followers = Follow.query.filter_by(following_id=user_id).all()
+    followers = Follow.query.filter_by(to_user_id=user_id).all()
 
     result = []
     for follow in followers:
-        user = User.query.get(follow.follower_id)
+        user = User.query.get(follow.from_user_id)
         if user:
             result.append(
                 {
@@ -106,11 +129,11 @@ def get_following(user_id):
     # 사용자 존재 확인
     User.query.get_or_404(user_id)
 
-    following = Follow.query.filter_by(follower_id=user_id).all()
+    following = Follow.query.filter_by(from_user_id=user_id).all()
 
     result = []
     for follow in following:
-        user = User.query.get(follow.following_id)
+        user = User.query.get(follow.to_user_id)
         if user:
             result.append(
                 {
