@@ -5,8 +5,9 @@
 from flask import Blueprint, jsonify, request
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from apps.config.server import db
-from apps.mention.models import Mention
+from apps.mention.models import Mention, MentionItemType
 from apps.notification.models import Notification
+from apps.notification.utils import create_mention_notification
 from apps.auth.models import User
 from apps.post.models import Post
 from apps.reply.models import Reply
@@ -142,9 +143,17 @@ def create_mention():
         if not target:
             return jsonify({"error": "해당 댓글을 찾을 수 없습니다"}), 404
 
+    # item_type과 item_id 결정
+    if post_id:
+        item_type = MentionItemType.POST
+        item_id = post_id
+    else:
+        item_type = MentionItemType.REPLY
+        item_id = reply_id
+
     # 중복 멘션 확인
     existing_mention = Mention.query.filter_by(
-        mentioned_user_id=mentioned_user_id, post_id=post_id, reply_id=reply_id
+        mentioned_user_id=mentioned_user_id, item_type=item_type, item_id=item_id
     ).first()
 
     if existing_mention:
@@ -155,22 +164,15 @@ def create_mention():
         new_mention = Mention(
             mentioner_id=current_user_id,
             mentioned_user_id=mentioned_user_id,
-            post_id=post_id,
-            reply_id=reply_id,
+            item_type=item_type,
+            item_id=item_id,
         )
         db.session.add(new_mention)
         db.session.flush()  # mention_id 생성
 
-        # 알림 자동 생성
-        notification = Notification(
-            user_id=mentioned_user_id,
-            from_user_id=current_user_id,
-            type="MENTION",
-            post_id=post_id,
-            reply_id=reply_id,
-            mention_id=new_mention.mention_id,
-        )
-        db.session.add(notification)
+        # 알림 자동 생성 (utils 함수 사용)
+        create_mention_notification(current_user_id, mentioned_user_id, new_mention)
+
         db.session.commit()
 
         return (
