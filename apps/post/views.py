@@ -6,13 +6,15 @@ from flask import Blueprint, jsonify, request, send_from_directory
 from flask_jwt_extended import jwt_required, get_jwt_identity, get_current_user
 from sqlalchemy.exc import IntegrityError
 
-from apps.mention.models import Mention
+from apps.mention.models import Mention, MentionItemType
 from apps.config.server import db
 from apps.notification.models import Notification
+from apps.notification.utils import create_mention_notification
 from apps.post.models import Post, Category, PostLike
 from apps.image.models import Image
 from apps.auth.models import User
 from apps.common.image_handlers import compress_image, save_to_disk, IMAGE_EXTENSIONS
+from apps.user.models import Follow
 
 bp = Blueprint("post", __name__)
 
@@ -267,6 +269,33 @@ def create_post():
                 }
             )
 
+        # 팔로워들에게 피드 생성 및 알림 발송
+        followers = (
+            db.session.query(User)
+            .join(
+                db.alias(Follow, name="f"),
+                User.user_id == db.alias(Follow, name="f").c.from_user_id,
+            )
+            .filter(db.alias(Follow, name="f").c.to_user_id == current_user.user_id)
+            .all()
+        )
+        for follower in followers:
+            # 피드 생성 (utils 함수 사용)
+            from apps.feed.utils import create_new_post_feed
+
+            feed_item = create_new_post_feed(
+                user_id=follower.user_id,
+                post_id=post.post_id,
+                post_user_id=current_user.user_id,
+            )
+
+            # 알림 생성 (utils 함수 사용)
+            from apps.notification.utils import create_new_post_notification
+
+            create_new_post_notification(
+                follower.user_id, current_user.user_id, post, feed_item
+            )
+
         # Mention 생성 및 알림 발송
         mentioned_ids = request.form.get("mentions")
         if mentioned_ids:
@@ -284,17 +313,16 @@ def create_post():
             mention = Mention(
                 mentioner_id=current_user.user_id,
                 mentioned_user_id=mentioned_user_id,
-                post_id=post.post_id,
+                item_type=MentionItemType.POST,
+                item_id=post.post_id,
             )
-            notification = Notification(
-                type="MENTION",
-                from_user_id=current_user.user_id,
-                to_user_id=mentioned_user_id,
-                post_id=post.post_id,
-            )
-
             db.session.add(mention)
-            db.session.add(notification)
+            db.session.flush()  # mention 객체에 ID 할당
+
+            # 알림 생성 (utils 함수 사용)
+            create_mention_notification(
+                current_user.user_id, mentioned_user_id, mention
+            )
 
         db.session.commit()
 
@@ -647,6 +675,9 @@ def get_my_posts():
                 "total": pagination.total,
                 "pages": pagination.pages,
                 "page": page,
+                "per_page": per_page,
+                "has_next": pagination.has_next,
+                "has_prev": pagination.has_prev,
             }
         ),
         200,
