@@ -12,6 +12,7 @@ from apps.product.models import Product
 from apps.image.models import Image
 from apps.favorite.models import Favorite, FavoriteType
 from apps.auth.models import User, AccountType
+from apps.product.utils import get_product_images
 
 bp = Blueprint("product", __name__)
 
@@ -163,6 +164,9 @@ def get_products():
         # 결과 직렬화
         products = []
         for product in pagination.items:
+            # 상품이미지 가져오기
+            images = get_product_images(product.product_id)
+
             product_data = {
                 "product_id": product.product_id,
                 "uuid": product.uuid,
@@ -186,6 +190,8 @@ def get_products():
                 "created_at": (
                     product.created_at.isoformat() if product.created_at else None
                 ),
+                "product_img": images[0] if images else None,
+                "product_detail_img": (images[1:] if len(images) > 1 else []),
             }
             products.append(product_data)
 
@@ -193,12 +199,12 @@ def get_products():
             jsonify(
                 {
                     "items": products,
-                    "pagination": {
-                        "page": pagination.page,
-                        "per_page": pagination.per_page,
-                        "total": pagination.total,
-                        "pages": pagination.pages,
-                    },
+                    "page": pagination.page,
+                    "per_page": pagination.per_page,
+                    "total": pagination.total,
+                    "pages": pagination.pages,
+                    "has_next": pagination.has_next,
+                    "has_prev": pagination.has_prev,
                 }
             ),
             200,
@@ -311,12 +317,8 @@ def get_product(product_id):
     try:
         product = Product.query.get_or_404(product_id)
 
-        # 이미지 조회 (product_img 필드에서 UUID 추출)
-        # 예: "FISH-20251124-000_0" -> apps/static/extracted_product_images/FISH-20251124-000_0.png
-        product_image_uuid = None
-        if hasattr(product, "product_img"):
-            # product_img가 있다면 해당 정보 포함
-            product_image_uuid = product.product_img
+        # 이미지 조회
+        images = get_product_images(product.product_id)
 
         product_data = {
             "product_id": product.product_id,
@@ -362,6 +364,8 @@ def get_product(product_id):
             "updated_at": (
                 product.updated_at.isoformat() if product.updated_at else None
             ),
+            "product_img": images[0] if images else None,
+            "product_detail_img": (images[1:] if len(images) > 1 else []),
         }
 
         return jsonify(product_data), 200

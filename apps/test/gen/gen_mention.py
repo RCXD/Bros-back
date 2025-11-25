@@ -114,6 +114,7 @@ def create_mention_db(app, mention_data, username_to_userid, post_map, reply_map
                 mention_id=mention.mention_id,
                 created_at=mention.created_at,
                 is_checked=mention.is_checked,
+                message="생성된 멘션 알림입니다.",  # 기본 메시지
             )
             notifications.append(notification)
 
