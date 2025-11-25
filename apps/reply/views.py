@@ -7,6 +7,10 @@ from flask_jwt_extended import jwt_required, get_jwt_identity, get_current_user
 
 from apps.config.server import db
 from apps.notification.models import Notification, NotificationType
+from apps.notification.utils import (
+    create_reply_notification,
+    create_reply_to_reply_notification,
+)
 from apps.reply.models import Reply, ReplyLike
 from apps.post.models import Post
 from apps.auth.models import User
@@ -243,32 +247,18 @@ def create_reply():
         db.session.add(reply)
         db.session.flush()  # reply_id 생성을 위해 flush
 
-        # 알림 발생 (notification 변수를 항상 None으로 초기화)
-        notification = None
-
+        # 알림 발생 (utils 함수 사용)
         if parent_id:
             parent_reply = Reply.query.get(parent_id)
             # 자기 자신의 댓글에 대댓글을 다는 경우 알림 생성하지 않음
             if parent_reply and parent_reply.user_id != current_user.user_id:
-                notification = Notification(
-                    type=NotificationType.REPLY_TO_REPLY,
-                    from_user_id=current_user.user_id,
-                    to_user_id=parent_reply.user_id,
-                    reply_id=reply.reply_id,
+                create_reply_to_reply_notification(
+                    current_user.user_id, parent_reply, reply.reply_id
                 )
         else:
             # 자기 자신의 게시글에 댓글을 다는 경우 알림 생성하지 않음
             if post.user_id != current_user.user_id:
-                notification = Notification(
-                    type=NotificationType.REPLY,
-                    from_user_id=current_user.user_id,
-                    to_user_id=post.user_id,
-                    reply_id=reply.reply_id,
-                )
-
-        # notification이 생성된 경우에만 추가
-        if notification:
-            db.session.add(notification)
+                create_reply_notification(current_user.user_id, post, reply.reply_id)
 
         db.session.commit()
 
