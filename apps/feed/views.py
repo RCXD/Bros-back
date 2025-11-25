@@ -7,11 +7,43 @@ from flask_jwt_extended import jwt_required, get_jwt_identity
 from datetime import datetime, timedelta
 
 from apps.config.server import db
-from apps.post.models import Post, PostLike, Category, Image
+from apps.post.models import Post, PostLike, Category
+from apps.image.models import Image
 from apps.user.models import Follow
 from apps.auth.models import User
 
 bp = Blueprint("feed", __name__)
+
+
+@bp.get("/api_info")
+def api_info():
+    """
+    피드 API 정보 제공 (개발용)
+    """
+    info = {
+        "module": "feed",
+        "base_path": "/feed",
+        "description": "사용자 맞춤 피드 조회",
+        "endpoints": [
+            {
+                "path": "/feed",
+                "method": "GET",
+                "auth_required": True,
+                "description": "피드 조회 (팔로우 중인 사용자의 활동)",
+                "query_params": {
+                    "page": "페이지 번호 (기본: 1)",
+                    "per_page": "페이지당 개수 (기본: 20)",
+                },
+            },
+            {
+                "path": "/feed/api_info",
+                "method": "GET",
+                "auth_required": False,
+                "description": "API 정보 조회 (개발용)",
+            },
+        ],
+    }
+    return jsonify(info), 200
 
 
 @bp.get("")

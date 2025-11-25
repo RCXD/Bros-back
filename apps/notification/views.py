@@ -20,85 +20,74 @@ from apps.user.models import Follow, Friend
 bp = Blueprint("notification", __name__, url_prefix="/notification")
 
 
-NOTIFICATION_API_DOC = {
-    "title": "Notification API",
-    "base_path": "/notification",
-    "authentication": "Bearer JWT (Authorization header) required for every endpoint except /docs.",
-    "notification_types": [nt.value for nt in NotificationType],
-    "endpoints": [
-        {
-            "name": "Create notification",
-            "method": "POST",
-            "path": "",
-            "description": "Emit a notification from the authenticated user to another user after an action like a like, reply, follow etc.",
-            "request_body": {
-                "to_user_id": "integer (required) - recipient user_id",
-                "type": "string (required) - one of NotificationType values",
-                "post_id": "integer (optional) - related post",
-                "reply_id": "integer (optional) - related reply",
-                "mention_id": "integer (optional)",
-                "product_id": "integer (optional) - legacy field from the original apps version"
+@bp.get("/api_info")
+def api_info():
+    """
+    알림 API 정보 제공 (개발용)
+    """
+    info = {
+        "module": "notification",
+        "base_path": "/notification",
+        "description": "사용자 알림 조회 및 관리",
+        "endpoints": [
+            {
+                "path": "/notification",
+                "method": "POST",
+                "auth_required": True,
+                "description": "알림 생성 (수동 호출용)",
+                "json_body": {
+                    "to_user_id": "받는 사용자 ID (필수)",
+                    "type": "알림 타입 (필수, MENTION/LIKE/COMMENT/FOLLOW 등)",
+                    "post_id": "게시물 ID (선택)",
+                    "reply_id": "댓글 ID (선택)",
+                    "mention_id": "멘션 ID (선택)",
+                    "product_id": "상품 ID (선택)",
+                },
             },
-            "responses": {
-                "201": "notification object from Notification.to_dict()",
-                "400": "missing parameters or invalid notification type",
-                "404": "target user not found",
-                "500": "unexpected failure when persisting the notification"
-            }
-        },
-        {
-            "name": "List my notifications",
-            "method": "GET",
-            "path": "",
-            "description": "Page through the authenticated user’s notifications with optional filters.",
-            "query_parameters": {
-                "page": "integer (default: 1)",
-                "per_page": "integer (default: 20)",
-                "unread_only": "boolean string (true/false) - only return unchecked notifications when true",
-                "follow_state": "boolean string - when true, adds following/followed flags for the sender on each item"
+            {
+                "path": "/notification",
+                "method": "GET",
+                "auth_required": True,
+                "description": "알림 목록 조회",
+                "query_params": {
+                    "page": "페이지 번호 (기본: 1)",
+                    "per_page": "페이지당 개수 (기본: 20)",
+                    "is_checked": "읽음 필터 (true/false)",
+                },
             },
-            "responses": {
-                "200": "paged response with 'items', 'total', 'pages', etc."
-            }
-        },
-        {
-            "name": "Unread notification count",
-            "method": "GET",
-            "path": "/unread-count",
-            "description": "Return the count of unchecked notifications for the authenticated user.",
-            "responses": {"200": "{\"unread_count\": <int>}"},
-        },
-        {
-            "name": "Mark notification as read",
-            "method": "PATCH",
-            "path": "/<notification_id>",
-            "description": "Set the checked flag on a single notification belonging to the current user.",
-            "responses": {"200": "notification object", "404": "notification not found"},
-        },
-        {
-            "name": "Mark all notifications as read",
-            "method": "PATCH",
-            "path": "/mark-all-read",
-            "description": "Set every unchecked notification to checked for the current user.",
-            "responses": {
-                "200": "{\"message\": \"...\", \"updated_count\": <int>}"
+            {
+                "path": "/notification/<notification_id>",
+                "method": "PATCH",
+                "auth_required": True,
+                "description": "알림 읽음 처리",
             },
-        },
-        {
-            "name": "Delete notification",
-            "method": "DELETE",
-            "path": "/<notification_id>",
-            "description": "Remove one notification belonging to the current user.",
-            "responses": {"200": "{\"message\": \"...\"}", "404": "notification not found"},
-        },
-    ],
-}
-
-
-@bp.get("/docs")
-def notification_docs():
-    """Return inline documentation for the notification module."""
-    return jsonify(NOTIFICATION_API_DOC), 200
+            {
+                "path": "/notification/mark-all-read",
+                "method": "PATCH",
+                "auth_required": True,
+                "description": "모든 알림 읽음 처리",
+            },
+            {
+                "path": "/notification/<notification_id>",
+                "method": "DELETE",
+                "auth_required": True,
+                "description": "알림 삭제",
+            },
+            {
+                "path": "/notification/unread-count",
+                "method": "GET",
+                "auth_required": True,
+                "description": "읽지 않은 알림 개수 조회",
+            },
+            {
+                "path": "/notification/api_info",
+                "method": "GET",
+                "auth_required": False,
+                "description": "API 정보 조회 (개발용)",
+            },
+        ],
+    }
+    return jsonify(info), 200
 
 
 @bp.post("")

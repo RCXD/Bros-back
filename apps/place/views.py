@@ -12,6 +12,58 @@ from apps.admin.views import admin_required
 
 bp = Blueprint("place", __name__)
 
+
+@bp.get("/api_info")
+def api_info():
+    """
+    장소 API 정보 제공 (개발용)
+    """
+    info = {
+        "module": "place",
+        "base_path": "/place",
+        "description": "장소 검색 및 관리",
+        "endpoints": [
+            {
+                "path": "/place/search",
+                "method": "GET",
+                "auth_required": False,
+                "description": "장소 검색",
+                "query_params": {
+                    "q": "검색어 (필수)",
+                    "lat": "중심 위도 (선택)",
+                    "lon": "중심 경도 (선택)",
+                    "radius": "반경(m, 기본: 500)",
+                },
+            },
+            {
+                "path": "/place/<place_id>",
+                "method": "GET",
+                "auth_required": False,
+                "description": "특정 장소 정보 조회",
+            },
+            {
+                "path": "/place",
+                "method": "POST",
+                "auth_required": True,
+                "description": "장소 등록",
+            },
+            {
+                "path": "/place/nearby",
+                "method": "GET",
+                "auth_required": False,
+                "description": "주변 장소 조회",
+            },
+            {
+                "path": "/place/api_info",
+                "method": "GET",
+                "auth_required": False,
+                "description": "API 정보 조회 (개발용)",
+            },
+        ],
+    }
+    return jsonify(info), 200
+
+
 DEFAULT_PAGE_SIZE = 20
 MAX_PAGE_SIZE = 100
 NOMINATIM_SEARCH_URL = "https://nominatim.openstreetmap.org/search"

@@ -17,6 +17,62 @@ from apps.route.models import Hazard, MyPath, TrafficHazard
 bp = Blueprint("route", __name__)
 
 
+@bp.get("/api_info")
+def api_info():
+    """
+    경로 API 정보 제공 (개발용)
+    """
+    info = {
+        "module": "route",
+        "base_path": "/route",
+        "description": "경로 탐색 및 위험 지역 관리",
+        "endpoints": [
+            {
+                "path": "/route",
+                "method": "POST",
+                "auth_required": False,
+                "description": "경로 탐색",
+                "json_body": {
+                    "start": "시작 좌표 [lat, lon]",
+                    "end": "종료 좌표 [lat, lon]",
+                    "vias": "경유지 좌표 배열 (선택)",
+                },
+            },
+            {
+                "path": "/route/hazard",
+                "method": "POST",
+                "auth_required": True,
+                "description": "위험 지역 등록",
+            },
+            {
+                "path": "/route/hazard",
+                "method": "GET",
+                "auth_required": False,
+                "description": "위험 지역 목록 조회",
+            },
+            {
+                "path": "/route/mypath",
+                "method": "POST",
+                "auth_required": True,
+                "description": "내 경로 저장",
+            },
+            {
+                "path": "/route/mypath",
+                "method": "GET",
+                "auth_required": True,
+                "description": "내 경로 목록 조회",
+            },
+            {
+                "path": "/route/api_info",
+                "method": "GET",
+                "auth_required": False,
+                "description": "API 정보 조회 (개발용)",
+            },
+        ],
+    }
+    return jsonify(info), 200
+
+
 def _split_points(s):
     pts = [
         list(map(float, p.split(","))) for p in s.strip("()").split(";") if p.strip()

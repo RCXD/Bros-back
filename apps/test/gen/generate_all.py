@@ -7,6 +7,7 @@ import pytest
 from apps.auth.models import User, AccountType
 from apps.post.models import Post, Category
 from apps.reply.models import Reply
+from apps.product.models import Product
 
 try:
     from logger import get_logger
@@ -35,6 +36,7 @@ def test_generate_all_data(fixture_app):
         test_generate_profile_images,
         test_generate_images,
     )
+    from apps.test.gen.gen_product import test_generate_products
 
     with fixture_app.app_context():
         verbosity = fixture_app.config.get("VERBOSITY", 1)
@@ -54,12 +56,14 @@ def test_generate_all_data(fixture_app):
         test_generate_posts(fixture_app)
         test_generate_images(fixture_app)
         test_generate_replies(fixture_app)
+        test_generate_products(fixture_app)
 
         # 요약
         total_users = User.query.count()
         total_posts = Post.query.count()
         total_replies = Reply.query.count()
         total_categories = Category.query.count()
+        total_products = Product.query.count()
 
         log.section("생성 완료")
         log.summary(
@@ -68,5 +72,6 @@ def test_generate_all_data(fixture_app):
                 "총 게시글": f"{total_posts}개",
                 "총 댓글": f"{total_replies}개",
                 "총 카테고리": f"{total_categories}개",
+                "총 제품": f"{total_products}개",
             }
         )

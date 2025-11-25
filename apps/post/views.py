@@ -9,11 +9,93 @@ from sqlalchemy.exc import IntegrityError
 from apps.mention.models import Mention
 from apps.config.server import db
 from apps.notification.models import Notification
-from apps.post.models import Post, Category, PostLike, Image
+from apps.post.models import Post, Category, PostLike
+from apps.image.models import Image
 from apps.auth.models import User
 from apps.common.image_handlers import compress_image, save_to_disk, IMAGE_EXTENSIONS
 
 bp = Blueprint("post", __name__)
+
+
+@bp.get("/api_info")
+def api_info():
+    """
+    게시물 API 정보 제공 (개발용)
+    """
+    info = {
+        "module": "post",
+        "base_path": "/post",
+        "description": "게시물 생성, 조회, 수정, 삭제 및 좋아요 관리",
+        "endpoints": [
+            {
+                "path": "/post",
+                "method": "POST",
+                "auth_required": True,
+                "description": "게시물 생성",
+                "form_data": {
+                    "content": "게시물 내용 (필수)",
+                    "category_id": "카테고리 ID (필수)",
+                    "images": "이미지 파일들 (선택, 다중 가능)",
+                },
+            },
+            {
+                "path": "/post/<post_id>",
+                "method": "GET",
+                "auth_required": False,
+                "description": "특정 게시물 조회",
+            },
+            {
+                "path": "/post/<post_id>",
+                "method": "PUT",
+                "auth_required": True,
+                "description": "게시물 수정",
+                "form_data": "content (선택)",
+            },
+            {
+                "path": "/post/<post_id>",
+                "method": "DELETE",
+                "auth_required": True,
+                "description": "게시물 삭제",
+            },
+            {
+                "path": "/post",
+                "method": "GET",
+                "auth_required": False,
+                "description": "게시물 목록 조회",
+                "query_params": {
+                    "category": "카테고리 필터 (선택)",
+                    "page": "페이지 번호 (기본: 1)",
+                    "per_page": "페이지당 개수 (기본: 20)",
+                    "order_by": "정렬 (latest, popular)",
+                },
+            },
+            {
+                "path": "/post/<post_id>/like",
+                "method": "POST",
+                "auth_required": True,
+                "description": "게시물 좋아요 추가",
+            },
+            {
+                "path": "/post/<post_id>/like",
+                "method": "DELETE",
+                "auth_required": True,
+                "description": "게시물 좋아요 취소",
+            },
+            {
+                "path": "/post/category",
+                "method": "GET",
+                "auth_required": False,
+                "description": "전체 카테고리 목록 조회",
+            },
+            {
+                "path": "/post/api_info",
+                "method": "GET",
+                "auth_required": False,
+                "description": "API 정보 조회 (개발용)",
+            },
+        ],
+    }
+    return jsonify(info), 200
 
 
 from flask import g
@@ -42,7 +124,6 @@ def get_posts():
 
     posts = []
     current_user_id = getattr(g, "user_id", None)  # 현재 로그인 유저 ID
-    current_user_id = getattr(g, "user_id", None)  # 현재 로그인 유저 ID
 
     for post in pagination.items:
         user = User.query.get(post.user_id)
@@ -51,12 +132,6 @@ def get_posts():
         # ✅ 현재 유저가 좋아요 눌렀는지 확인
         is_liked = False
         if current_user_id:
-            is_liked = (
-                PostLike.query.filter_by(
-                    post_id=post.post_id, user_id=current_user_id
-                ).first()
-                is not None
-            )
             is_liked = (
                 PostLike.query.filter_by(
                     post_id=post.post_id, user_id=current_user_id
@@ -93,20 +168,6 @@ def get_posts():
             }
         )
 
-    return (
-        jsonify(
-            {
-                "items": posts,
-                "total": pagination.total,
-                "pages": pagination.pages,
-                "page": page,
-                "per_page": per_page,
-                "has_next": pagination.has_next,
-                "has_prev": pagination.has_prev,
-            }
-        ),
-        200,
-    )
     return (
         jsonify(
             {
@@ -592,18 +653,8 @@ def get_my_posts():
     )
 
 
-@bp.get("/image/<string:uuid>")
-def get_post_image(uuid):
-    """
-    이미지 파일 조회
-    Path params:
-        - uuid: 이미지 UUID
-    Returns:
-        - 이미지 파일
-
-    Note: /image/ 와 /images/ 모두 지원
-    """
-    image = Image.query.filter_by(uuid=uuid).first_or_404(description="이미지 없음")
-    return send_from_directory(
-        "/".join(image.directory.split("/")[:-1]), image.directory.split("/")[-1]
-    )
+# =====================================================
+# 게시글 이미지 조회
+# =====================================================
+# 이미지 조회는 /image/post/<uuid> 엔드포인트로 통합되었습니다.
+# apps.image.views.get_post_image 참조

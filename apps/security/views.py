@@ -1,13 +1,38 @@
 # """
 # 보안 모듈 - 신고 및 관리
 # """
-# from flask import Blueprint, jsonify, request
+from flask import Blueprint, jsonify
+
+bp = Blueprint("security", __name__)
+
+
+@bp.get("/api_info")
+def api_info():
+    """
+    보안 API 정보 제공 (개발용)
+    """
+    info = {
+        "module": "security",
+        "base_path": "/security",
+        "description": "보안 및 신고 관리 (현재 미사용)",
+        "endpoints": [
+            {
+                "path": "/security/api_info",
+                "method": "GET",
+                "auth_required": False,
+                "description": "API 정보 조회 (개발용)",
+            }
+        ],
+        "note": "현재 모듈 주석 처리됨. 기능은 /report 모듈로 이동",
+    }
+    return jsonify(info), 200
+
+
+# from flask import request
 # from flask_jwt_extended import jwt_required, get_jwt_identity, get_current_user
 
 # from apps.config.server import db
 # from apps.report.models import Report, ReportType
-
-# bp = Blueprint("security", __name__)
 
 
 # @bp.post("/reports")
@@ -24,45 +49,45 @@
 #     try:
 #         current_user = get_current_user()
 #         data = request.get_json()
-        
+
 #         target_type = data.get("target_type")
 #         target_id = data.get("target_id")
 #         reason = data.get("reason")
-        
+
 #         if not all([target_type, target_id, reason]):
 #             return jsonify({"message": "target_type, target_id, reason은 필수입니다"}), 400
-        
+
 #         # target_type 검증
 #         try:
 #             report_type = ReportType[target_type.upper()]
 #         except KeyError:
 #             return jsonify({"message": f"유효하지 않은 target_type입니다. 다음 중 하나여야 합니다: {[t.name for t in ReportType]}"}), 400
-        
+
 #         # 이미 신고했는지 확인
 #         existing = Report.query.filter_by(
 #             reporter_id=current_user.user_id,
 #             target_type=report_type,
 #             target_id=target_id
 #         ).first()
-        
+
 #         if existing:
 #             return jsonify({"message": "이미 신고한 콘텐츠입니다"}), 409
-        
+
 #         report = Report(
 #             reporter_id=current_user.user_id,
 #             target_type=report_type,
 #             target_id=target_id,
 #             reason=reason
 #         )
-        
+
 #         db.session.add(report)
 #         db.session.commit()
-        
+
 #         return jsonify({
 #             "message": "신고가 제출되었습니다",
 #             "report_id": report.report_id
 #         }), 201
-        
+
 #     except Exception as e:
 #         db.session.rollback()
 #         return jsonify({"message": f"신고 생성 실패: {str(e)}"}), 400
@@ -73,10 +98,10 @@
 # def get_my_reports():
 #     """현재 사용자가 제출한 신고 조회"""
 #     current_user_id = int(get_jwt_identity())
-    
+
 #     reports = Report.query.filter_by(reporter_id=current_user_id)\
 #         .order_by(Report.created_at.desc()).all()
-    
+
 #     result = []
 #     for report in reports:
 #         result.append({
@@ -88,7 +113,7 @@
 #             "created_at": report.created_at.isoformat(),
 #             "resolved_at": report.resolved_at.isoformat() if report.resolved_at else None
 #         })
-    
+
 #     return jsonify({"reports": result, "count": len(result)}), 200
 
 
@@ -98,11 +123,11 @@
 #     """특정 신고 상세 조회"""
 #     current_user_id = int(get_jwt_identity())
 #     report = Report.query.get_or_404(report_id)
-    
+
 #     # 소유권 확인
 #     if report.reporter_id != current_user_id:
 #         return jsonify({"message": "권한이 없습니다"}), 403
-    
+
 #     return jsonify({
 #         "report_id": report.report_id,
 #         "target_type": report.target_type.name,
@@ -121,20 +146,20 @@
 #     try:
 #         current_user_id = int(get_jwt_identity())
 #         report = Report.query.get_or_404(report_id)
-        
+
 #         # 소유권 확인
 #         if report.reporter_id != current_user_id:
 #             return jsonify({"message": "권한이 없습니다"}), 403
-        
+
 #         # 미처리 신고만 취소 가능
 #         if report.is_resolved:
 #             return jsonify({"message": "처리 완료된 신고는 취소할 수 없습니다"}), 400
-        
+
 #         db.session.delete(report)
 #         db.session.commit()
-        
+
 #         return jsonify({"message": "신고가 취소되었습니다"}), 200
-        
+
 #     except Exception as e:
 #         db.session.rollback()
 #         return jsonify({"message": f"신고 취소 실패: {str(e)}"}), 400

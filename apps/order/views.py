@@ -20,6 +20,56 @@ import logging
 bp = Blueprint("order", __name__)
 
 
+@bp.get("/api_info")
+def api_info():
+    """
+    주문 API 정보 제공 (개발용)
+    """
+    info = {
+        "module": "order",
+        "base_path": "/order",
+        "description": "주문 및 결제 관리 (KakaoPay 연동)",
+        "endpoints": [
+            {
+                "path": "/order",
+                "method": "POST",
+                "auth_required": True,
+                "description": "주문 생성",
+                "json_body": {
+                    "item_name": "상품명 (필수)",
+                    "quantity": "수량 (필수)",
+                    "total_amount": "총액 (필수)",
+                },
+            },
+            {
+                "path": "/order/<order_id>",
+                "method": "GET",
+                "auth_required": True,
+                "description": "주문 조회",
+            },
+            {
+                "path": "/order/payment/ready",
+                "method": "POST",
+                "auth_required": True,
+                "description": "결제 준비 (KakaoPay)",
+            },
+            {
+                "path": "/order/payment/approve",
+                "method": "POST",
+                "auth_required": True,
+                "description": "결제 승인",
+            },
+            {
+                "path": "/order/api_info",
+                "method": "GET",
+                "auth_required": False,
+                "description": "API 정보 조회 (개발용)",
+            },
+        ],
+    }
+    return jsonify(info), 200
+
+
 def save_ready_order(order_id, user_id, item_name, quantity, total_amount):
     """Persist an order as READY so KakaoPay /ready can reference it."""
     order = Order(
@@ -211,7 +261,7 @@ def pay_ready():
             body,
         )
     except Exception as e:
-        
+
         return (
             jsonify({"error": "KakaoPay ready request failed", "detail": str(e)}),
             500,
@@ -281,7 +331,9 @@ def pay_approve():
     db.session.commit()
     log_payment_event(order, "APPROVE", order.status, result, tid=order.tid)
 
-    redirect_url = f"{current_app.config['FRONTEND_URL']}/order/success?order_id={order.order_id}"
+    redirect_url = (
+        f"{current_app.config['FRONTEND_URL']}/order/success?order_id={order.order_id}"
+    )
     return redirect(redirect_url)
 
 

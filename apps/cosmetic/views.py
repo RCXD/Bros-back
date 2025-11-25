@@ -30,6 +30,57 @@ from apps.admin.views import admin_required
 bp = Blueprint("cosmetic", __name__)
 
 
+@bp.get("/api_info")
+def api_info():
+    """
+    코스메틱 API 정보 제공 (개발용)
+    """
+    info = {
+        "module": "cosmetic",
+        "base_path": "/cosmetic",
+        "description": "사용자 아이템 및 코스메틱 관리",
+        "endpoints": [
+            {
+                "path": "/cosmetic/items",
+                "method": "GET",
+                "auth_required": False,
+                "description": "아이템 목록 조회",
+            },
+            {
+                "path": "/cosmetic/sets",
+                "method": "GET",
+                "auth_required": False,
+                "description": "세트 목록 조회",
+            },
+            {
+                "path": "/cosmetic/user/items",
+                "method": "GET",
+                "auth_required": True,
+                "description": "사용자 소유 아이템 조회",
+            },
+            {
+                "path": "/cosmetic/user/state",
+                "method": "GET",
+                "auth_required": True,
+                "description": "사용자 코스메틱 상태 조회",
+            },
+            {
+                "path": "/cosmetic/user/state",
+                "method": "PUT",
+                "auth_required": True,
+                "description": "사용자 코스메틱 상태 업데이트",
+            },
+            {
+                "path": "/cosmetic/api_info",
+                "method": "GET",
+                "auth_required": False,
+                "description": "API 정보 조회 (개발용)",
+            },
+        ],
+    }
+    return jsonify(info), 200
+
+
 DEFAULT_PER_PAGE = 50
 MAX_PER_PAGE = 200
 

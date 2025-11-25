@@ -94,6 +94,7 @@ class User(db.Model):
             "nickname": self.nickname,
             "email": self.email,
             "address": self.address,
+            "phone": self.phone,
             "profile_img": self.profile_img,
             "created_at": self.created_at.isoformat(),
             "last_login": self.last_login.isoformat() if self.last_login else None,
