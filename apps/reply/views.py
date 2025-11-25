@@ -114,6 +114,19 @@ def get_replies():
     else:
         order_method = Reply.created_at.asc()
 
+    # 현재 로그인한 사용자 ID 가져오기 (없으면 None)
+    current_user_id = None
+    from flask_jwt_extended import verify_jwt_in_request
+
+    current_user_id = None
+    try:
+        verify_jwt_in_request(optional=True)
+        user_identity = get_jwt_identity()
+        if user_identity:
+            current_user_id = int(user_identity)
+    except:
+        pass
+
     # 최상위 댓글 조회 (부모 댓글이 없는 것)
     pagination = (
         Reply.query.filter_by(post_id=post_id, parent_id=None)
@@ -136,13 +149,23 @@ def get_replies():
     top_liked_replies = []
     for reply, like_count in top_liked_query:
         author = User.query.get(reply.user_id)
+        # 현재 사용자의 좋아요 여부 확인
+        is_liked = False
+        if current_user_id:
+            is_liked = (
+                ReplyLike.query.filter_by(
+                    reply_id=reply.reply_id, user_id=current_user_id
+                ).first()
+                is not None
+            )
+
         top_liked_replies.append(
             {
                 "reply_id": reply.reply_id,
                 "post_id": reply.post_id,
                 "author": (
                     {
-                        "user_id": author.user_id,  # Deprecation 검토 중
+                        "user_id": author.user_id,
                         "nickname": author.nickname,
                         "profile_img": author.profile_img,
                     }
@@ -151,6 +174,7 @@ def get_replies():
                 ),
                 "content": reply.content,
                 "like_count": like_count,
+                "is_liked": is_liked,
                 "created_at": reply.created_at.isoformat(),
                 "updated_at": reply.updated_at.isoformat(),
             }
@@ -161,6 +185,16 @@ def get_replies():
         author = User.query.get(reply.user_id)
         like_count = ReplyLike.query.filter_by(reply_id=reply.reply_id).count()
         child_count = Reply.query.filter_by(parent_id=reply.reply_id).count()
+
+        # 현재 사용자의 좋아요 여부 확인
+        is_liked = False
+        if current_user_id:
+            is_liked = (
+                ReplyLike.query.filter_by(
+                    reply_id=reply.reply_id, user_id=current_user_id
+                ).first()
+                is not None
+            )
 
         replies.append(
             {
@@ -179,6 +213,7 @@ def get_replies():
                 "parent_id": reply.parent_id,
                 "like_count": like_count,
                 "child_count": child_count,
+                "is_liked": is_liked,  # 추가된 필드
                 "created_at": reply.created_at.isoformat(),
                 "updated_at": reply.updated_at.isoformat(),
             }
@@ -394,12 +429,12 @@ def like_reply(reply_id):
         reply_id=reply_id, user_id=current_user_id
     ).first()
 
-    like_count = ReplyLike.query.filter_by(reply_id=reply_id).count()
-
     if existing:
         # 좋아요 취소
         db.session.delete(existing)
         db.session.commit()
+        # 커밋 후에 개수 세기
+        like_count = ReplyLike.query.filter_by(reply_id=reply_id).count()
         return (
             jsonify(
                 {
@@ -415,6 +450,8 @@ def like_reply(reply_id):
         like = ReplyLike(reply_id=reply_id, user_id=current_user_id)
         db.session.add(like)
         db.session.commit()
+        # 커밋 후에 개수 세기
+        like_count = ReplyLike.query.filter_by(reply_id=reply_id).count()
         return (
             jsonify(
                 {"message": "댓글 좋아요", "liked": True, "like_count": like_count}
@@ -456,6 +493,15 @@ def get_nested_replies(reply_id):
     else:
         order_method = Reply.created_at.asc()
 
+    # 현재 로그인한 사용자 ID 가져오기 (없으면 None)
+    current_user_id = None
+    try:
+        from flask_jwt_extended import get_jwt_identity
+
+        current_user_id = int(get_jwt_identity())
+    except:
+        pass
+
     # 대댓글 조회 (페이지네이션)
     pagination = (
         Reply.query.filter_by(parent_id=reply_id)
@@ -469,13 +515,23 @@ def get_nested_replies(reply_id):
         like_count = ReplyLike.query.filter_by(reply_id=reply.reply_id).count()
         child_count = Reply.query.filter_by(parent_id=reply.reply_id).count()
 
+        # 현재 사용자의 좋아요 여부 확인
+        is_liked = False
+        if current_user_id:
+            is_liked = (
+                ReplyLike.query.filter_by(
+                    reply_id=reply.reply_id, user_id=current_user_id
+                ).first()
+                is not None
+            )
+
         replies.append(
             {
                 "reply_id": reply.reply_id,
                 "post_id": reply.post_id,
                 "author": (
                     {
-                        "user_id": author.user_id,  # Deprecation 검토 중
+                        "user_id": author.user_id,
                         "nickname": author.nickname,
                         "profile_img": author.profile_img,
                     }
@@ -486,6 +542,7 @@ def get_nested_replies(reply_id):
                 "parent_id": reply.parent_id,
                 "like_count": like_count,
                 "child_count": child_count,
+                "is_liked": is_liked,  # 추가된 필드
                 "created_at": reply.created_at.isoformat(),
                 "updated_at": reply.updated_at.isoformat(),
             }
