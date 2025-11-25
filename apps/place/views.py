@@ -458,6 +458,8 @@ def list_places():
                 "pages": pagination.pages,
                 "page": page,
                 "per_page": per_page,
+                "has_next": pagination.has_next,
+                "has_prev": pagination.has_prev,
             }
         ),
         200,
