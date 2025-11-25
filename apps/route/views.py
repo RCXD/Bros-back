@@ -17,6 +17,62 @@ from apps.route.models import Hazard, MyPath, TrafficHazard
 bp = Blueprint("route", __name__)
 
 
+@bp.get("/api_info")
+def api_info():
+    """
+    경로 API 정보 제공 (개발용)
+    """
+    info = {
+        "module": "route",
+        "base_path": "/route",
+        "description": "경로 탐색 및 위험 지역 관리",
+        "endpoints": [
+            {
+                "path": "/route",
+                "method": "POST",
+                "auth_required": False,
+                "description": "경로 탐색",
+                "json_body": {
+                    "start": "시작 좌표 [lat, lon]",
+                    "end": "종료 좌표 [lat, lon]",
+                    "vias": "경유지 좌표 배열 (선택)",
+                },
+            },
+            {
+                "path": "/route/hazard",
+                "method": "POST",
+                "auth_required": True,
+                "description": "위험 지역 등록",
+            },
+            {
+                "path": "/route/hazard",
+                "method": "GET",
+                "auth_required": False,
+                "description": "위험 지역 목록 조회",
+            },
+            {
+                "path": "/route/mypath",
+                "method": "POST",
+                "auth_required": True,
+                "description": "내 경로 저장",
+            },
+            {
+                "path": "/route/mypath",
+                "method": "GET",
+                "auth_required": True,
+                "description": "내 경로 목록 조회",
+            },
+            {
+                "path": "/route/api_info",
+                "method": "GET",
+                "auth_required": False,
+                "description": "API 정보 조회 (개발용)",
+            },
+        ],
+    }
+    return jsonify(info), 200
+
+
 def _split_points(s):
     pts = [
         list(map(float, p.split(","))) for p in s.strip("()").split(";") if p.strip()
@@ -155,6 +211,9 @@ _RATE_LIMIT_BUCKET = {}
 _RATE_LIMIT_WINDOW = 60
 _RATE_LIMIT_MAX = 20
 _INTERPOLATE_STEPS = 12
+_HAZARD_DEFAULT_PAGE = 1
+_HAZARD_DEFAULT_PER_PAGE = 50
+_HAZARD_MAX_PER_PAGE = 200
 
 
 def _rate_limited(key):
@@ -197,7 +256,7 @@ def _collapse_hazards(hazards, traffic_entries=None):
 
 def _hydrate_cache_from_db():
     hazards = Hazard.query.filter_by(is_active=True).all()
-    cutoff = datetime.utcnow() - timedelta(minutes=5)
+    cutoff = datetime.now() - timedelta(minutes=5)
     traffic_entries = TrafficHazard.query.filter(
         TrafficHazard.updated_at >= cutoff
     ).all()
@@ -299,6 +358,30 @@ def _parse_points_payload(data):
     return start, end, vias
 
 
+def _hazard_to_pin(hazard):
+    raw = hazard.serialize() if hasattr(hazard, "serialize") else {}
+    hazard_type = (
+        getattr(hazard, "hazard_type", None) or raw.get("hazard_type") or "hazard"
+    )
+    return {
+        "id": (
+            hazard.hazard_id if hasattr(hazard, "hazard_id") else raw.get("hazard_id")
+        ),
+        "hazardId": (
+            hazard.hazard_id if hasattr(hazard, "hazard_id") else raw.get("hazard_id")
+        ),
+        "lat": getattr(hazard, "lat", None),
+        "lng": getattr(hazard, "lon", None),
+        "description": raw.get("description"),
+        "type": hazard_type,
+        "dangerScore": raw.get("danger_score"),
+        "source": "hazard",
+        "createdAt": raw.get("created_at"),
+        "updatedAt": raw.get("updated_at"),
+        "raw": raw,
+    }
+
+
 @bp.post("/hazards")
 def ingest_hazard():
     """Ingest a hazard point and keep active cache updated."""
@@ -346,6 +429,7 @@ def ingest_hazard():
                 {
                     "message": "hazard ingested",
                     "hazard": hazard.serialize(),
+                    "pin": _hazard_to_pin(hazard),
                     "osrm_customizing": customize_started,
                 }
             ),
@@ -354,6 +438,40 @@ def ingest_hazard():
     except SQLAlchemyError as exc:
         db.session.rollback()
         return jsonify({"error": f"Failed to persist hazard: {str(exc)}"}), 400
+
+
+@bp.get("/hazards")
+def list_hazards():
+    """Return normalized hazard pins with min_score filtering."""
+    try:
+        min_score = float(request.args.get("min_score", 0))
+    except (TypeError, ValueError):
+        return jsonify({"error": "min_score must be a number"}), 400
+    try:
+        page = max(int(request.args.get("page", _HAZARD_DEFAULT_PAGE)), 1)
+    except (TypeError, ValueError):
+        page = _HAZARD_DEFAULT_PAGE
+    try:
+        per_page = int(request.args.get("per_page", _HAZARD_DEFAULT_PER_PAGE))
+    except (TypeError, ValueError):
+        per_page = _HAZARD_DEFAULT_PER_PAGE
+    per_page = max(1, min(per_page, _HAZARD_MAX_PER_PAGE))
+
+    query = Hazard.query.filter(Hazard.is_active.is_(True))
+    if min_score > 0:
+        query = query.filter(Hazard.danger_score >= min_score)
+
+    total = query.count()
+    hazards = (
+        query.order_by(Hazard.updated_at.desc())
+        .offset((page - 1) * per_page)
+        .limit(per_page)
+        .all()
+    )
+    results = [_hazard_to_pin(h) for h in hazards]
+    meta = {"page": page, "per_page": per_page, "total": total}
+    return jsonify({"results": results, "meta": meta}), 200
+
 
 @bp.put("/hazards/<int:hazard_id>")
 def update_hazard(hazard_id):
@@ -387,7 +505,10 @@ def update_hazard(hazard_id):
         db.session.commit()
         _hazard_cache(force=True)
         schedule_osrm_customize()
-        return jsonify({"hazard": hazard.serialize()}), 200
+        return (
+            jsonify({"hazard": hazard.serialize(), "pin": _hazard_to_pin(hazard)}),
+            200,
+        )
     except SQLAlchemyError as exc:
         db.session.rollback()
         return jsonify({"error": f"Failed to update hazard: {str(exc)}"}), 400
@@ -408,7 +529,16 @@ def delete_hazard(hazard_id):
         db.session.commit()
         _hazard_cache(force=True)
         schedule_osrm_customize()
-        return jsonify({"message": "hazard_deactivated", "hazard": hazard.serialize()}), 200
+        return (
+            jsonify(
+                {
+                    "message": "hazard_deactivated",
+                    "hazard": hazard.serialize(),
+                    "pin": _hazard_to_pin(hazard),
+                }
+            ),
+            200,
+        )
     except SQLAlchemyError as exc:
         db.session.rollback()
         return jsonify({"error": f"Failed to deactivate hazard: {str(exc)}"}), 400
@@ -422,7 +552,8 @@ def list_active_hazards():
         .limit(500)
         .all()
     )
-    return jsonify({"hazards": [h.serialize() for h in hazards]}), 200
+    pins = [_hazard_to_pin(h) for h in hazards]
+    return jsonify({"results": pins, "total": len(pins)}), 200
 
 
 @bp.post("/hazard/refresh")

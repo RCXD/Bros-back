@@ -63,7 +63,7 @@ def _gather_penalties():
         if penalty and penalty > penalties.get(edge, 0.0):
             penalties[edge] = penalty
 
-    cutoff = datetime.utcnow() - timedelta(minutes=5)
+    cutoff = datetime.now() - timedelta(minutes=5)
     traffic_rows = (
         TrafficHazard.query.filter(TrafficHazard.updated_at >= cutoff)
         .with_entities(TrafficHazard.osm_edge_id, TrafficHazard.penalty)

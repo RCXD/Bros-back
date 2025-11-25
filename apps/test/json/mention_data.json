@@ -1,0 +1,144 @@
+{
+  "mentions": [
+    {
+      "mentioner": "user1",
+      "mentioned_user": "user2",
+      "target_type": "post",
+      "target_username": "user2",
+      "target_content": "오늘 점심 뭐 먹을지 고민중... @user2 추천 좀!"
+    },
+    {
+      "mentioner": "user3",
+      "mentioned_user": "user5",
+      "target_type": "post",
+      "target_username": "user3",
+      "target_content": "@user5 이거 봐봐! 진짜 신기한 거 발견했어"
+    },
+    {
+      "mentioner": "user4",
+      "mentioned_user": "user1",
+      "target_type": "reply",
+      "parent_post_username": "user6",
+      "reply_content": "@user1 너도 이거 해봤어? 완전 재밌어!"
+    },
+    {
+      "mentioner": "user2",
+      "mentioned_user": "user8",
+      "target_type": "post",
+      "target_username": "user2",
+      "target_content": "강남역에서 만날 사람? @user8 시간 돼?"
+    },
+    {
+      "mentioner": "user5",
+      "mentioned_user": "user3",
+      "target_type": "reply",
+      "parent_post_username": "user1",
+      "reply_content": "@user3 이거 완전 대박이다 ㅋㅋㅋ"
+    },
+    {
+      "mentioner": "user7",
+      "mentioned_user": "user4",
+      "target_type": "post",
+      "target_username": "user7",
+      "target_content": "오늘 날씨 너무 좋은데 @user4 같이 산책할래?"
+    },
+    {
+      "mentioner": "user6",
+      "mentioned_user": "user9",
+      "target_type": "reply",
+      "parent_post_username": "user2",
+      "reply_content": "@user9 여기 사진 보니까 네가 말한 그곳 맞네!"
+    },
+    {
+      "mentioner": "user8",
+      "mentioned_user": "user10",
+      "target_type": "post",
+      "target_username": "user8",
+      "target_content": "맛집 발견! @user10 다음에 여기 같이 가자"
+    },
+    {
+      "mentioner": "user9",
+      "mentioned_user": "user7",
+      "target_type": "reply",
+      "parent_post_username": "user5",
+      "reply_content": "@user7 완전 공감해 ㅋㅋㅋ 나도 그렇게 생각했어"
+    },
+    {
+      "mentioner": "user10",
+      "mentioned_user": "user6",
+      "target_type": "post",
+      "target_username": "user10",
+      "target_content": "이번 주말에 뭐하지? @user6 계획 있어?"
+    },
+    {
+      "mentioner": "user1",
+      "mentioned_user": "user3",
+      "target_type": "reply",
+      "parent_post_username": "user8",
+      "reply_content": "@user3 이거 진짜야?! 대박이다"
+    },
+    {
+      "mentioner": "user4",
+      "mentioned_user": "user7",
+      "target_type": "post",
+      "target_username": "user4",
+      "target_content": "새로운 카페 오픈했는데 @user7 같이 가볼래?"
+    },
+    {
+      "mentioner": "user2",
+      "mentioned_user": "user5",
+      "target_type": "reply",
+      "parent_post_username": "user10",
+      "reply_content": "@user5 너 이거 좋아할 것 같은데"
+    },
+    {
+      "mentioner": "user6",
+      "mentioned_user": "user1",
+      "target_type": "post",
+      "target_username": "user6",
+      "target_content": "드디어 주말이다! @user1 영화 보러 갈래?"
+    },
+    {
+      "mentioner": "user3",
+      "mentioned_user": "user9",
+      "target_type": "reply",
+      "parent_post_username": "user4",
+      "reply_content": "@user9 완전 네 스타일이야 ㅋㅋ"
+    },
+    {
+      "mentioner": "user8",
+      "mentioned_user": "user2",
+      "target_type": "post",
+      "target_username": "user8",
+      "target_content": "운동 같이 할 사람? @user2 헬스장 가자!"
+    },
+    {
+      "mentioner": "user5",
+      "mentioned_user": "user10",
+      "target_type": "reply",
+      "parent_post_username": "user7",
+      "reply_content": "@user10 이거 네가 찾던 거 아니야?"
+    },
+    {
+      "mentioner": "user9",
+      "mentioned_user": "user4",
+      "target_type": "post",
+      "target_username": "user9",
+      "target_content": "여행 계획 세우는 중... @user4 의견 좀 줘!"
+    },
+    {
+      "mentioner": "user7",
+      "mentioned_user": "user8",
+      "target_type": "reply",
+      "parent_post_username": "user3",
+      "reply_content": "@user8 이거 완전 네가 말한 그거네!"
+    },
+    {
+      "mentioner": "user10",
+      "mentioned_user": "user1",
+      "target_type": "post",
+      "target_username": "user10",
+      "target_content": "새로운 프로젝트 시작! @user1 조언 좀 해줘"
+    }
+  ]
+}

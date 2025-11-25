@@ -13,11 +13,108 @@ from datetime import datetime
 
 from apps.config.server import db, BLACKLIST
 from apps.auth.models import User, OauthType
-from apps.post.models import Image
+from apps.image.models import Image
 from apps.auth.utils import token_provider, is_valid_phone
 
 
 bp = Blueprint("auth", __name__)
+
+
+@bp.get("/api_info")
+def api_info():
+    """
+    인증 API 정보 제공 (개발용)
+    """
+    info = {
+        "module": "auth",
+        "base_path": "/auth",
+        "description": "사용자 인증 및 계정 관리",
+        "endpoints": [
+            {
+                "path": "/auth/user",
+                "method": "POST",
+                "auth_required": False,
+                "description": "회원가입",
+                "form_data": {
+                    "username": "사용자명 (필수)",
+                    "password": "비밀번호 (필수)",
+                    "email": "이메일 (필수)",
+                    "nickname": "닉네임 (선택)",
+                    "address": "주소 (선택)",
+                    "phone": "전화번호 (선택)",
+                    "profile_img": "프로필 이미지 파일 (선택)",
+                },
+            },
+            {
+                "path": "/auth/login",
+                "method": "POST",
+                "auth_required": False,
+                "description": "통합 로그인 (일반/OAuth)",
+                "json_body": {
+                    "일반": {"username": "사용자명", "password": "비밀번호"},
+                    "OAuth": {"provider": "google/kakao/naver", "token": "OAuth 토큰"},
+                },
+            },
+            {
+                "path": "/auth/login/google",
+                "method": "POST",
+                "auth_required": False,
+                "description": "Google OAuth 로그인 (Deprecated)",
+            },
+            {
+                "path": "/auth/login/kakao",
+                "method": "POST",
+                "auth_required": False,
+                "description": "Kakao OAuth 로그인 (Deprecated)",
+            },
+            {
+                "path": "/auth/login/naver",
+                "method": "POST",
+                "auth_required": False,
+                "description": "Naver OAuth 로그인 (Deprecated)",
+            },
+            {
+                "path": "/auth/user",
+                "method": "PUT",
+                "auth_required": True,
+                "description": "프로필 수정",
+                "form_data": "email, password, nickname, address, phone, profile_img (모두 선택)",
+            },
+            {
+                "path": "/auth/logout",
+                "method": "DELETE",
+                "auth_required": True,
+                "description": "로그아웃 (토큰 블랙리스트 추가)",
+            },
+            {
+                "path": "/auth/user",
+                "method": "DELETE",
+                "auth_required": True,
+                "description": "계정 삭제",
+            },
+            {
+                "path": "/auth/refresh",
+                "method": "POST",
+                "auth_required": "refresh_token",
+                "description": "액세스 토큰 갱신",
+            },
+            {
+                "path": "/auth/me",
+                "method": "GET",
+                "auth_required": True,
+                "description": "현재 사용자 정보 조회",
+            },
+            {
+                "path": "/auth/api_info",
+                "method": "GET",
+                "auth_required": False,
+                "description": "API 정보 조회 (개발용)",
+            },
+        ],
+        "note": "프로필 이미지는 /image/profile/<uuid>로 조회",
+    }
+    return jsonify(info), 200
+
 
 # OAuth 설정
 GOOGLE_TOKEN_INFO_URL = "https://oauth2.googleapis.com/tokeninfo"
@@ -446,20 +543,82 @@ def update_profile():
             current_user.phone = phone
 
         # 프로필 이미지 업로드 처리
-        default_img = "static/default_profile.jpg"
+        default_img = "default_profile"
         current_img = current_user.profile_img
 
         print(f"[DEBUG] 프로필 이미지 처리 시작 - current_img={current_img}")
         print(f"[DEBUG] request.files: {list(request.files.keys())}")
+        print(f"[DEBUG] request.form: {dict(request.form)}")
 
-        if "profile_img" in request.files:
-            file = request.files["profile_img"]
-            print(
-                f"[DEBUG] profile_img 파일 발견 - filename={file.filename if file else 'None'}"
-            )
+        # profile_img 필드가 request에 포함되어 있는지 확인
+        has_profile_img_field = (
+            "profile_img" in request.files or "profile_img" in request.form
+        )
 
-            if file and file.filename:
-                print(f"[DEBUG] 파일 업로드 처리 시작")
+        if has_profile_img_field:
+            file = request.files.get("profile_img")
+            delete_flag = request.form.get("delete_profile_img")  # 명시적 삭제 플래그
+
+            print(f"[DEBUG] profile_img 필드 감지")
+            print(f"[DEBUG] file exists: {file is not None}")
+            print(f"[DEBUG] file.filename: {file.filename if file else 'N/A'}")
+            print(f"[DEBUG] delete_flag: {delete_flag}")
+
+            # 케이스 1: 명시적 삭제 플래그가 있거나, 파일이 없거나 빈 파일명인 경우
+            if (
+                delete_flag == "true"
+                or not file
+                or not file.filename
+                or file.filename.strip() == ""
+            ):
+                print(f"[DEBUG] 프로필 이미지 삭제 요청 감지")
+
+                # 기존 프로필 이미지 삭제 (기본 이미지가 아닌 경우)
+                if current_img and current_img != default_img:
+                    print(f"[DEBUG] 기존 이미지 삭제 시도 - current_img={current_img}")
+                    old_image = Image.query.filter_by(
+                        user_id=current_user.user_id, post_id=None
+                    ).first()
+                    if old_image:
+                        try:
+                            old_path = os.path.join(
+                                current_app.root_path, old_image.directory
+                            )
+                            if os.path.exists(old_path):
+                                os.remove(old_path)
+                                print(f"[DEBUG] 기존 파일 삭제 완료 - {old_path}")
+                            else:
+                                print(f"[DEBUG] 기존 파일이 존재하지 않음 - {old_path}")
+                        except Exception as e:
+                            print(f"[DEBUG] 기존 파일 삭제 실패 - {e}")
+
+                        db.session.delete(old_image)
+                        print(f"[DEBUG] 기존 Image 레코드 삭제 완료")
+                    else:
+                        print(f"[DEBUG] 삭제할 Image 레코드가 없음")
+
+                current_user.profile_img = default_img
+                print(f"[DEBUG] profile_img를 기본 이미지로 변경 완료")
+
+            # 케이스 2: 유효한 파일이 전송된 경우
+            elif file and file.filename:
+                print(f"[DEBUG] 새 파일 업로드 처리 시작")
+
+                from apps.common.image_handlers import (
+                    compress_image,
+                    save_to_disk,
+                    IMAGE_EXTENSIONS,
+                )
+
+                # 파일 확장자 검증
+                ext = file.filename.rsplit(".", 1)[-1].lower()
+                if ext not in IMAGE_EXTENSIONS:
+                    return (
+                        jsonify(
+                            {"message": f"지원하지 않는 파일 형식: {file.filename}"}
+                        ),
+                        400,
+                    )
 
                 # 기존 프로필 이미지 삭제 (기본 이미지가 아닌 경우)
                 if current_img and current_img != default_img:
@@ -480,15 +639,34 @@ def update_profile():
                         db.session.delete(old_image)
                         print(f"[DEBUG] 기존 Image 레코드 삭제 완료")
 
-                # 새 프로필 이미지 저장
-                print(f"[DEBUG] 새 프로필 이미지 저장 호출")
-                new_uuid = save_profile_image(file, user_id=current_user.user_id)
-                print(f"[DEBUG] save_profile_image 반환값 - new_uuid={new_uuid}")
+                # 이미지 압축
+                image_compressed, ext, filename = compress_image(
+                    file, image_type="profile"
+                )
 
-                current_user.profile_img = new_uuid
-                print(f"[DEBUG] current_user.profile_img 업데이트 완료 - {new_uuid}")
+                # Image 레코드 생성
+                image = Image(
+                    user_id=current_user.user_id,
+                    post_id=None,
+                    directory="",
+                    original_image_name=file.filename,
+                    ext=ext,
+                )
+                db.session.add(image)
+                db.session.flush()  # UUID 생성
+
+                # UUID로 파일명 생성하여 저장
+                filename = f"{image.uuid}.{ext}"
+                rel_path = save_to_disk(
+                    image_compressed, ext, filename, category="profile"
+                )
+                image.directory = rel_path
+
+                # user의 profile_img를 UUID로 설정
+                current_user.profile_img = str(image.uuid)
+                print(f"[DEBUG] 새 프로필 이미지 저장 완료 - UUID={image.uuid}")
         else:
-            print(f"[DEBUG] profile_img 파일 없음")
+            print(f"[DEBUG] profile_img 필드 없음 - 프로필 이미지 변경 없음")
 
         print(f"[DEBUG] db.session.commit() 호출 전")
         db.session.commit()
@@ -603,34 +781,5 @@ def get_me():
 # =====================================================
 # 프로필 이미지 조회
 # =====================================================
-
-
-@bp.get("/image/<string:uuid>")
-def get_image_by_uuid(uuid):
-    """
-    UUID로 이미지 조회
-
-    Args:
-        uuid: 이미지 UUID 또는 'default_profile'
-    """
-    if uuid == "default_profile":
-        path = "static/default_profile.jpg"
-        folder = os.path.join(current_app.root_path, "static")
-        return send_from_directory(folder, "default_profile.jpg")
-    else:
-        image = Image.query.filter_by(uuid=uuid).first_or_404(description="이미지 없음")
-
-        # DB: static/profile_images/2025-11-12/uuid.jpg
-        relative_path = image.directory
-
-        # 절대 경로 생성
-        absolute_path = os.path.join(current_app.root_path, relative_path)
-
-        folder = os.path.dirname(absolute_path)
-        filename = os.path.basename(absolute_path)
-
-        # 파일 존재 여부 체크
-        if not os.path.exists(absolute_path):
-            return jsonify({"message": f"파일 없음: {absolute_path}"}), 404
-
-        return send_from_directory(folder, filename)
+# 이미지 조회는 /image/profile/<uuid> 엔드포인트로 통합되었습니다.
+# apps.image.views.get_profile_image 참조

@@ -12,10 +12,68 @@ from datetime import datetime, timedelta
 from apps.config.server import db
 from apps.auth.models import User, AccountType
 from apps.admin.models import Post, Reply, Follow, Report
-from apps.post.models import Image
+from apps.image.models import Image
 from apps.notification.models import Notification, NotificationType
 
 bp = Blueprint("admin", __name__)
+
+
+@bp.get("/api_info")
+def api_info():
+    """
+    관리자 API 정보 제공 (개발용)
+    """
+    info = {
+        "module": "admin",
+        "base_path": "/admin",
+        "description": "관리자 기능 (사용자, 게시물, 신고 관리 등)",
+        "endpoints": [
+            {
+                "path": "/admin/users",
+                "method": "GET",
+                "auth_required": True,
+                "description": "사용자 목록 조회 (관리자 전용)",
+            },
+            {
+                "path": "/admin/user/<user_id>",
+                "method": "DELETE",
+                "auth_required": True,
+                "description": "사용자 삭제 (관리자 전용)",
+            },
+            {
+                "path": "/admin/posts",
+                "method": "GET",
+                "auth_required": True,
+                "description": "게시물 목록 조회 (관리자 전용)",
+            },
+            {
+                "path": "/admin/post/<post_id>",
+                "method": "DELETE",
+                "auth_required": True,
+                "description": "게시물 삭제 (관리자 전용)",
+            },
+            {
+                "path": "/admin/reports",
+                "method": "GET",
+                "auth_required": True,
+                "description": "신고 목록 조회 (관리자 전용)",
+            },
+            {
+                "path": "/admin/stats",
+                "method": "GET",
+                "auth_required": True,
+                "description": "통계 정보 조회 (관리자 전용)",
+            },
+            {
+                "path": "/admin/api_info",
+                "method": "GET",
+                "auth_required": False,
+                "description": "API 정보 조회 (개발용)",
+            },
+        ],
+        "note": "모든 관리자 엔드포인트는 ADMIN 계정 타입 필요",
+    }
+    return jsonify(info), 200
 
 
 def admin_required():
@@ -112,8 +170,8 @@ def get_user_detail(user_id):
     # Get user statistics
     post_count = Post.query.filter_by(user_id=user_id).count()
     reply_count = Reply.query.filter_by(user_id=user_id).count()
-    following_count = Follow.query.filter_by(follower_id=user_id).count()
-    follower_count = Follow.query.filter_by(following_id=user_id).count()
+    following_count = Follow.query.filter_by(from_user_id=user_id).count()
+    follower_count = Follow.query.filter_by(to_user_id=user_id).count()
 
     return (
         jsonify(

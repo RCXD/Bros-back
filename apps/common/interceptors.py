@@ -166,32 +166,49 @@ def setup_logging(app):
     import os
     from logging.handlers import RotatingFileHandler
 
-    # 로그 디렉토리 생성
-    log_dir = os.path.join(app.root_path, "..", "logs")
+    # 로그 디렉토리 생성 (apps/logs)
+    log_dir = os.path.join(app.root_path, "logs")
     os.makedirs(log_dir, exist_ok=True)
 
-    # 로그 파일 핸들러 (UTF-8 인코딩)
-    log_file = os.path.join(log_dir, "error.log")
-    file_handler = RotatingFileHandler(
-        log_file,
+    # 에러 로그 파일 핸들러 (UTF-8 인코딩)
+    error_log_file = os.path.join(log_dir, "error.log")
+    error_handler = RotatingFileHandler(
+        error_log_file,
         maxBytes=10 * 1024 * 1024,  # 10MB
         backupCount=10,
         encoding="utf-8",  # UTF-8 인코딩 명시
     )
-    file_handler.setLevel(logging.WARNING)
+    error_handler.setLevel(logging.WARNING)
+
+    # 성공 로그 파일 핸들러 (UTF-8 인코딩)
+    success_log_file = os.path.join(log_dir, "success.log")
+    success_handler = RotatingFileHandler(
+        success_log_file,
+        maxBytes=10 * 1024 * 1024,  # 10MB
+        backupCount=10,
+        encoding="utf-8",  # UTF-8 인코딩 명시
+    )
+    success_handler.setLevel(logging.INFO)
 
     # 로그 포맷
     formatter = logging.Formatter(
         "[%(asctime)s] %(levelname)s in %(module)s: %(message)s"
     )
-    file_handler.setFormatter(formatter)
+    error_handler.setFormatter(formatter)
+    success_handler.setFormatter(formatter)
 
     # 앱 로거에 핸들러 추가
-    app.logger.addHandler(file_handler)
+    app.logger.addHandler(error_handler)
+    app.logger.addHandler(success_handler)
     app.logger.setLevel(logging.INFO)
 
     # 모듈 로거에도 핸들러 추가
-    logger.addHandler(file_handler)
+    logger.addHandler(error_handler)
+    logger.addHandler(success_handler)
     logger.setLevel(logging.INFO)
+
+    # SQLAlchemy 로거 비활성화 (콘솔 출력 방지)
+    logging.getLogger("sqlalchemy.engine").setLevel(logging.WARNING)
+    logging.getLogger("sqlalchemy.pool").setLevel(logging.WARNING)
 
     logger.info("Logging configured successfully")

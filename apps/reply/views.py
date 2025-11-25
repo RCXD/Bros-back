@@ -6,11 +6,87 @@ from flask import Blueprint, jsonify, request
 from flask_jwt_extended import jwt_required, get_jwt_identity, get_current_user
 
 from apps.config.server import db
+from apps.notification.models import Notification, NotificationType
 from apps.reply.models import Reply, ReplyLike
 from apps.post.models import Post
 from apps.auth.models import User
 
 bp = Blueprint("reply", __name__)
+
+
+@bp.get("/api_info")
+def api_info():
+    """
+    댓글 API 정보 제공 (개발용)
+    """
+    info = {
+        "module": "reply",
+        "base_path": "/reply",
+        "description": "댓글 생성, 조회, 수정, 삭제 및 좋아요 관리",
+        "endpoints": [
+            {
+                "path": "/reply",
+                "method": "POST",
+                "auth_required": True,
+                "description": "댓글 생성",
+                "json_body": {
+                    "post_id": "게시물 ID (필수)",
+                    "content": "댓글 내용 (필수)",
+                    "parent_id": "부모 댓글 ID (대댓글인 경우)",
+                },
+            },
+            {
+                "path": "/reply/<reply_id>",
+                "method": "GET",
+                "auth_required": False,
+                "description": "특정 댓글 조회",
+            },
+            {
+                "path": "/reply/<reply_id>",
+                "method": "PUT",
+                "auth_required": True,
+                "description": "댓글 수정",
+                "json_body": {"content": "수정할 내용"},
+            },
+            {
+                "path": "/reply/<reply_id>",
+                "method": "DELETE",
+                "auth_required": True,
+                "description": "댓글 삭제",
+            },
+            {
+                "path": "/reply",
+                "method": "GET",
+                "auth_required": False,
+                "description": "게시물의 댓글 목록 조회",
+                "query_params": {
+                    "post_id": "게시물 ID (필수)",
+                    "page": "페이지 번호 (기본: 1)",
+                    "per_page": "페이지당 개수 (기본: 20)",
+                    "order_by": "정렬 (asc, desc)",
+                },
+            },
+            {
+                "path": "/reply/<reply_id>/like",
+                "method": "POST",
+                "auth_required": True,
+                "description": "댓글 좋아요 추가",
+            },
+            {
+                "path": "/reply/<reply_id>/like",
+                "method": "DELETE",
+                "auth_required": True,
+                "description": "댓글 좋아요 취소",
+            },
+            {
+                "path": "/reply/api_info",
+                "method": "GET",
+                "auth_required": False,
+                "description": "API 정보 조회 (개발용)",
+            },
+        ],
+    }
+    return jsonify(info), 200
 
 
 @bp.get("")
@@ -147,7 +223,7 @@ def create_reply():
             return jsonify({"message": "post_id와 content는 필수입니다"}), 400
 
         # 게시글 존재 확인
-        Post.query.get_or_404(post_id)
+        post = Post.query.get_or_404(post_id)
 
         # 부모 댓글 검증 (제공된 경우)
         if parent_id:
@@ -165,6 +241,35 @@ def create_reply():
         )
 
         db.session.add(reply)
+        db.session.flush()  # reply_id 생성을 위해 flush
+
+        # 알림 발생 (notification 변수를 항상 None으로 초기화)
+        notification = None
+
+        if parent_id:
+            parent_reply = Reply.query.get(parent_id)
+            # 자기 자신의 댓글에 대댓글을 다는 경우 알림 생성하지 않음
+            if parent_reply and parent_reply.user_id != current_user.user_id:
+                notification = Notification(
+                    type=NotificationType.REPLY_TO_REPLY,
+                    from_user_id=current_user.user_id,
+                    to_user_id=parent_reply.user_id,
+                    reply_id=reply.reply_id,
+                )
+        else:
+            # 자기 자신의 게시글에 댓글을 다는 경우 알림 생성하지 않음
+            if post.user_id != current_user.user_id:
+                notification = Notification(
+                    type=NotificationType.REPLY,
+                    from_user_id=current_user.user_id,
+                    to_user_id=post.user_id,
+                    reply_id=reply.reply_id,
+                )
+
+        # notification이 생성된 경우에만 추가
+        if notification:
+            db.session.add(notification)
+
         db.session.commit()
 
         return (
@@ -344,7 +449,7 @@ def get_nested_replies(reply_id):
 
     page = request.args.get("page", 1, type=int)
     per_page = request.args.get("per_page", 20, type=int)
-    order_by = request.args.get("order_by", "desc").lower()
+    order_by = request.args.get("order_by", "asc").lower()
 
     if order_by == "desc":
         order_method = Reply.created_at.desc()

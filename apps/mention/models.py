@@ -29,7 +29,7 @@ class Mention(db.Model):
         db.Integer, db.ForeignKey("replies.reply_id", ondelete="CASCADE"), nullable=True
     )
 
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=datetime.now)
     is_checked = db.Column(db.Boolean, default=False)
 
     # 관계 설정

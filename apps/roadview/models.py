@@ -1,6 +1,7 @@
 """
 Roadview Models - Store roadview data from Google, Kakao, and Naver APIs
 """
+
 from datetime import datetime
 from sqlalchemy import Enum as SQLEnum
 import enum
@@ -8,6 +9,7 @@ import enum
 
 class RoadviewProvider(enum.Enum):
     """Road view service providers"""
+
     GOOGLE_STREET_VIEW = "google_street_view"
     KAKAO_ROADVIEW = "kakao_roadview"
     NAVER_STREET_VIEW = "naver_street_view"
@@ -15,6 +17,7 @@ class RoadviewProvider(enum.Enum):
 
 class RoadviewStatus(enum.Enum):
     """Status of roadview data"""
+
     AVAILABLE = "available"
     NOT_AVAILABLE = "not_available"
     PENDING = "pending"
@@ -23,57 +26,62 @@ class RoadviewStatus(enum.Enum):
 
 def init_models(db):
     """Initialize roadview models with db instance"""
-    
+
     class Roadview(db.Model):
         """
         Main roadview record - stores metadata about roadview requests and availability
         """
+
         __tablename__ = "roadviews"
-        
+
         roadview_id = db.Column(db.Integer, primary_key=True)
-        
+
         # Location information
         latitude = db.Column(db.Float, nullable=False, index=True)
         longitude = db.Column(db.Float, nullable=False, index=True)
         address = db.Column(db.String(500))  # Human-readable address
-        
+
         # Provider information
         provider = db.Column(SQLEnum(RoadviewProvider), nullable=False)
         status = db.Column(SQLEnum(RoadviewStatus), default=RoadviewStatus.PENDING)
-        
+
         # Roadview metadata
         pano_id = db.Column(db.String(255))  # Panorama ID (Google/Kakao/Naver specific)
         heading = db.Column(db.Float)  # Camera heading direction (0-360 degrees)
         pitch = db.Column(db.Float)  # Camera pitch angle (-90 to 90 degrees)
         fov = db.Column(db.Float, default=90.0)  # Field of view
         zoom = db.Column(db.Integer, default=1)  # Zoom level
-        
+
         # Image URLs
         thumbnail_url = db.Column(db.String(1000))  # Thumbnail image URL
         panorama_url = db.Column(db.String(1000))  # Full panorama URL
         image_width = db.Column(db.Integer)  # Image dimensions
         image_height = db.Column(db.Integer)
-        
+
         # Provider-specific data
         provider_data = db.Column(db.JSON)  # Store provider-specific metadata
-        
+
         # Quality metrics
         image_date = db.Column(db.Date)  # When the roadview image was captured
-        distance_from_location = db.Column(db.Float)  # Distance in meters from requested location
-        
+        distance_from_location = db.Column(
+            db.Float
+        )  # Distance in meters from requested location
+
         # Error handling
         error_message = db.Column(db.Text)
         retry_count = db.Column(db.Integer, default=0)
-        
+
         # Relationships
         user_id = db.Column(db.Integer, db.ForeignKey("users.user_id"))
-        location_id = db.Column(db.Integer, db.ForeignKey("locations.location_id"))
-        
+        location_id = db.Column(
+            db.Integer, nullable=True
+        )  # Removed FK - locations table doesn't exist
+
         # Timestamps
         created_at = db.Column(db.DateTime, default=datetime.now, index=True)
         updated_at = db.Column(db.DateTime, default=datetime.now, onupdate=datetime.now)
         expires_at = db.Column(db.DateTime)  # URL expiration time
-        
+
         def to_dict(self):
             """Convert to dictionary for JSON response"""
             return {
@@ -96,40 +104,40 @@ def init_models(db):
                 "distance_from_location": self.distance_from_location,
                 "provider_data": self.provider_data,
                 "created_at": self.created_at.isoformat() if self.created_at else None,
-                "expires_at": self.expires_at.isoformat() if self.expires_at else None
+                "expires_at": self.expires_at.isoformat() if self.expires_at else None,
             }
-    
-    
+
     class RoadviewCache(db.Model):
         """
         Cache roadview availability and metadata to reduce API calls
         """
+
         __tablename__ = "roadview_cache"
-        
+
         cache_id = db.Column(db.Integer, primary_key=True)
-        
+
         # Location (rounded for cache efficiency)
-        lat_rounded = db.Column(db.Float, nullable=False, index=True)  # Rounded to ~100m
+        lat_rounded = db.Column(
+            db.Float, nullable=False, index=True
+        )  # Rounded to ~100m
         lng_rounded = db.Column(db.Float, nullable=False, index=True)
-        
+
         # Provider availability
         google_available = db.Column(db.Boolean, default=None)
         kakao_available = db.Column(db.Boolean, default=None)
         naver_available = db.Column(db.Boolean, default=None)
-        
+
         # Best provider (based on quality/availability)
         best_provider = db.Column(SQLEnum(RoadviewProvider))
-        
+
         # Cache metadata
         check_count = db.Column(db.Integer, default=1)
         last_checked = db.Column(db.DateTime, default=datetime.now)
         created_at = db.Column(db.DateTime, default=datetime.now)
-        
+
         # Composite index for efficient lookup
-        __table_args__ = (
-            db.Index('idx_location_cache', 'lat_rounded', 'lng_rounded'),
-        )
-        
+        __table_args__ = (db.Index("idx_location_cache", "lat_rounded", "lng_rounded"),)
+
         def to_dict(self):
             """Convert to dictionary"""
             return {
@@ -139,42 +147,46 @@ def init_models(db):
                 "google_available": self.google_available,
                 "kakao_available": self.kakao_available,
                 "naver_available": self.naver_available,
-                "best_provider": self.best_provider.value if self.best_provider else None,
+                "best_provider": (
+                    self.best_provider.value if self.best_provider else None
+                ),
                 "check_count": self.check_count,
-                "last_checked": self.last_checked.isoformat() if self.last_checked else None
+                "last_checked": (
+                    self.last_checked.isoformat() if self.last_checked else None
+                ),
             }
-    
-    
+
     class RoadviewRequest(db.Model):
         """
         Track user requests for roadview data
         """
+
         __tablename__ = "roadview_requests"
-        
+
         request_id = db.Column(db.Integer, primary_key=True)
         user_id = db.Column(db.Integer, db.ForeignKey("users.user_id"), nullable=False)
-        
+
         # Request details
         latitude = db.Column(db.Float, nullable=False)
         longitude = db.Column(db.Float, nullable=False)
         preferred_provider = db.Column(SQLEnum(RoadviewProvider))
-        
+
         # Results
         providers_checked = db.Column(db.JSON)  # List of providers checked
         provider_used = db.Column(SQLEnum(RoadviewProvider))
         roadview_id = db.Column(db.Integer, db.ForeignKey("roadviews.roadview_id"))
-        
+
         # Metrics
         response_time_ms = db.Column(db.Integer)  # Time to get result
         api_calls_made = db.Column(db.Integer, default=0)  # Number of API calls
         cache_hit = db.Column(db.Boolean, default=False)
-        
+
         # Status
         success = db.Column(db.Boolean, default=False)
         error_message = db.Column(db.Text)
-        
+
         created_at = db.Column(db.DateTime, default=datetime.now, index=True)
-        
+
         def to_dict(self):
             """Convert to dictionary"""
             return {
@@ -182,50 +194,56 @@ def init_models(db):
                 "user_id": self.user_id,
                 "latitude": self.latitude,
                 "longitude": self.longitude,
-                "preferred_provider": self.preferred_provider.value if self.preferred_provider else None,
+                "preferred_provider": (
+                    self.preferred_provider.value if self.preferred_provider else None
+                ),
                 "providers_checked": self.providers_checked,
-                "provider_used": self.provider_used.value if self.provider_used else None,
+                "provider_used": (
+                    self.provider_used.value if self.provider_used else None
+                ),
                 "roadview_id": self.roadview_id,
                 "response_time_ms": self.response_time_ms,
                 "api_calls_made": self.api_calls_made,
                 "cache_hit": self.cache_hit,
                 "success": self.success,
                 "error_message": self.error_message,
-                "created_at": self.created_at.isoformat() if self.created_at else None
+                "created_at": self.created_at.isoformat() if self.created_at else None,
             }
-    
-    
+
     class RoadviewAPIUsage(db.Model):
         """
         Track API usage and quotas for each provider
         """
+
         __tablename__ = "roadview_api_usage"
-        
+
         usage_id = db.Column(db.Integer, primary_key=True)
-        
+
         provider = db.Column(SQLEnum(RoadviewProvider), nullable=False)
-        date = db.Column(db.Date, nullable=False, default=datetime.now().date, index=True)
-        
+        date = db.Column(
+            db.Date, nullable=False, default=datetime.now().date, index=True
+        )
+
         # Usage counts
         total_requests = db.Column(db.Integer, default=0)
         successful_requests = db.Column(db.Integer, default=0)
         failed_requests = db.Column(db.Integer, default=0)
         cached_requests = db.Column(db.Integer, default=0)
-        
+
         # Cost tracking (if applicable)
         estimated_cost = db.Column(db.Float, default=0.0)
-        
+
         # Quota management
         daily_limit = db.Column(db.Integer)
         quota_exceeded = db.Column(db.Boolean, default=False)
-        
+
         updated_at = db.Column(db.DateTime, default=datetime.now, onupdate=datetime.now)
-        
+
         # Composite unique constraint
         __table_args__ = (
-            db.UniqueConstraint('provider', 'date', name='unique_provider_date'),
+            db.UniqueConstraint("provider", "date", name="unique_provider_date"),
         )
-        
+
         def to_dict(self):
             """Convert to dictionary"""
             return {
@@ -239,8 +257,7 @@ def init_models(db):
                 "estimated_cost": self.estimated_cost,
                 "daily_limit": self.daily_limit,
                 "quota_exceeded": self.quota_exceeded,
-                "updated_at": self.updated_at.isoformat() if self.updated_at else None
+                "updated_at": self.updated_at.isoformat() if self.updated_at else None,
             }
-    
-    
+
     return Roadview, RoadviewCache, RoadviewRequest, RoadviewAPIUsage

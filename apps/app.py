@@ -15,7 +15,7 @@ from flask import Flask
 from apps.config.common import config
 from apps.config.server import db, migrate, cors, jwt
 from apps.common.jwt_handlers import register_jwt_handlers
-from apps.cosmetics.seed import seed_cosmetics
+from apps.cosmetic.seed import seed_cosmetics
 import os
 
 
@@ -35,7 +35,7 @@ def create_app(config_name="default"):
     app.config.from_object(config[config_name])
 
     app.cli.add_command(seed_cosmetics)
-    
+
     # 정적 파일 설정 (환경 변수에서 가져오기)
     app.static_folder = app.config.get("STATIC_FOLDER", "static")
     app.static_url_path = app.config.get("STATIC_URL_PATH", "/static")
@@ -72,7 +72,8 @@ def create_app(config_name="default"):
 def import_all_models():
     """모든 모델을 import하여 Flask-Migrate가 인식하도록 함"""
     from apps.auth.models import User, OauthType, AccountType
-    from apps.post.models import Post, PostLike, Category, Image
+    from apps.post.models import Post, PostLike, Category
+    from apps.image.models import Image
     from apps.reply.models import Reply, ReplyLike
     from apps.user.models import Follow, Friend
     from apps.mention.models import Mention
@@ -82,6 +83,7 @@ def import_all_models():
     from apps.product.models import Product
     from apps.report.models import Report
     from apps.report.models import ReportType
+    from apps.place.models import Place
 
     # 필요한 다른 모델들도 여기에 추가
 
@@ -119,14 +121,25 @@ def register_blueprints(app):
 
     app.register_blueprint(route_bp, url_prefix="/route")
 
+    # 즐겨찾기 장소 모듈
+    from apps.place.views import bp as place_bp
+
+    app.register_blueprint(place_bp, url_prefix="/place")
+
     # 코스메틱 모듈
-    from apps.cosmetics.views import bp as cosmetic_bp
+    from apps.cosmetic.views import bp as cosmetic_bp
+
     app.register_blueprint(cosmetic_bp, url_prefix="/cosmetic")
-    
+
     # 제품 모듈
     from apps.product.views import bp as product_bp
 
     app.register_blueprint(product_bp, url_prefix="/product")
+
+    # 이미지 모듈
+    from apps.image.views import bp as image_bp
+
+    app.register_blueprint(image_bp, url_prefix="/image")
 
     # 즐겨찾기 모듈
     from apps.favorite.views import bp as favorite_bp
@@ -147,6 +160,12 @@ def register_blueprints(app):
     from apps.report.views import bp as report_bp
 
     app.register_blueprint(report_bp, url_prefix="/report")
+
+    # 로드뷰 모듈
+    from apps.roadview.views import bp as roadview_bp, init_roadview_models
+
+    app.register_blueprint(roadview_bp, url_prefix="/roadview")
+    init_roadview_models(db)  # Initialize roadview models
 
     # 감지기 모듈
     # from apps.detector.views import bp as detector_bp
@@ -170,10 +189,10 @@ def register_blueprints(app):
 def create_directories(app):
     """파일 업로드를 위한 필수 디렉토리 생성"""
     directories = [
-        os.path.join(app.root_path, 'static', 'profile_images'),
-        os.path.join(app.root_path, 'static', 'post_images'),
-        os.path.join(app.root_path, 'static', 'product_images'),
-        os.path.join(app.root_path, 'static', 'cosmetic_overlays'),
+        os.path.join(app.root_path, "static", "profile_images"),
+        os.path.join(app.root_path, "static", "post_images"),
+        os.path.join(app.root_path, "static", "product_images"),
+        os.path.join(app.root_path, "static", "cosmetic_overlays"),
     ]
 
     for directory in directories:
