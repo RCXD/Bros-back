@@ -193,10 +193,6 @@ def create_directories(app):
         os.path.join(app.root_path, "static", "post_images"),
         os.path.join(app.root_path, "static", "product_images"),
         os.path.join(app.root_path, "static", "cosmetic_overlays"),
-        os.path.join(app.root_path, "static", "profile_images"),
-        os.path.join(app.root_path, "static", "post_images"),
-        os.path.join(app.root_path, "static", "product_images"),
-        os.path.join(app.root_path, "static", "cosmetic_overlays"),
     ]
 
     for directory in directories:
