@@ -782,6 +782,38 @@ def _ingest_nominatim_places(search_text, limit):
     return True, normalized, raw_items, False
 
 
+def _serialize_transient_place(payload):
+    tags = (
+        payload.get("tags") if isinstance(payload.get("tags"), (dict, list)) else None
+    )
+    raw = {
+        "place_id": None,
+        "name": payload.get("name"),
+        "alt_name": payload.get("alt_name"),
+        "display_name": payload.get("alt_name") or payload.get("name"),
+        "description": payload.get("description"),
+        "tags": tags,
+        "lat": payload.get("lat"),
+        "lon": payload.get("lon"),
+        "created_at": None,
+        "updated_at": None,
+    }
+    return {
+        "id": None,
+        "placeId": None,
+        "name": payload.get("name"),
+        "label": payload.get("alt_name") or payload.get("name"),
+        "lat": payload.get("lat"),
+        "lng": payload.get("lon"),
+        "type": _derive_pin_type(payload.get("name"), tags),
+        "tags": tags or {},
+        "source": "nominatim",
+        "createdAt": None,
+        "updatedAt": None,
+        "raw": raw,
+    }
+
+
 @bp.get("/search")
 def search_places():
     q = (request.args.get("q") or "").strip()
@@ -833,6 +865,15 @@ def search_places():
     print(results)
 
     results = [place_to_dict(p) for p in places]
+    if not results and q and page == 1 and tag is None and point_filter is None:
+        _, normalized, _, db_error = _ingest_nominatim_places(q, per_page)
+        if normalized:
+            results = [_serialize_transient_place(payload) for payload in normalized]
+            total = len(results)
+            if db_error:
+                current_app.logger.warning(
+                    "Nominatim search results could not be persisted; returning transient data"
+                )
     return (
         jsonify(
             {
