@@ -14,6 +14,81 @@ from apps.auth.models import User
 bp = Blueprint("reply", __name__)
 
 
+@bp.get("/api_info")
+def api_info():
+    """
+    댓글 API 정보 제공 (개발용)
+    """
+    info = {
+        "module": "reply",
+        "base_path": "/reply",
+        "description": "댓글 생성, 조회, 수정, 삭제 및 좋아요 관리",
+        "endpoints": [
+            {
+                "path": "/reply",
+                "method": "POST",
+                "auth_required": True,
+                "description": "댓글 생성",
+                "json_body": {
+                    "post_id": "게시물 ID (필수)",
+                    "content": "댓글 내용 (필수)",
+                    "parent_id": "부모 댓글 ID (대댓글인 경우)",
+                },
+            },
+            {
+                "path": "/reply/<reply_id>",
+                "method": "GET",
+                "auth_required": False,
+                "description": "특정 댓글 조회",
+            },
+            {
+                "path": "/reply/<reply_id>",
+                "method": "PUT",
+                "auth_required": True,
+                "description": "댓글 수정",
+                "json_body": {"content": "수정할 내용"},
+            },
+            {
+                "path": "/reply/<reply_id>",
+                "method": "DELETE",
+                "auth_required": True,
+                "description": "댓글 삭제",
+            },
+            {
+                "path": "/reply",
+                "method": "GET",
+                "auth_required": False,
+                "description": "게시물의 댓글 목록 조회",
+                "query_params": {
+                    "post_id": "게시물 ID (필수)",
+                    "page": "페이지 번호 (기본: 1)",
+                    "per_page": "페이지당 개수 (기본: 20)",
+                    "order_by": "정렬 (asc, desc)",
+                },
+            },
+            {
+                "path": "/reply/<reply_id>/like",
+                "method": "POST",
+                "auth_required": True,
+                "description": "댓글 좋아요 추가",
+            },
+            {
+                "path": "/reply/<reply_id>/like",
+                "method": "DELETE",
+                "auth_required": True,
+                "description": "댓글 좋아요 취소",
+            },
+            {
+                "path": "/reply/api_info",
+                "method": "GET",
+                "auth_required": False,
+                "description": "API 정보 조회 (개발용)",
+            },
+        ],
+    }
+    return jsonify(info), 200
+
+
 @bp.get("")
 def get_replies():
     """

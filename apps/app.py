@@ -72,7 +72,8 @@ def create_app(config_name="default"):
 def import_all_models():
     """모든 모델을 import하여 Flask-Migrate가 인식하도록 함"""
     from apps.auth.models import User, OauthType, AccountType
-    from apps.post.models import Post, PostLike, Category, Image
+    from apps.post.models import Post, PostLike, Category
+    from apps.image.models import Image
     from apps.reply.models import Reply, ReplyLike
     from apps.user.models import Follow, Friend
     from apps.mention.models import Mention
@@ -134,6 +135,11 @@ def register_blueprints(app):
     from apps.product.views import bp as product_bp
 
     app.register_blueprint(product_bp, url_prefix="/product")
+
+    # 이미지 모듈
+    from apps.image.views import bp as image_bp
+
+    app.register_blueprint(image_bp, url_prefix="/image")
 
     # 즐겨찾기 모듈
     from apps.favorite.views import bp as favorite_bp

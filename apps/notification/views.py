@@ -20,6 +20,76 @@ from apps.user.models import Follow, Friend
 bp = Blueprint("notification", __name__, url_prefix="/notification")
 
 
+@bp.get("/api_info")
+def api_info():
+    """
+    알림 API 정보 제공 (개발용)
+    """
+    info = {
+        "module": "notification",
+        "base_path": "/notification",
+        "description": "사용자 알림 조회 및 관리",
+        "endpoints": [
+            {
+                "path": "/notification",
+                "method": "POST",
+                "auth_required": True,
+                "description": "알림 생성 (수동 호출용)",
+                "json_body": {
+                    "to_user_id": "받는 사용자 ID (필수)",
+                    "type": "알림 타입 (필수, MENTION/LIKE/COMMENT/FOLLOW 등)",
+                    "post_id": "게시물 ID (선택)",
+                    "reply_id": "댓글 ID (선택)",
+                    "mention_id": "멘션 ID (선택)",
+                    "product_id": "상품 ID (선택)",
+                },
+            },
+            {
+                "path": "/notification",
+                "method": "GET",
+                "auth_required": True,
+                "description": "알림 목록 조회",
+                "query_params": {
+                    "page": "페이지 번호 (기본: 1)",
+                    "per_page": "페이지당 개수 (기본: 20)",
+                    "is_checked": "읽음 필터 (true/false)",
+                },
+            },
+            {
+                "path": "/notification/<notification_id>",
+                "method": "PATCH",
+                "auth_required": True,
+                "description": "알림 읽음 처리",
+            },
+            {
+                "path": "/notification/mark-all-read",
+                "method": "PATCH",
+                "auth_required": True,
+                "description": "모든 알림 읽음 처리",
+            },
+            {
+                "path": "/notification/<notification_id>",
+                "method": "DELETE",
+                "auth_required": True,
+                "description": "알림 삭제",
+            },
+            {
+                "path": "/notification/unread-count",
+                "method": "GET",
+                "auth_required": True,
+                "description": "읽지 않은 알림 개수 조회",
+            },
+            {
+                "path": "/notification/api_info",
+                "method": "GET",
+                "auth_required": False,
+                "description": "API 정보 조회 (개발용)",
+            },
+        ],
+    }
+    return jsonify(info), 200
+
+
 @bp.post("")
 @jwt_required()
 def create_notification():
@@ -106,7 +176,7 @@ def get_my_notifications():
     === END ===
     """
     current_user_id = int(get_jwt_identity())
-    # TODO: Follow여부를 받아오기
+
     # 페이지네이션 파라미터
     page = request.args.get("page", 1, type=int)
     per_page = request.args.get("per_page", 20, type=int)
@@ -125,6 +195,7 @@ def get_my_notifications():
     notifications = query.order_by(Notification.created_at.desc()).paginate(
         page=page, per_page=per_page, error_out=False
     )
+
     result = {
         "items": [n.to_dict() for n in notifications.items],
         "total": notifications.total,
@@ -153,6 +224,7 @@ def get_my_notifications():
                     Follow.to_user_id.in_(from_user_ids),
                 )
             }
+
             followed = {
                 from_user_id
                 for (from_user_id,) in Follow.query.with_entities(
@@ -172,7 +244,7 @@ def get_my_notifications():
                 item_dict["from_user_id"] = from_user_id in followed
 
             result["items"].append(item_dict)
-
+        print(result)
     # if follow_state:
     #     result["follow_state"] = {"items": follow_state_list}
     return jsonify(result), 200

@@ -278,28 +278,39 @@ pip-selfcheck.json
 
 # End of https://www.toptal.com/developers/gitignore/api/python,venv,flask
 
-# secrets
+# ============================================
+# Project-specific ignores
+# ============================================
+
+# Secrets and configuration
 secrets.json
 .secret_key
-
-# vscode
-.vscode/
-
-# enviroments
-.env
 *.env
+.endpoint.env
 /app/config.py
-/app/static/post_images
-apps/gen/.env.example
-/test/uploads
-test/.gen.env
+/apps/config.py
 apps/.env.production
 apps/.env.local
-.env.production
-.env.local
-.env.example
+apps/gen/.env.example
+test/.gen.env
+
+# IDE
+.vscode/
+
+# Static files and uploads
+/app/static/post_images
 /apps/static/post_images
 /apps/static/profile_images
-/app/static/profile_images
-apps/migrations
+/apps/static/product_images
+/test/uploads
 
+# Database migrations
+/apps/migrations
+
+# EasyOCR model cache
+.EasyOCR/
+.env.example
+.env.local
+.env.production
+migrations/versions/8adbfeddc44f_add_uuid_code_category_product_img_.py
+/migrations

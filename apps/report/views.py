@@ -6,6 +6,45 @@ from flask_jwt_extended import jwt_required, get_jwt_identity
 bp = Blueprint("report", __name__)
 
 
+@bp.get("/api_info")
+def api_info():
+    """
+    신고 API 정보 제공 (개발용)
+    """
+    info = {
+        "module": "report",
+        "base_path": "/report",
+        "description": "사용자, 게시물, 댓글 신고 관리",
+        "endpoints": [
+            {
+                "path": "/report/report",
+                "method": "POST",
+                "auth_required": True,
+                "description": "신고 생성",
+                "json_body": {
+                    "target_type": "USER, POST, REPLY",
+                    "target_id": "대상 ID",
+                    "reason": "신고 사유 (문자열 또는 리스트)",
+                    "description": "상세 설명 (선택)",
+                },
+            },
+            {
+                "path": "/report/report/me",
+                "method": "GET",
+                "auth_required": True,
+                "description": "내가 한 신고 목록 조회",
+            },
+            {
+                "path": "/report/api_info",
+                "method": "GET",
+                "auth_required": False,
+                "description": "API 정보 조회 (개발용)",
+            },
+        ],
+    }
+    return jsonify(info), 200
+
+
 # ----------------------------------
 # 1. 사용자 신고 생성
 # ----------------------------------

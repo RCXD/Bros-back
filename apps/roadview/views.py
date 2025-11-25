@@ -20,6 +20,51 @@ from .utils import (
 
 bp = Blueprint("roadview", __name__)
 
+
+@bp.get("/api_info")
+def api_info():
+    """
+    로드뷰 API 정보 제공 (개발용)
+    """
+    info = {
+        "module": "roadview",
+        "base_path": "/roadview",
+        "description": "도로 뷰 이미지 조회 서비스",
+        "endpoints": [
+            {
+                "path": "/roadview",
+                "method": "GET",
+                "auth_required": False,
+                "description": "로드뷰 이미지 조회",
+                "query_params": {
+                    "lat": "위도 (필수)",
+                    "lon": "경도 (필수)",
+                    "provider": "제공자 (KAKAO, NAVER 등)",
+                },
+            },
+            {
+                "path": "/roadview/nearby",
+                "method": "GET",
+                "auth_required": False,
+                "description": "주변 로드뷰 위치 조회",
+            },
+            {
+                "path": "/roadview/cache",
+                "method": "GET",
+                "auth_required": True,
+                "description": "캐시된 로드뷰 조회",
+            },
+            {
+                "path": "/roadview/api_info",
+                "method": "GET",
+                "auth_required": False,
+                "description": "API 정보 조회 (개발용)",
+            },
+        ],
+    }
+    return jsonify(info), 200
+
+
 # Initialize models (will be set up when app context is available)
 Roadview = None
 RoadviewCache = None

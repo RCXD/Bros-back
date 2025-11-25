@@ -8,7 +8,8 @@ from sqlalchemy.exc import IntegrityError
 
 from apps.config.server import db
 from apps.favorite.models import Favorite, FavoriteType
-from apps.post.models import Post, PostLike, Image, Category
+from apps.post.models import Post, PostLike, Category
+from apps.image.models import Image
 from apps.product.models import Product
 from apps.place.models import Place
 
@@ -18,45 +19,65 @@ DEFAULT_PAGE_SIZE = 20
 MAX_PAGE_SIZE = 100
 
 
-# 개발용 엔드포인트. 추후 삭제 필요
 @bp.get("/api_info")
 def api_info():
     """
-    즐겨찾기 API 정보 제공
+    즐겨찾기 API 정보 제공 (개발용)
     """
     info = {
-        "endpoints": {
-            "get_favorites": {
-                "method": "GET",
+        "module": "favorite",
+        "base_path": "/favorite",
+        "description": "사용자 즐겨찾기 및 북마크 관리",
+        "endpoints": [
+            {
                 "path": "/favorite",
+                "method": "GET",
+                "auth_required": True,
                 "description": "현재 사용자의 즐겨찾기 조회",
                 "query_params": {
-                    "item_type": "타입별 필터 (STORY, ROUTE, REVIEW, REPORT, PRODUCT)",
-                    "page": "페이지 번호",
-                    "per_page": "페이지당 항목 수",
+                    "item_type": "타입별 필터 (STORY, ROUTE, REVIEW, REPORT, PRODUCT, PLACE)",
+                    "page": "페이지 번호 (기본: 1)",
+                    "per_page": "페이지당 항목 수 (기본: 20)",
                 },
             },
-            "get_favorites_by_type": {
+            {
+                "path": "/favorite/me/<item_type>",
                 "method": "GET",
-                "path": "/favorite/me/<string:item_type>",
-                "description": "현재 사용자의 특정 타입 즐겨찾기 조회",
+                "auth_required": True,
+                "description": "특정 타입의 즐겨찾기 상세 조회 (실제 아이템 정보 포함)",
+                "path_params": {
+                    "item_type": "story, route, review, report, product, place"
+                },
             },
-            "toggle_favorite": {
+            {
+                "path": "/favorite/<item_type>/<item_id>",
                 "method": "PATCH",
-                "path": "/favorite/<string:item_type>/<int:item_id>",
+                "auth_required": True,
                 "description": "즐겨찾기 토글 (추가/제거)",
+                "path_params": {
+                    "item_type": "story, route, review, report, product, place",
+                    "item_id": "아이템 ID",
+                },
             },
-            "remove_from_favorites": {
+            {
+                "path": "/favorite/<item_type>/<item_id>",
                 "method": "DELETE",
-                "path": "/favorite/<string:item_type>/<int:item_id>",
+                "auth_required": True,
                 "description": "즐겨찾기 제거",
             },
-            "check_favorite": {
+            {
+                "path": "/favorite/check/<item_type>/<item_id>",
                 "method": "GET",
-                "path": "/favorite/check/<string:item_type>/<int:item_id>",
+                "auth_required": True,
                 "description": "즐겨찾기 여부 확인",
             },
-        }
+            {
+                "path": "/favorite/api_info",
+                "method": "GET",
+                "auth_required": False,
+                "description": "API 정보 조회 (개발용)",
+            },
+        ],
     }
     return jsonify(info), 200
 
@@ -145,17 +166,19 @@ def get_favorites_by_type(item_type):
         for fav in favorites:
             product = Product.query.get(fav.item_id)
             if product:
-                items_list.append({
-                    "product_id": product.product_id,
-                    "name": product.name,
-                    "description": product.description,
-                    "price": float(product.price),
-                    "stock": product.stock,
-                    "is_active": product.is_active,
-                    "created_at": product.created_at.isoformat(),
-                    "updated_at": product.updated_at.isoformat(),
-                    "favorited_at": fav.created_at.isoformat()
-                })
+                items_list.append(
+                    {
+                        "product_id": product.product_id,
+                        "name": product.name,
+                        "description": product.description,
+                        "price": float(product.price),
+                        "stock": product.stock,
+                        "is_active": product.is_active,
+                        "created_at": product.created_at.isoformat(),
+                        "updated_at": product.updated_at.isoformat(),
+                        "favorited_at": fav.created_at.isoformat(),
+                    }
+                )
     # Post 타입인 경우 (story, route, review, report)
     else:
         for fav in favorites:
@@ -164,7 +187,7 @@ def get_favorites_by_type(item_type):
                 # Post의 실제 카테고리와 요청한 타입이 일치하는지 확인
                 if post.category.category_name.upper() != favorite_type.name.upper():
                     continue
-                
+
                 like_count = PostLike.query.filter_by(post_id=post.post_id).count()
                 is_liked = (
                     PostLike.query.filter_by(
@@ -174,27 +197,29 @@ def get_favorites_by_type(item_type):
                 )
                 images = Image.query.filter_by(post_id=post.post_id).all()
 
-                items_list.append({
-                    "post_id": post.post_id,
-                    "content": post.content,
-                    "category": post.category.category_name,
-                    "view_counts": post.view_counts,
-                    "like_count": like_count,
-                    "isLiked": is_liked,
-                    "images": [
-                        {
-                            "image_id": img.image_id,
-                            "uuid": img.uuid,
-                            "directory": img.directory,
-                            "original_image_name": img.original_image_name,
-                            "ext": img.ext,
-                        }
-                        for img in images
-                    ],
-                    "created_at": post.created_at.isoformat(),
-                    "updated_at": post.updated_at.isoformat(),
-                    "favorited_at": fav.created_at.isoformat()
-                })
+                items_list.append(
+                    {
+                        "post_id": post.post_id,
+                        "content": post.content,
+                        "category": post.category.category_name,
+                        "view_counts": post.view_counts,
+                        "like_count": like_count,
+                        "isLiked": is_liked,
+                        "images": [
+                            {
+                                "image_id": img.image_id,
+                                "uuid": img.uuid,
+                                "directory": img.directory,
+                                "original_image_name": img.original_image_name,
+                                "ext": img.ext,
+                            }
+                            for img in images
+                        ],
+                        "created_at": post.created_at.isoformat(),
+                        "updated_at": post.updated_at.isoformat(),
+                        "favorited_at": fav.created_at.isoformat(),
+                    }
+                )
 
     return jsonify({"items": items_list, "count": len(items_list)}), 200
 
@@ -237,15 +262,22 @@ def toggle_favorite(item_type, item_id):
         item = Post.query.get(item_id)
         if not item:
             return jsonify({"message": "게시글을 찾을 수 없습니다"}), 404
-        
+
         if not item.category:
             return jsonify({"message": "게시글 카테고리가 없습니다"}), 400
-        
+
         # Post의 실제 카테고리로 FavoriteType 결정
         try:
             actual_favorite_type = FavoriteType[item.category.category_name.upper()]
         except KeyError:
-            return jsonify({"message": f"유효하지 않은 카테고리: {item.category.category_name}"}), 400
+            return (
+                jsonify(
+                    {
+                        "message": f"유효하지 않은 카테고리: {item.category.category_name}"
+                    }
+                ),
+                400,
+            )
 
     # 이미 즐겨찾기 했는지 확인 (실제 타입으로)
     existing = Favorite.query.filter_by(

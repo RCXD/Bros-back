@@ -45,6 +45,27 @@ def test_clear_database(fixture_app):
         else:
             log.info("  삭제할 데이터 없음")
 
+        # 이미지 폴더 초기화
+        import shutil
+        import os
+
+        image_folders = [
+            "apps/static/post_images",
+            "apps/static/profile_images",
+            "apps/static/product_images",
+        ]
+
+        for folder in image_folders:
+            folder_path = os.path.join(os.getcwd(), folder)
+            if os.path.exists(folder_path):
+                try:
+                    shutil.rmtree(folder_path)
+                    log.info(f"  [DELETE] 삭제: {folder}")
+                except Exception as e:
+                    log.warning(f"  [!] {folder} 삭제 실패: {e}")
+            else:
+                log.debug(f"  [SKIP] {folder} 폴더 없음")
+
 
 if __name__ == "__main__":
     print("pytest를 사용하여 실행하세요:")

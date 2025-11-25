@@ -1,0 +1,4714 @@
+{
+  "fishing": {
+    "source": "\\\\\\\\192.168.1.89\\\\share\\\\dummy data\\\\products\\\\낚시",
+    "items": [
+      {
+        "id": 0,
+        "uuid": "d3810860-cf5a-4a21-aa67-3b966c477d73",
+        "code": "FISH-20251124-000",
+        "name": "MTF 다용도 보조 밑밥가방 밑밥통 보조가방 낚시용품",
+        "category": "fishing",
+        "current_price": 18020,
+        "currency": "원",
+        "original_price": 19800,
+        "discount_percentage": 9,
+        "rocket_delivery": true,
+        "rocket_delivery_valid_until": "2025-12-08",
+        "rocket_delivery_estimation_region": "전국",
+        "arrival_eta": 49,
+        "arrival_date": "2일 뒤",
+        "out_of_stock_alert": false,
+        "remaining_stock": null,
+        "mall_name": "옥션",
+        "mall_url": null,
+        "seller_name": "프리미엄MTF상사",
+        "seller_url": null,
+        "brand": "MTF",
+        "model_number": "FI-1124-000-7984",
+        "rating": 2.2,
+        "n_reviews": 175,
+        "n_satisfied_customers": 5,
+        "n_repeated_customers": 1,
+        "product_img": "FISH-20251124-000_0",
+        "product_detail_img": [
+          "FISH-20251124-000_2",
+          "FISH-20251124-000_3",
+          "FISH-20251124-000_4",
+          "FISH-20251124-000_5",
+          "FISH-20251124-000_6",
+          "FISH-20251124-000_7",
+          "FISH-20251124-000_8",
+          "FISH-20251124-000_9",
+          "FISH-20251124-000_10",
+          "FISH-20251124-000_11",
+          "FISH-20251124-000_12",
+          "FISH-20251124-000_13",
+          "FISH-20251124-000_14",
+          "FISH-20251124-000_15",
+          "FISH-20251124-000_16",
+          "FISH-20251124-000_17",
+          "FISH-20251124-000_18",
+          "FISH-20251124-000_19",
+          "FISH-20251124-000_20",
+          "FISH-20251124-000_21",
+          "FISH-20251124-000_22",
+          "FISH-20251124-000_23",
+          "FISH-20251124-000_24",
+          "FISH-20251124-000_25",
+          "FISH-20251124-000_26",
+          "FISH-20251124-000_27"
+        ],
+        "product_url": null,
+        "reward_points": 901,
+        "options": [
+          {
+            "색상": [
+              "오렌지",
+              "네이비",
+              "블루",
+              "핑크"
+            ]
+          },
+          {
+            "사이즈": [
+              "중형",
+              "특대형"
+            ]
+          }
+        ]
+      },
+      {
+        "id": 1,
+        "uuid": "33f4b1b6-86d8-4103-8166-039dc9da6bcb",
+        "code": "FISH-20251124-001",
+        "name": "SRF EVA 살림 밑밥통 50형",
+        "category": "fishing",
+        "current_price": 1609,
+        "currency": "원",
+        "original_price": 13460,
+        "discount_percentage": 88,
+        "rocket_delivery": true,
+        "rocket_delivery_valid_until": "2025-12-07",
+        "rocket_delivery_estimation_region": "서울/경기",
+        "arrival_eta": 67,
+        "arrival_date": "2일 뒤",
+        "out_of_stock_alert": false,
+        "remaining_stock": null,
+        "mall_name": "위메프",
+        "mall_url": null,
+        "seller_name": "정품SRF마켓",
+        "seller_url": null,
+        "brand": "SRF",
+        "model_number": "FI-1124-001-9763",
+        "rating": 4.9,
+        "n_reviews": 1609,
+        "n_satisfied_customers": 14,
+        "n_repeated_customers": 1,
+        "product_img": "FISH-20251124-001_0",
+        "product_detail_img": [
+          "FISH-20251124-001_2",
+          "FISH-20251124-001_3",
+          "FISH-20251124-001_4",
+          "FISH-20251124-001_5",
+          "FISH-20251124-001_6",
+          "FISH-20251124-001_7",
+          "FISH-20251124-001_8",
+          "FISH-20251124-001_9"
+        ],
+        "product_url": null,
+        "reward_points": 80,
+        "options": [
+          {
+            "색상": [
+              "블랙",
+              "레드",
+              "블루",
+              "그레이",
+              "오렌지"
+            ]
+          },
+          {
+            "사이즈": [
+              "특대형",
+              "중형",
+              "대형"
+            ]
+          }
+        ]
+      },
+      {
+        "id": 2,
+        "uuid": "8ee6956c-9a94-46bd-9e33-1a4080961003",
+        "code": "FISH-20251124-002",
+        "name": "ZOZOFO 헤드 랜턴 모션센서 충전식 모자랜턴 아웃도어 캠핑 등산 낚시 조명 다용도 LED 헤드랜턴",
+        "category": "fishing",
+        "current_price": 39318,
+        "currency": "원",
+        "original_price": 39318,
+        "discount_percentage": 0,
+        "rocket_delivery": true,
+        "rocket_delivery_valid_until": "2025-12-23",
+        "rocket_delivery_estimation_region": "서울/경기",
+        "arrival_eta": 32,
+        "arrival_date": "내일",
+        "out_of_stock_alert": false,
+        "remaining_stock": null,
+        "mall_name": "G마켓",
+        "mall_url": null,
+        "seller_name": "정품ZOZOFO마켓",
+        "seller_url": null,
+        "brand": "ZOZOFO",
+        "model_number": "FI-1124-002-2445",
+        "rating": 1.1,
+        "n_reviews": 3,
+        "n_satisfied_customers": 1,
+        "n_repeated_customers": 2,
+        "product_img": "FISH-20251124-002_0",
+        "product_detail_img": [
+          "FISH-20251124-002_2",
+          "FISH-20251124-002_3",
+          "FISH-20251124-002_4",
+          "FISH-20251124-002_5",
+          "FISH-20251124-002_6",
+          "FISH-20251124-002_7",
+          "FISH-20251124-002_8",
+          "FISH-20251124-002_9",
+          "FISH-20251124-002_10",
+          "FISH-20251124-002_11",
+          "FISH-20251124-002_12",
+          "FISH-20251124-002_13",
+          "FISH-20251124-002_14",
+          "FISH-20251124-002_15",
+          "FISH-20251124-002_16",
+          "FISH-20251124-002_17",
+          "FISH-20251124-002_18",
+          "FISH-20251124-002_19",
+          "FISH-20251124-002_20",
+          "FISH-20251124-002_21"
+        ],
+        "product_url": null,
+        "reward_points": 1965,
+        "options": [
+          {
+            "색상": [
+              "오렌지",
+              "화이트",
+              "그레이",
+              "블랙",
+              "레드"
+            ]
+          }
+        ]
+      },
+      {
+        "id": 4,
+        "uuid": "33ab5cea-97de-4008-b439-d788613f2964",
+        "code": "FISH-20251124-004",
+        "name": "경량 움직임감지 센서 괴물 LED 헤드랜턴 충전식 등산 낚시용 해루질, 2개, 블랙",
+        "category": "fishing",
+        "current_price": 24450,
+        "currency": "원",
+        "original_price": 423608,
+        "discount_percentage": 94,
+        "rocket_delivery": true,
+        "rocket_delivery_valid_until": "2025-12-10",
+        "rocket_delivery_estimation_region": "서울/경기",
+        "arrival_eta": 52,
+        "arrival_date": "2일 뒤",
+        "out_of_stock_alert": false,
+        "remaining_stock": null,
+        "mall_name": "네이버쇼핑",
+        "mall_url": null,
+        "seller_name": "프리미엄경량몰",
+        "seller_url": null,
+        "brand": "경량",
+        "model_number": "FI-1124-004-9507",
+        "rating": 4.7,
+        "n_reviews": 2,
+        "n_satisfied_customers": 28,
+        "n_repeated_customers": 1,
+        "product_img": "FISH-20251124-004_0",
+        "product_detail_img": [
+          "FISH-20251124-004_2",
+          "FISH-20251124-004_3",
+          "FISH-20251124-004_4",
+          "FISH-20251124-004_5",
+          "FISH-20251124-004_6",
+          "FISH-20251124-004_7"
+        ],
+        "product_url": null,
+        "reward_points": 1222,
+        "options": [
+          {
+            "색상": [
+              "레드",
+              "블랙",
+              "그린",
+              "핑크",
+              "블루"
+            ]
+          }
+        ]
+      },
+      {
+        "id": 5,
+        "uuid": "fc79cd68-369a-4559-904b-ceaf189a7f73",
+        "code": "FISH-20251124-005",
+        "name": "굿타임 바다 낚시 가방",
+        "category": "fishing",
+        "current_price": 25990,
+        "currency": "원",
+        "original_price": 25990,
+        "discount_percentage": 0,
+        "rocket_delivery": false,
+        "rocket_delivery_valid_until": null,
+        "rocket_delivery_estimation_region": null,
+        "arrival_eta": 38,
+        "arrival_date": "내일",
+        "out_of_stock_alert": false,
+        "remaining_stock": null,
+        "mall_name": "네이버쇼핑",
+        "mall_url": null,
+        "seller_name": "굿타임상사",
+        "seller_url": null,
+        "brand": "굿타임",
+        "model_number": "FI-1124-005-6177",
+        "rating": 2.0,
+        "n_reviews": 440,
+        "n_satisfied_customers": 12,
+        "n_repeated_customers": 2,
+        "product_img": "FISH-20251124-005_0",
+        "product_detail_img": [
+          "FISH-20251124-005_2",
+          "FISH-20251124-005_3",
+          "FISH-20251124-005_4",
+          "FISH-20251124-005_5"
+        ],
+        "product_url": null,
+        "reward_points": 1299,
+        "options": [
+          {
+            "색상": [
+              "레드",
+              "화이트",
+              "옐로우",
+              "블루",
+              "오렌지"
+            ]
+          },
+          {
+            "사이즈": [
+              "대형",
+              "중형",
+              "소형"
+            ]
+          }
+        ]
+      },
+      {
+        "id": 6,
+        "uuid": "65188378-6578-4525-aad1-445a5cf51018",
+        "code": "FISH-20251124-006",
+        "name": "금양피싱 KP 낚시가방 로드케이스",
+        "category": "fishing",
+        "current_price": 3000,
+        "currency": "원",
+        "original_price": 50000,
+        "discount_percentage": 94,
+        "rocket_delivery": false,
+        "rocket_delivery_valid_until": null,
+        "rocket_delivery_estimation_region": null,
+        "arrival_eta": 51,
+        "arrival_date": "2일 뒤",
+        "out_of_stock_alert": false,
+        "remaining_stock": null,
+        "mall_name": "G마켓",
+        "mall_url": null,
+        "seller_name": "정품금양피싱스토어",
+        "seller_url": null,
+        "brand": "금양피싱",
+        "model_number": "FI-1124-006-9011",
+        "rating": 2.0,
+        "n_reviews": 1,
+        "n_satisfied_customers": 30,
+        "n_repeated_customers": 20,
+        "product_img": "FISH-20251124-006_0",
+        "product_detail_img": [
+          "FISH-20251124-006_2",
+          "FISH-20251124-006_3",
+          "FISH-20251124-006_4"
+        ],
+        "product_url": null,
+        "reward_points": 150,
+        "options": [
+          {
+            "사이즈": [
+              "특대형",
+              "대형"
+            ]
+          }
+        ]
+      },
+      {
+        "id": 7,
+        "uuid": "d06658a0-331d-4d9e-9f3a-95718818c4aa",
+        "code": "FISH-20251124-007",
+        "name": "낚시 헤드랜턴 모션센서 충전식 LED 캡라이트 후레쉬",
+        "category": "fishing",
+        "current_price": 1330,
+        "currency": "원",
+        "original_price": 13100,
+        "discount_percentage": 90,
+        "rocket_delivery": false,
+        "rocket_delivery_valid_until": null,
+        "rocket_delivery_estimation_region": null,
+        "arrival_eta": 63,
+        "arrival_date": "2일 뒤",
+        "out_of_stock_alert": false,
+        "remaining_stock": null,
+        "mall_name": "인터파크",
+        "mall_url": null,
+        "seller_name": "공식낚시스토어",
+        "seller_url": null,
+        "brand": "낚시",
+        "model_number": "FI-1124-007-1599",
+        "rating": 4.3,
+        "n_reviews": 1330,
+        "n_satisfied_customers": 24,
+        "n_repeated_customers": 1,
+        "product_img": "FISH-20251124-007_0",
+        "product_detail_img": [
+          "FISH-20251124-007_2",
+          "FISH-20251124-007_3",
+          "FISH-20251124-007_4",
+          "FISH-20251124-007_5",
+          "FISH-20251124-007_6",
+          "FISH-20251124-007_7",
+          "FISH-20251124-007_8",
+          "FISH-20251124-007_9",
+          "FISH-20251124-007_10",
+          "FISH-20251124-007_11",
+          "FISH-20251124-007_12"
+        ],
+        "product_url": null,
+        "reward_points": 66,
+        "options": [
+          {
+            "색상": [
+              "블루",
+              "블랙",
+              "핑크",
+              "오렌지"
+            ]
+          }
+        ]
+      },
+      {
+        "id": 8,
+        "uuid": "8c0ae8d6-bb04-400e-b6f0-b074233bdd35",
+        "code": "FISH-20251124-008",
+        "name": "낚시앤 대용량 낚시대 가방 와이드형 2단",
+        "category": "fishing",
+        "current_price": 22600,
+        "currency": "원",
+        "original_price": 22600,
+        "discount_percentage": 0,
+        "rocket_delivery": true,
+        "rocket_delivery_valid_until": "2025-11-26",
+        "rocket_delivery_estimation_region": "전국",
+        "arrival_eta": 20,
+        "arrival_date": "오늘 중",
+        "out_of_stock_alert": false,
+        "remaining_stock": null,
+        "mall_name": "쿠팡",
+        "mall_url": null,
+        "seller_name": "공식낚시앤스토어",
+        "seller_url": null,
+        "brand": "낚시앤",
+        "model_number": "FI-1124-008-3822",
+        "rating": 3.4,
+        "n_reviews": 299,
+        "n_satisfied_customers": 2,
+        "n_repeated_customers": 3,
+        "product_img": "FISH-20251124-008_0",
+        "product_detail_img": [
+          "FISH-20251124-008_2"
+        ],
+        "product_url": null,
+        "reward_points": 1130,
+        "options": [
+          {
+            "색상": [
+              "화이트",
+              "그린",
+              "핑크"
+            ]
+          },
+          {
+            "사이즈": [
+              "중형",
+              "소형",
+              "대형"
+            ]
+          }
+        ]
+      },
+      {
+        "id": 9,
+        "uuid": "cd716908-b509-49b6-8ceb-136367bfa126",
+        "code": "FISH-20251124-009",
+        "name": "대용량 낚시가방 릴가방 대형 낚시대가방",
+        "category": "fishing",
+        "current_price": 10000,
+        "currency": "원",
+        "original_price": 63688,
+        "discount_percentage": 84,
+        "rocket_delivery": true,
+        "rocket_delivery_valid_until": "2025-11-30",
+        "rocket_delivery_estimation_region": "서울/경기",
+        "arrival_eta": 38,
+        "arrival_date": "내일",
+        "out_of_stock_alert": false,
+        "remaining_stock": null,
+        "mall_name": "인터파크",
+        "mall_url": null,
+        "seller_name": "정품대용량스토어",
+        "seller_url": null,
+        "brand": "대용량",
+        "model_number": "FI-1124-009-8559",
+        "rating": 3.4,
+        "n_reviews": 63,
+        "n_satisfied_customers": 4,
+        "n_repeated_customers": 13,
+        "product_img": "FISH-20251124-009_0",
+        "product_detail_img": [
+          "FISH-20251124-009_2",
+          "FISH-20251124-009_3",
+          "FISH-20251124-009_4",
+          "FISH-20251124-009_5"
+        ],
+        "product_url": null,
+        "reward_points": 500,
+        "options": [
+          {
+            "색상": [
+              "블루",
+              "핑크",
+              "블랙",
+              "그레이",
+              "옐로우"
+            ]
+          },
+          {
+            "사이즈": [
+              "중형",
+              "소형"
+            ]
+          }
+        ]
+      },
+      {
+        "id": 10,
+        "uuid": "bf44e828-7a6d-4c83-9775-eb2b0feee7c9",
+        "code": "FISH-20251124-010",
+        "name": "라이트헌터 X3 모션센서 캡라이트 헤드랜턴 LED 등산 해루질 낚시 이너캠핑 라이트, 1개, 블랙",
+        "category": "fishing",
+        "current_price": 18600,
+        "currency": "원",
+        "original_price": 25580,
+        "discount_percentage": 27,
+        "rocket_delivery": true,
+        "rocket_delivery_valid_until": "2025-12-16",
+        "rocket_delivery_estimation_region": "서울/경기",
+        "arrival_eta": 46,
+        "arrival_date": "내일",
+        "out_of_stock_alert": false,
+        "remaining_stock": null,
+        "mall_name": "옥션",
+        "mall_url": null,
+        "seller_name": "정품라이트헌터몰",
+        "seller_url": null,
+        "brand": "라이트헌터",
+        "model_number": "FI-1124-010-6836",
+        "rating": 1.2,
+        "n_reviews": 1,
+        "n_satisfied_customers": 14,
+        "n_repeated_customers": 5,
+        "product_img": "FISH-20251124-010_0",
+        "product_detail_img": [
+          "FISH-20251124-010_2",
+          "FISH-20251124-010_3",
+          "FISH-20251124-010_4",
+          "FISH-20251124-010_5",
+          "FISH-20251124-010_6",
+          "FISH-20251124-010_7",
+          "FISH-20251124-010_8",
+          "FISH-20251124-010_9",
+          "FISH-20251124-010_10",
+          "FISH-20251124-010_11",
+          "FISH-20251124-010_12",
+          "FISH-20251124-010_13",
+          "FISH-20251124-010_14",
+          "FISH-20251124-010_15",
+          "FISH-20251124-010_16",
+          "FISH-20251124-010_17",
+          "FISH-20251124-010_18",
+          "FISH-20251124-010_19",
+          "FISH-20251124-010_20",
+          "FISH-20251124-010_21",
+          "FISH-20251124-010_22",
+          "FISH-20251124-010_23",
+          "FISH-20251124-010_24"
+        ],
+        "product_url": null,
+        "reward_points": 930,
+        "options": [
+          {
+            "색상": [
+              "옐로우",
+              "핑크",
+              "그레이",
+              "오렌지",
+              "블루"
+            ]
+          }
+        ]
+      },
+      {
+        "id": 11,
+        "uuid": "b89c0300-9f6b-4565-97d5-2d723131fd78",
+        "code": "FISH-20251124-011",
+        "name": "라이트헌터 XHP70.2 헤드랜턴+3000배터리세트+안전모클립(세트) 충전식 LED 낚시 해루질 작업용, 1개",
+        "category": "fishing",
+        "current_price": 29400,
+        "currency": "원",
+        "original_price": 88200,
+        "discount_percentage": 67,
+        "rocket_delivery": true,
+        "rocket_delivery_valid_until": "2025-12-15",
+        "rocket_delivery_estimation_region": "서울/경기",
+        "arrival_eta": 47,
+        "arrival_date": "내일",
+        "out_of_stock_alert": false,
+        "remaining_stock": null,
+        "mall_name": "G마켓",
+        "mall_url": null,
+        "seller_name": "공식라이트헌터몰",
+        "seller_url": null,
+        "brand": "라이트헌터",
+        "model_number": "FI-1124-011-8947",
+        "rating": 3.0,
+        "n_reviews": 3000,
+        "n_satisfied_customers": 1,
+        "n_repeated_customers": 37,
+        "product_img": "FISH-20251124-011_0",
+        "product_detail_img": [
+          "FISH-20251124-011_2",
+          "FISH-20251124-011_3",
+          "FISH-20251124-011_4",
+          "FISH-20251124-011_5",
+          "FISH-20251124-011_6",
+          "FISH-20251124-011_7",
+          "FISH-20251124-011_8",
+          "FISH-20251124-011_9",
+          "FISH-20251124-011_10",
+          "FISH-20251124-011_11",
+          "FISH-20251124-011_12",
+          "FISH-20251124-011_13",
+          "FISH-20251124-011_14",
+          "FISH-20251124-011_15",
+          "FISH-20251124-011_16",
+          "FISH-20251124-011_17",
+          "FISH-20251124-011_18",
+          "FISH-20251124-011_19",
+          "FISH-20251124-011_20",
+          "FISH-20251124-011_21",
+          "FISH-20251124-011_22",
+          "FISH-20251124-011_23",
+          "FISH-20251124-011_24",
+          "FISH-20251124-011_25",
+          "FISH-20251124-011_26",
+          "FISH-20251124-011_27"
+        ],
+        "product_url": null,
+        "reward_points": 1470,
+        "options": [
+          {
+            "색상": [
+              "블랙",
+              "오렌지"
+            ]
+          }
+        ]
+      },
+      {
+        "id": 12,
+        "uuid": "fe493f4b-8702-41d8-87ee-dbaf4dc5598b",
+        "code": "FISH-20251124-012",
+        "name": "루코 갯바위 겸용 낚시 구명복 낚시용 스포츠형 구명조끼 블랙",
+        "category": "fishing",
+        "current_price": 50800,
+        "currency": "원",
+        "original_price": 52868,
+        "discount_percentage": 4,
+        "rocket_delivery": true,
+        "rocket_delivery_valid_until": "2025-12-05",
+        "rocket_delivery_estimation_region": "전국",
+        "arrival_eta": 32,
+        "arrival_date": "내일",
+        "out_of_stock_alert": false,
+        "remaining_stock": null,
+        "mall_name": "11번가",
+        "mall_url": null,
+        "seller_name": "프리미엄루코상사",
+        "seller_url": null,
+        "brand": "루코",
+        "model_number": "FI-1124-012-2724",
+        "rating": 1.6,
+        "n_reviews": 28,
+        "n_satisfied_customers": 1,
+        "n_repeated_customers": 23,
+        "product_img": "FISH-20251124-012_0",
+        "product_detail_img": [
+          "FISH-20251124-012_2",
+          "FISH-20251124-012_3",
+          "FISH-20251124-012_4",
+          "FISH-20251124-012_5",
+          "FISH-20251124-012_6",
+          "FISH-20251124-012_7"
+        ],
+        "product_url": null,
+        "reward_points": 2540,
+        "options": [
+          {
+            "색상": [
+              "블루",
+              "레드",
+              "화이트"
+            ]
+          }
+        ]
+      },
+      {
+        "id": 13,
+        "uuid": "9458b844-35e0-48e5-a075-0e39a35cefd2",
+        "code": "FISH-20251124-013",
+        "name": "루코 다용도 바다낚시 구명복 낚시용 구명조끼 2025 NEW",
+        "category": "fishing",
+        "current_price": 3000,
+        "currency": "원",
+        "original_price": 55868,
+        "discount_percentage": 95,
+        "rocket_delivery": false,
+        "rocket_delivery_valid_until": null,
+        "rocket_delivery_estimation_region": null,
+        "arrival_eta": 53,
+        "arrival_date": "2일 뒤",
+        "out_of_stock_alert": false,
+        "remaining_stock": null,
+        "mall_name": "인터파크",
+        "mall_url": null,
+        "seller_name": "공식루코몰",
+        "seller_url": null,
+        "brand": "루코",
+        "model_number": "FI-1124-013-8534",
+        "rating": 1.1,
+        "n_reviews": 2025,
+        "n_satisfied_customers": 1,
+        "n_repeated_customers": 1,
+        "product_img": "FISH-20251124-013_0",
+        "product_detail_img": [
+          "FISH-20251124-013_2",
+          "FISH-20251124-013_3",
+          "FISH-20251124-013_4",
+          "FISH-20251124-013_5"
+        ],
+        "product_url": null,
+        "reward_points": 150,
+        "options": [
+          {
+            "색상": [
+              "옐로우",
+              "핑크",
+              "네이비",
+              "블루",
+              "오렌지"
+            ]
+          }
+        ]
+      },
+      {
+        "id": 14,
+        "uuid": "b487b632-0160-4f12-973f-902d71f781a3",
+        "code": "FISH-20251124-014",
+        "name": "마리수 루어가방 낚시 보조가방 백팩 힙색 슬링백 배스 워킹",
+        "category": "fishing",
+        "current_price": 2036,
+        "currency": "원",
+        "original_price": 23040,
+        "discount_percentage": 91,
+        "rocket_delivery": true,
+        "rocket_delivery_valid_until": "2025-12-12",
+        "rocket_delivery_estimation_region": "서울/경기",
+        "arrival_eta": 38,
+        "arrival_date": "내일",
+        "out_of_stock_alert": false,
+        "remaining_stock": null,
+        "mall_name": "위메프",
+        "mall_url": null,
+        "seller_name": "정품마리수스토어",
+        "seller_url": null,
+        "brand": "마리수",
+        "model_number": "FI-1124-014-3221",
+        "rating": 3.0,
+        "n_reviews": 270,
+        "n_satisfied_customers": 11,
+        "n_repeated_customers": 5,
+        "product_img": "FISH-20251124-014_0",
+        "product_detail_img": [
+          "FISH-20251124-014_2",
+          "FISH-20251124-014_3",
+          "FISH-20251124-014_4",
+          "FISH-20251124-014_5",
+          "FISH-20251124-014_6",
+          "FISH-20251124-014_7",
+          "FISH-20251124-014_8",
+          "FISH-20251124-014_9",
+          "FISH-20251124-014_10",
+          "FISH-20251124-014_11",
+          "FISH-20251124-014_12",
+          "FISH-20251124-014_13",
+          "FISH-20251124-014_14",
+          "FISH-20251124-014_15",
+          "FISH-20251124-014_16",
+          "FISH-20251124-014_17",
+          "FISH-20251124-014_18",
+          "FISH-20251124-014_19",
+          "FISH-20251124-014_20",
+          "FISH-20251124-014_21"
+        ],
+        "product_url": null,
+        "reward_points": 101,
+        "options": [
+          {
+            "색상": [
+              "오렌지",
+              "네이비"
+            ]
+          },
+          {
+            "사이즈": [
+              "특대형",
+              "대형"
+            ]
+          }
+        ]
+      },
+      {
+        "id": 15,
+        "uuid": "5a21c231-5aa1-429c-be8e-eaac02196f4f",
+        "code": "FISH-20251124-015",
+        "name": "문리버 대용량 바다 낚싯대가방 다용도 민물 낚시가방130cm 미니 핸드백",
+        "category": "fishing",
+        "current_price": 29800,
+        "currency": "원",
+        "original_price": 37250,
+        "discount_percentage": 20,
+        "rocket_delivery": true,
+        "rocket_delivery_valid_until": "2025-11-27",
+        "rocket_delivery_estimation_region": "서울/경기",
+        "arrival_eta": 41,
+        "arrival_date": "내일",
+        "out_of_stock_alert": false,
+        "remaining_stock": null,
+        "mall_name": "G마켓",
+        "mall_url": null,
+        "seller_name": "문리버스토어",
+        "seller_url": null,
+        "brand": "문리버",
+        "model_number": "FI-1124-015-8555",
+        "rating": 4.1,
+        "n_reviews": 129,
+        "n_satisfied_customers": 14,
+        "n_repeated_customers": 18,
+        "product_img": "FISH-20251124-015_0",
+        "product_detail_img": [
+          "FISH-20251124-015_2",
+          "FISH-20251124-015_3",
+          "FISH-20251124-015_4",
+          "FISH-20251124-015_5",
+          "FISH-20251124-015_6",
+          "FISH-20251124-015_7",
+          "FISH-20251124-015_8",
+          "FISH-20251124-015_9",
+          "FISH-20251124-015_10",
+          "FISH-20251124-015_11",
+          "FISH-20251124-015_12",
+          "FISH-20251124-015_13",
+          "FISH-20251124-015_14"
+        ],
+        "product_url": null,
+        "reward_points": 1490,
+        "options": [
+          {
+            "색상": [
+              "그레이",
+              "그린"
+            ]
+          },
+          {
+            "사이즈": [
+              "대형",
+              "특대형",
+              "중형"
+            ]
+          }
+        ]
+      },
+      {
+        "id": 16,
+        "uuid": "13575087-ecd0-45b9-8379-76daeb494547",
+        "code": "FISH-20251124-016",
+        "name": "블랙마린 쓰리포켓 자동팽창식 구명조끼",
+        "category": "fishing",
+        "current_price": 89000,
+        "currency": "원",
+        "original_price": 89000,
+        "discount_percentage": 0,
+        "rocket_delivery": true,
+        "rocket_delivery_valid_until": "2025-12-06",
+        "rocket_delivery_estimation_region": "전국",
+        "arrival_eta": 56,
+        "arrival_date": "2일 뒤",
+        "out_of_stock_alert": false,
+        "remaining_stock": null,
+        "mall_name": "티몬",
+        "mall_url": null,
+        "seller_name": "블랙마린무역",
+        "seller_url": null,
+        "brand": "블랙마린",
+        "model_number": "FI-1124-016-2530",
+        "rating": 1.7,
+        "n_reviews": 115,
+        "n_satisfied_customers": 1,
+        "n_repeated_customers": 20,
+        "product_img": "FISH-20251124-016_0",
+        "product_detail_img": [
+          "FISH-20251124-016_2",
+          "FISH-20251124-016_3",
+          "FISH-20251124-016_4",
+          "FISH-20251124-016_5",
+          "FISH-20251124-016_6",
+          "FISH-20251124-016_7",
+          "FISH-20251124-016_8",
+          "FISH-20251124-016_9",
+          "FISH-20251124-016_10",
+          "FISH-20251124-016_11",
+          "FISH-20251124-016_12",
+          "FISH-20251124-016_13"
+        ],
+        "product_url": null,
+        "reward_points": 4450,
+        "options": [
+          {
+            "색상": [
+              "화이트",
+              "블랙",
+              "레드"
+            ]
+          }
+        ]
+      },
+      {
+        "id": 17,
+        "uuid": "2b88447e-b95c-44a1-9fa5-316b0d81176d",
+        "code": "FISH-20251124-017",
+        "name": "블랙스톤 허리벨트형 자동팽창식 구명조끼 형식승인 해양수산부 KOMSA 콤사 착용성향상형 선상낚시 배낚시 갯바위 바다낚시",
+        "category": "fishing",
+        "current_price": 85000,
+        "currency": "원",
+        "original_price": 445088,
+        "discount_percentage": 81,
+        "rocket_delivery": false,
+        "rocket_delivery_valid_until": null,
+        "rocket_delivery_estimation_region": null,
+        "arrival_eta": 38,
+        "arrival_date": "내일",
+        "out_of_stock_alert": false,
+        "remaining_stock": null,
+        "mall_name": "위메프",
+        "mall_url": null,
+        "seller_name": "정품블랙스톤무역",
+        "seller_url": null,
+        "brand": "블랙스톤",
+        "model_number": "FI-1124-017-6824",
+        "rating": 3.9,
+        "n_reviews": 315,
+        "n_satisfied_customers": 1,
+        "n_repeated_customers": 2,
+        "product_img": "FISH-20251124-017_0",
+        "product_detail_img": [
+          "FISH-20251124-017_2",
+          "FISH-20251124-017_3",
+          "FISH-20251124-017_4",
+          "FISH-20251124-017_5",
+          "FISH-20251124-017_6",
+          "FISH-20251124-017_7",
+          "FISH-20251124-017_8",
+          "FISH-20251124-017_9",
+          "FISH-20251124-017_10"
+        ],
+        "product_url": null,
+        "reward_points": 4250,
+        "options": [
+          {
+            "색상": [
+              "블랙",
+              "화이트"
+            ]
+          }
+        ]
+      },
+      {
+        "id": 18,
+        "uuid": "ae5f24b8-3fda-4690-b3a2-896af40c2ccf",
+        "code": "FISH-20251124-018",
+        "name": "소프트 낚시가방 바다낚시 민장대 바다낚시가방 민물낚시가방 로드케이스",
+        "category": "fishing",
+        "current_price": 23850,
+        "currency": "원",
+        "original_price": 23850,
+        "discount_percentage": 0,
+        "rocket_delivery": false,
+        "rocket_delivery_valid_until": null,
+        "rocket_delivery_estimation_region": null,
+        "arrival_eta": 67,
+        "arrival_date": "2일 뒤",
+        "out_of_stock_alert": false,
+        "remaining_stock": null,
+        "mall_name": "위메프",
+        "mall_url": null,
+        "seller_name": "프리미엄소프트몰",
+        "seller_url": null,
+        "brand": "소프트",
+        "model_number": "FI-1124-018-9714",
+        "rating": 3.2,
+        "n_reviews": 104,
+        "n_satisfied_customers": 9,
+        "n_repeated_customers": 17,
+        "product_img": "FISH-20251124-018_0",
+        "product_detail_img": [
+          "FISH-20251124-018_2",
+          "FISH-20251124-018_3",
+          "FISH-20251124-018_4",
+          "FISH-20251124-018_5",
+          "FISH-20251124-018_6",
+          "FISH-20251124-018_7",
+          "FISH-20251124-018_8",
+          "FISH-20251124-018_9",
+          "FISH-20251124-018_10",
+          "FISH-20251124-018_11",
+          "FISH-20251124-018_12",
+          "FISH-20251124-018_13",
+          "FISH-20251124-018_14",
+          "FISH-20251124-018_15",
+          "FISH-20251124-018_16",
+          "FISH-20251124-018_17",
+          "FISH-20251124-018_18",
+          "FISH-20251124-018_19",
+          "FISH-20251124-018_20",
+          "FISH-20251124-018_21",
+          "FISH-20251124-018_22",
+          "FISH-20251124-018_23"
+        ],
+        "product_url": null,
+        "reward_points": 1192,
+        "options": [
+          {
+            "사이즈": [
+              "특대형",
+              "중형",
+              "소형"
+            ]
+          }
+        ]
+      },
+      {
+        "id": 19,
+        "uuid": "ecb4ed46-ce5a-42c9-8e6f-4c28ea063ced",
+        "code": "FISH-20251124-019",
+        "name": "싸파 민물 4단 낚시받침가방 STB-224Z",
+        "category": "fishing",
+        "current_price": 39000,
+        "currency": "원",
+        "original_price": 39000,
+        "discount_percentage": 0,
+        "rocket_delivery": true,
+        "rocket_delivery_valid_until": "2025-12-19",
+        "rocket_delivery_estimation_region": "전국",
+        "arrival_eta": 54,
+        "arrival_date": "2일 뒤",
+        "out_of_stock_alert": false,
+        "remaining_stock": null,
+        "mall_name": "인터파크",
+        "mall_url": null,
+        "seller_name": "싸파무역",
+        "seller_url": null,
+        "brand": "싸파",
+        "model_number": "FI-1124-019-3490",
+        "rating": 4.5,
+        "n_reviews": 2242,
+        "n_satisfied_customers": 1,
+        "n_repeated_customers": 11,
+        "product_img": "FISH-20251124-019_0",
+        "product_detail_img": [
+          "FISH-20251124-019_2"
+        ],
+        "product_url": null,
+        "reward_points": 1950,
+        "options": [
+          {
+            "색상": [
+              "네이비",
+              "그레이",
+              "오렌지"
+            ]
+          },
+          {
+            "사이즈": [
+              "대형",
+              "중형"
+            ]
+          }
+        ]
+      },
+      {
+        "id": 20,
+        "uuid": "fd1d441c-dc2e-4116-ab51-3e901680bbcc",
+        "code": "FISH-20251124-020",
+        "name": "알바트로스 쓰리포켓 자동팽창식 구명조끼",
+        "category": "fishing",
+        "current_price": 68500,
+        "currency": "원",
+        "original_price": 68500,
+        "discount_percentage": 0,
+        "rocket_delivery": true,
+        "rocket_delivery_valid_until": "2025-12-13",
+        "rocket_delivery_estimation_region": "서울/경기",
+        "arrival_eta": 23,
+        "arrival_date": "오늘 중",
+        "out_of_stock_alert": false,
+        "remaining_stock": null,
+        "mall_name": "네이버쇼핑",
+        "mall_url": null,
+        "seller_name": "공식알바트로스무역",
+        "seller_url": null,
+        "brand": "알바트로스",
+        "model_number": "FI-1124-020-6186",
+        "rating": 3.9,
+        "n_reviews": 95,
+        "n_satisfied_customers": 10,
+        "n_repeated_customers": 10,
+        "product_img": "FISH-20251124-020_0",
+        "product_detail_img": [
+          "FISH-20251124-020_2",
+          "FISH-20251124-020_3",
+          "FISH-20251124-020_4",
+          "FISH-20251124-020_5",
+          "FISH-20251124-020_6",
+          "FISH-20251124-020_7",
+          "FISH-20251124-020_8",
+          "FISH-20251124-020_9",
+          "FISH-20251124-020_10",
+          "FISH-20251124-020_11",
+          "FISH-20251124-020_12"
+        ],
+        "product_url": null,
+        "reward_points": 3425,
+        "options": [
+          {
+            "색상": [
+              "화이트",
+              "오렌지",
+              "블랙"
+            ]
+          }
+        ]
+      },
+      {
+        "id": 21,
+        "uuid": "e391b00f-d3b7-49a6-886f-cfd0f712a8d9",
+        "code": "FISH-20251124-021",
+        "name": "업투유 3000루멘 초강력 LED 헤드랜턴 충전식 낚시 등산 해루질 랜턴",
+        "category": "fishing",
+        "current_price": 500,
+        "currency": "원",
+        "original_price": 49880,
+        "discount_percentage": 99,
+        "rocket_delivery": true,
+        "rocket_delivery_valid_until": "2025-12-12",
+        "rocket_delivery_estimation_region": "서울/경기",
+        "arrival_eta": 47,
+        "arrival_date": "내일",
+        "out_of_stock_alert": false,
+        "remaining_stock": null,
+        "mall_name": "옥션",
+        "mall_url": null,
+        "seller_name": "프리미엄업투유샵",
+        "seller_url": null,
+        "brand": "업투유",
+        "model_number": "FI-1124-021-1265",
+        "rating": 3.0,
+        "n_reviews": 1000,
+        "n_satisfied_customers": 9,
+        "n_repeated_customers": 6,
+        "product_img": "FISH-20251124-021_0",
+        "product_detail_img": [
+          "FISH-20251124-021_2",
+          "FISH-20251124-021_3",
+          "FISH-20251124-021_4",
+          "FISH-20251124-021_5",
+          "FISH-20251124-021_6",
+          "FISH-20251124-021_7",
+          "FISH-20251124-021_8",
+          "FISH-20251124-021_9",
+          "FISH-20251124-021_10",
+          "FISH-20251124-021_11",
+          "FISH-20251124-021_12",
+          "FISH-20251124-021_13",
+          "FISH-20251124-021_14",
+          "FISH-20251124-021_15",
+          "FISH-20251124-021_16",
+          "FISH-20251124-021_17",
+          "FISH-20251124-021_18",
+          "FISH-20251124-021_19",
+          "FISH-20251124-021_20",
+          "FISH-20251124-021_21",
+          "FISH-20251124-021_22",
+          "FISH-20251124-021_23",
+          "FISH-20251124-021_24",
+          "FISH-20251124-021_25",
+          "FISH-20251124-021_26",
+          "FISH-20251124-021_27",
+          "FISH-20251124-021_28"
+        ],
+        "product_url": null,
+        "reward_points": 25,
+        "options": [
+          {
+            "색상": [
+              "블루",
+              "레드"
+            ]
+          }
+        ]
+      },
+      {
+        "id": 22,
+        "uuid": "425d0c60-1f2b-457b-a2a0-18761b04ffe1",
+        "code": "FISH-20251124-022",
+        "name": "엘마운틴 다기능 낚시가방",
+        "category": "fishing",
+        "current_price": 2383,
+        "currency": "원",
+        "original_price": 32140,
+        "discount_percentage": 93,
+        "rocket_delivery": true,
+        "rocket_delivery_valid_until": "2025-12-07",
+        "rocket_delivery_estimation_region": "전국",
+        "arrival_eta": 32,
+        "arrival_date": "내일",
+        "out_of_stock_alert": false,
+        "remaining_stock": null,
+        "mall_name": "11번가",
+        "mall_url": null,
+        "seller_name": "프리미엄엘마운틴스토어",
+        "seller_url": null,
+        "brand": "엘마운틴",
+        "model_number": "FI-1124-022-7500",
+        "rating": 1.1,
+        "n_reviews": 2383,
+        "n_satisfied_customers": 12,
+        "n_repeated_customers": 6,
+        "product_img": "FISH-20251124-022_0",
+        "product_detail_img": [
+          "FISH-20251124-022_2",
+          "FISH-20251124-022_3",
+          "FISH-20251124-022_4",
+          "FISH-20251124-022_5"
+        ],
+        "product_url": null,
+        "reward_points": 119,
+        "options": [
+          {
+            "색상": [
+              "블루",
+              "블랙"
+            ]
+          },
+          {
+            "사이즈": [
+              "중형",
+              "특대형",
+              "소형"
+            ]
+          }
+        ]
+      },
+      {
+        "id": 23,
+        "uuid": "2a307f3a-533c-403a-abb3-8dcd8d98b425",
+        "code": "FISH-20251124-023",
+        "name": "지구촌 다용도 낚시가방",
+        "category": "fishing",
+        "current_price": 1087,
+        "currency": "원",
+        "original_price": 19800,
+        "discount_percentage": 95,
+        "rocket_delivery": true,
+        "rocket_delivery_valid_until": "2025-12-08",
+        "rocket_delivery_estimation_region": "전국",
+        "arrival_eta": 61,
+        "arrival_date": "2일 뒤",
+        "out_of_stock_alert": false,
+        "remaining_stock": null,
+        "mall_name": "G마켓",
+        "mall_url": null,
+        "seller_name": "지구촌무역",
+        "seller_url": null,
+        "brand": "지구촌",
+        "model_number": "FI-1124-023-2860",
+        "rating": 1.4,
+        "n_reviews": 1087,
+        "n_satisfied_customers": 16,
+        "n_repeated_customers": 4,
+        "product_img": "FISH-20251124-023_0",
+        "product_detail_img": [
+          "FISH-20251124-023_2"
+        ],
+        "product_url": null,
+        "reward_points": 54,
+        "options": [
+          {
+            "사이즈": [
+              "중형",
+              "특대형"
+            ]
+          }
+        ]
+      },
+      {
+        "id": 24,
+        "uuid": "bca58677-cbaa-4e76-958f-277ec92b51e6",
+        "code": "FISH-20251124-024",
+        "name": "코르빈 루어가방 다용도 낚시 보조가방 숄더백 크로스백 힙색 멀티가방",
+        "category": "fishing",
+        "current_price": 200,
+        "currency": "원",
+        "original_price": 21900,
+        "discount_percentage": 99,
+        "rocket_delivery": true,
+        "rocket_delivery_valid_until": "2025-12-16",
+        "rocket_delivery_estimation_region": "전국",
+        "arrival_eta": 41,
+        "arrival_date": "내일",
+        "out_of_stock_alert": false,
+        "remaining_stock": null,
+        "mall_name": "위메프",
+        "mall_url": null,
+        "seller_name": "정품코르빈스토어",
+        "seller_url": null,
+        "brand": "코르빈",
+        "model_number": "FI-1124-024-5996",
+        "rating": 4.5,
+        "n_reviews": 49,
+        "n_satisfied_customers": 2,
+        "n_repeated_customers": 10,
+        "product_img": "FISH-20251124-024_0",
+        "product_detail_img": [
+          "FISH-20251124-024_2",
+          "FISH-20251124-024_3",
+          "FISH-20251124-024_4",
+          "FISH-20251124-024_5",
+          "FISH-20251124-024_6",
+          "FISH-20251124-024_7",
+          "FISH-20251124-024_8",
+          "FISH-20251124-024_9",
+          "FISH-20251124-024_10",
+          "FISH-20251124-024_11",
+          "FISH-20251124-024_12",
+          "FISH-20251124-024_13",
+          "FISH-20251124-024_14",
+          "FISH-20251124-024_15",
+          "FISH-20251124-024_16"
+        ],
+        "product_url": null,
+        "reward_points": 10,
+        "options": [
+          {
+            "색상": [
+              "핑크",
+              "레드",
+              "블루",
+              "그레이",
+              "그린"
+            ]
+          },
+          {
+            "사이즈": [
+              "소형",
+              "대형",
+              "특대형"
+            ]
+          }
+        ]
+      },
+      {
+        "id": 25,
+        "uuid": "ca5e9f72-5183-4118-85ae-b656f85289ce",
+        "code": "FISH-20251124-025",
+        "name": "크레모아 캡온 40B LED캡라이트 CLP-210, BLACK, 1개",
+        "category": "fishing",
+        "current_price": 1320,
+        "currency": "원",
+        "original_price": 36000,
+        "discount_percentage": 96,
+        "rocket_delivery": true,
+        "rocket_delivery_valid_until": "2025-12-23",
+        "rocket_delivery_estimation_region": "서울/경기",
+        "arrival_eta": 17,
+        "arrival_date": "오늘 중",
+        "out_of_stock_alert": false,
+        "remaining_stock": null,
+        "mall_name": "네이버쇼핑",
+        "mall_url": null,
+        "seller_name": "프리미엄크레모아마켓",
+        "seller_url": null,
+        "brand": "크레모아",
+        "model_number": "FI-1124-025-2928",
+        "rating": 3.2,
+        "n_reviews": 1,
+        "n_satisfied_customers": 31,
+        "n_repeated_customers": 1,
+        "product_img": "FISH-20251124-025_0",
+        "product_detail_img": [
+          "FISH-20251124-025_2",
+          "FISH-20251124-025_3",
+          "FISH-20251124-025_4",
+          "FISH-20251124-025_5",
+          "FISH-20251124-025_6",
+          "FISH-20251124-025_7",
+          "FISH-20251124-025_8",
+          "FISH-20251124-025_9",
+          "FISH-20251124-025_10",
+          "FISH-20251124-025_11"
+        ],
+        "product_url": null,
+        "reward_points": 66,
+        "options": [
+          {
+            "색상": [
+              "옐로우",
+              "그린",
+              "핑크",
+              "화이트"
+            ]
+          }
+        ]
+      },
+      {
+        "id": 26,
+        "uuid": "bc8fcbf5-d2f8-4357-8f1a-051705847c63",
+        "code": "FISH-20251124-026",
+        "name": "폰터스 자동팽창식 구명조끼 PL-9500",
+        "category": "fishing",
+        "current_price": 44368,
+        "currency": "원",
+        "original_price": 107570,
+        "discount_percentage": 59,
+        "rocket_delivery": true,
+        "rocket_delivery_valid_until": "2025-12-11",
+        "rocket_delivery_estimation_region": "전국",
+        "arrival_eta": 49,
+        "arrival_date": "2일 뒤",
+        "out_of_stock_alert": false,
+        "remaining_stock": null,
+        "mall_name": "네이버쇼핑",
+        "mall_url": null,
+        "seller_name": "정품폰터스무역",
+        "seller_url": null,
+        "brand": "폰터스",
+        "model_number": "FI-1124-026-8905",
+        "rating": 4.6,
+        "n_reviews": 708,
+        "n_satisfied_customers": 16,
+        "n_repeated_customers": 4,
+        "product_img": "FISH-20251124-026_0",
+        "product_detail_img": [
+          "FISH-20251124-026_2",
+          "FISH-20251124-026_3",
+          "FISH-20251124-026_4",
+          "FISH-20251124-026_5",
+          "FISH-20251124-026_6"
+        ],
+        "product_url": null,
+        "reward_points": 2218,
+        "options": [
+          {
+            "색상": [
+              "블랙",
+              "화이트"
+            ]
+          }
+        ]
+      },
+      {
+        "id": 27,
+        "uuid": "b1f3629f-19ab-4fbf-9e5d-2358433fcb21",
+        "code": "FISH-20251124-027",
+        "name": "피싱포켓 다기능 낚시가방 하드케이스 바다 낚시가방 고강도 방수",
+        "category": "fishing",
+        "current_price": null,
+        "currency": "원",
+        "original_price": null,
+        "discount_percentage": null,
+        "rocket_delivery": false,
+        "rocket_delivery_valid_until": null,
+        "rocket_delivery_estimation_region": null,
+        "arrival_eta": 14,
+        "arrival_date": "오늘 중",
+        "out_of_stock_alert": false,
+        "remaining_stock": null,
+        "mall_name": "티몬",
+        "mall_url": null,
+        "seller_name": "공식피싱포켓상사",
+        "seller_url": null,
+        "brand": "피싱포켓",
+        "model_number": "FI-1124-027-3360",
+        "rating": 2.3,
+        "n_reviews": 10,
+        "n_satisfied_customers": 10,
+        "n_repeated_customers": 3,
+        "product_img": "FISH-20251124-027_0",
+        "product_detail_img": [
+          "FISH-20251124-027_2",
+          "FISH-20251124-027_3",
+          "FISH-20251124-027_4"
+        ],
+        "product_url": null,
+        "reward_points": null,
+        "options": [
+          {
+            "색상": [
+              "핑크",
+              "오렌지"
+            ]
+          },
+          {
+            "사이즈": [
+              "대형",
+              "특대형"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "motorcycle": {
+    "source": "\\\\\\\\192.168.1.89\\\\share\\\\dummy data\\\\products\\\\오토바이",
+    "items": [
+      {
+        "id": 0,
+        "uuid": "66cd8063-3970-4eb3-9150-90a2ceb8b96d",
+        "code": "MOTO-20251124-000",
+        "name": "AGV K-6 S 풀페이스 바이크 헬멧",
+        "category": "motorcycle",
+        "current_price": 10000,
+        "currency": "원",
+        "original_price": 1287568,
+        "discount_percentage": 99,
+        "rocket_delivery": false,
+        "rocket_delivery_valid_until": null,
+        "rocket_delivery_estimation_region": null,
+        "arrival_eta": 19,
+        "arrival_date": "오늘 중",
+        "out_of_stock_alert": false,
+        "remaining_stock": null,
+        "mall_name": "쿠팡",
+        "mall_url": null,
+        "seller_name": "AGV스토어",
+        "seller_url": null,
+        "brand": "AGV",
+        "model_number": "MO-1124-000-2815",
+        "rating": 4.7,
+        "n_reviews": 10000,
+        "n_satisfied_customers": 10,
+        "n_repeated_customers": 5,
+        "product_img": "MOTO-20251124-000_0",
+        "product_detail_img": [
+          "MOTO-20251124-000_2",
+          "MOTO-20251124-000_3",
+          "MOTO-20251124-000_4",
+          "MOTO-20251124-000_5",
+          "MOTO-20251124-000_6",
+          "MOTO-20251124-000_7",
+          "MOTO-20251124-000_8",
+          "MOTO-20251124-000_9",
+          "MOTO-20251124-000_10",
+          "MOTO-20251124-000_11",
+          "MOTO-20251124-000_12",
+          "MOTO-20251124-000_13",
+          "MOTO-20251124-000_14",
+          "MOTO-20251124-000_15"
+        ],
+        "product_url": null,
+        "reward_points": 500,
+        "options": [
+          {
+            "색상": [
+              "화이트",
+              "레드",
+              "네이비"
+            ]
+          },
+          {
+            "사이즈": [
+              "XXL",
+              "M",
+              "XL"
+            ]
+          }
+        ]
+      },
+      {
+        "id": 1,
+        "uuid": "c691bc73-6d10-410c-ac3c-fe247d0e57d3",
+        "code": "MOTO-20251124-001",
+        "name": "AGV K1 S E2206 바이크 헬멧 풀페이스 레이싱 오토바이 헬멧 스포일러",
+        "category": "motorcycle",
+        "current_price": 588,
+        "currency": "원",
+        "original_price": 458500,
+        "discount_percentage": 100,
+        "rocket_delivery": false,
+        "rocket_delivery_valid_until": null,
+        "rocket_delivery_estimation_region": null,
+        "arrival_eta": 50,
+        "arrival_date": "2일 뒤",
+        "out_of_stock_alert": false,
+        "remaining_stock": null,
+        "mall_name": "티몬",
+        "mall_url": null,
+        "seller_name": "AGV몰",
+        "seller_url": null,
+        "brand": "AGV",
+        "model_number": "MO-1124-001-9421",
+        "rating": 2.5,
+        "n_reviews": 2206,
+        "n_satisfied_customers": 42,
+        "n_repeated_customers": 8,
+        "product_img": "MOTO-20251124-001_0",
+        "product_detail_img": [
+          "MOTO-20251124-001_2",
+          "MOTO-20251124-001_3",
+          "MOTO-20251124-001_4",
+          "MOTO-20251124-001_5",
+          "MOTO-20251124-001_6",
+          "MOTO-20251124-001_7",
+          "MOTO-20251124-001_8",
+          "MOTO-20251124-001_9",
+          "MOTO-20251124-001_10",
+          "MOTO-20251124-001_11",
+          "MOTO-20251124-001_12",
+          "MOTO-20251124-001_13",
+          "MOTO-20251124-001_14",
+          "MOTO-20251124-001_15"
+        ],
+        "product_url": null,
+        "reward_points": 29,
+        "options": [
+          {
+            "색상": [
+              "그린",
+              "화이트",
+              "블루"
+            ]
+          },
+          {
+            "사이즈": [
+              "M",
+              "L",
+              "XL"
+            ]
+          }
+        ]
+      },
+      {
+        "id": 2,
+        "uuid": "74fd1fb2-b75b-4145-98ad-b870877ef98c",
+        "code": "MOTO-20251124-002",
+        "name": "F71 (2)",
+        "category": "motorcycle",
+        "current_price": 3500,
+        "currency": "원",
+        "original_price": 499000,
+        "discount_percentage": 99,
+        "rocket_delivery": false,
+        "rocket_delivery_valid_until": null,
+        "rocket_delivery_estimation_region": null,
+        "arrival_eta": 40,
+        "arrival_date": "내일",
+        "out_of_stock_alert": false,
+        "remaining_stock": null,
+        "mall_name": "위메프",
+        "mall_url": null,
+        "seller_name": "F71스토어",
+        "seller_url": null,
+        "brand": "F71",
+        "model_number": "MO-1124-002-3607",
+        "rating": 4.7,
+        "n_reviews": 499000,
+        "n_satisfied_customers": 10,
+        "n_repeated_customers": 2,
+        "product_img": "MOTO-20251124-002_0",
+        "product_detail_img": [],
+        "product_url": null,
+        "reward_points": 175,
+        "options": [
+          {
+            "색상": [
+              "그린",
+              "블루"
+            ]
+          }
+        ]
+      },
+      {
+        "id": 3,
+        "uuid": "7d3b36f3-fee9-4c6b-a876-9a42d49eec6f",
+        "code": "MOTO-20251124-003",
+        "name": "F71",
+        "category": "motorcycle",
+        "current_price": 3500,
+        "currency": "원",
+        "original_price": 499000,
+        "discount_percentage": 99,
+        "rocket_delivery": false,
+        "rocket_delivery_valid_until": null,
+        "rocket_delivery_estimation_region": null,
+        "arrival_eta": 24,
+        "arrival_date": "내일",
+        "out_of_stock_alert": false,
+        "remaining_stock": null,
+        "mall_name": "G마켓",
+        "mall_url": null,
+        "seller_name": "정품F71상사",
+        "seller_url": null,
+        "brand": "F71",
+        "model_number": "MO-1124-003-9559",
+        "rating": 1.3,
+        "n_reviews": 499000,
+        "n_satisfied_customers": 2,
+        "n_repeated_customers": 7,
+        "product_img": "MOTO-20251124-003_0",
+        "product_detail_img": [],
+        "product_url": null,
+        "reward_points": 175,
+        "options": [
+          {
+            "색상": [
+              "오렌지",
+              "화이트",
+              "블랙",
+              "네이비"
+            ]
+          }
+        ]
+      },
+      {
+        "id": 4,
+        "uuid": "d71f4894-31fb-4bcc-91f0-7f41e9ea00dd",
+        "code": "MOTO-20251124-004",
+        "name": "HJC RPHA 1 TOXIN MC1 알파1 톡신 풀페이스 헬멧",
+        "category": "motorcycle",
+        "current_price": 1055000,
+        "currency": "원",
+        "original_price": 1055000,
+        "discount_percentage": 0,
+        "rocket_delivery": false,
+        "rocket_delivery_valid_until": null,
+        "rocket_delivery_estimation_region": null,
+        "arrival_eta": 28,
+        "arrival_date": "내일",
+        "out_of_stock_alert": false,
+        "remaining_stock": null,
+        "mall_name": "인터파크",
+        "mall_url": null,
+        "seller_name": "공식HJC상사",
+        "seller_url": null,
+        "brand": "HJC",
+        "model_number": "MO-1124-004-1998",
+        "rating": 1.1,
+        "n_reviews": 44,
+        "n_satisfied_customers": 51,
+        "n_repeated_customers": 5,
+        "product_img": "MOTO-20251124-004_0",
+        "product_detail_img": [
+          "MOTO-20251124-004_2",
+          "MOTO-20251124-004_3"
+        ],
+        "product_url": null,
+        "reward_points": 52750,
+        "options": [
+          {
+            "색상": [
+              "레드",
+              "오렌지",
+              "옐로우"
+            ]
+          },
+          {
+            "사이즈": [
+              "M",
+              "XXL",
+              "S",
+              "XL"
+            ]
+          }
+        ]
+      },
+      {
+        "id": 5,
+        "uuid": "03b52a1f-7f63-4b4c-9c44-342c7b9b7a24",
+        "code": "MOTO-20251124-005",
+        "name": "i71",
+        "category": "motorcycle",
+        "current_price": 3500,
+        "currency": "원",
+        "original_price": 299000,
+        "discount_percentage": 99,
+        "rocket_delivery": false,
+        "rocket_delivery_valid_until": null,
+        "rocket_delivery_estimation_region": null,
+        "arrival_eta": 22,
+        "arrival_date": "오늘 중",
+        "out_of_stock_alert": false,
+        "remaining_stock": null,
+        "mall_name": "위메프",
+        "mall_url": null,
+        "seller_name": "정품i71상사",
+        "seller_url": null,
+        "brand": "i71",
+        "model_number": "MO-1124-005-1731",
+        "rating": 3.6,
+        "n_reviews": 299000,
+        "n_satisfied_customers": 19,
+        "n_repeated_customers": 3,
+        "product_img": "MOTO-20251124-005_0",
+        "product_detail_img": [],
+        "product_url": null,
+        "reward_points": 175,
+        "options": [
+          {
+            "색상": [
+              "레드",
+              "블루",
+              "화이트"
+            ]
+          }
+        ]
+      },
+      {
+        "id": 6,
+        "uuid": "8407c082-5228-4b89-8855-ab0973fcbeb9",
+        "code": "MOTO-20251124-006",
+        "name": "V10",
+        "category": "motorcycle",
+        "current_price": 3500,
+        "currency": "원",
+        "original_price": 449000,
+        "discount_percentage": 99,
+        "rocket_delivery": false,
+        "rocket_delivery_valid_until": null,
+        "rocket_delivery_estimation_region": null,
+        "arrival_eta": 32,
+        "arrival_date": "내일",
+        "out_of_stock_alert": false,
+        "remaining_stock": null,
+        "mall_name": "위메프",
+        "mall_url": null,
+        "seller_name": "V10상사",
+        "seller_url": null,
+        "brand": "V10",
+        "model_number": "MO-1124-006-1587",
+        "rating": 4.8,
+        "n_reviews": 449000,
+        "n_satisfied_customers": 25,
+        "n_repeated_customers": 20,
+        "product_img": "MOTO-20251124-006_0",
+        "product_detail_img": [],
+        "product_url": null,
+        "reward_points": 175,
+        "options": [
+          {
+            "색상": [
+              "블랙",
+              "화이트",
+              "블루"
+            ]
+          }
+        ]
+      },
+      {
+        "id": 7,
+        "uuid": "01d41742-cdc8-4cab-88da-deefa08a85e0",
+        "code": "MOTO-20251124-007",
+        "name": "V60",
+        "category": "motorcycle",
+        "current_price": 3500,
+        "currency": "원",
+        "original_price": 349000,
+        "discount_percentage": 99,
+        "rocket_delivery": false,
+        "rocket_delivery_valid_until": null,
+        "rocket_delivery_estimation_region": null,
+        "arrival_eta": 23,
+        "arrival_date": "오늘 중",
+        "out_of_stock_alert": false,
+        "remaining_stock": null,
+        "mall_name": "위메프",
+        "mall_url": null,
+        "seller_name": "프리미엄V60스토어",
+        "seller_url": null,
+        "brand": "V60",
+        "model_number": "MO-1124-007-3306",
+        "rating": 1.7,
+        "n_reviews": 349000,
+        "n_satisfied_customers": 3,
+        "n_repeated_customers": 22,
+        "product_img": "MOTO-20251124-007_0",
+        "product_detail_img": [],
+        "product_url": null,
+        "reward_points": 175,
+        "options": [
+          {
+            "색상": [
+              "네이비",
+              "핑크",
+              "블랙",
+              "오렌지",
+              "그린"
+            ]
+          }
+        ]
+      },
+      {
+        "id": 8,
+        "uuid": "e1f18512-4952-4a52-8199-3ade5b234d3b",
+        "code": "MOTO-20251124-008",
+        "name": "새로 출시된 빈티지 오토바이 헬멧 DOT 합성 가죽 제트 마스크 508",
+        "category": "motorcycle",
+        "current_price": 46300,
+        "currency": "원",
+        "original_price": 92688,
+        "discount_percentage": 50,
+        "rocket_delivery": true,
+        "rocket_delivery_valid_until": "2025-12-19",
+        "rocket_delivery_estimation_region": "서울/경기",
+        "arrival_eta": 57,
+        "arrival_date": "2일 뒤",
+        "out_of_stock_alert": false,
+        "remaining_stock": null,
+        "mall_name": "티몬",
+        "mall_url": null,
+        "seller_name": "공식새로스토어",
+        "seller_url": null,
+        "brand": "새로",
+        "model_number": "MO-1124-008-3245",
+        "rating": 1.2,
+        "n_reviews": 5096,
+        "n_satisfied_customers": 9,
+        "n_repeated_customers": 13,
+        "product_img": "MOTO-20251124-008_0",
+        "product_detail_img": [
+          "MOTO-20251124-008_2",
+          "MOTO-20251124-008_3",
+          "MOTO-20251124-008_4",
+          "MOTO-20251124-008_5",
+          "MOTO-20251124-008_6",
+          "MOTO-20251124-008_7",
+          "MOTO-20251124-008_8",
+          "MOTO-20251124-008_9",
+          "MOTO-20251124-008_10",
+          "MOTO-20251124-008_11",
+          "MOTO-20251124-008_12",
+          "MOTO-20251124-008_13",
+          "MOTO-20251124-008_14",
+          "MOTO-20251124-008_15",
+          "MOTO-20251124-008_16",
+          "MOTO-20251124-008_17",
+          "MOTO-20251124-008_18",
+          "MOTO-20251124-008_19",
+          "MOTO-20251124-008_20",
+          "MOTO-20251124-008_21",
+          "MOTO-20251124-008_22",
+          "MOTO-20251124-008_23"
+        ],
+        "product_url": null,
+        "reward_points": 2315,
+        "options": [
+          {
+            "색상": [
+              "그린",
+              "핑크",
+              "그레이",
+              "레드"
+            ]
+          },
+          {
+            "사이즈": [
+              "L",
+              "XXL",
+              "S"
+            ]
+          }
+        ]
+      },
+      {
+        "id": 9,
+        "uuid": "dbe6d8d6-d30e-4b44-bcfd-b16554ffa0ea",
+        "code": "MOTO-20251124-009",
+        "name": "아라이 Arai 바이크 헬멧 풀페이스 ASTRO GX FACE 블루",
+        "category": "motorcycle",
+        "current_price": 719200,
+        "currency": "원",
+        "original_price": 719200,
+        "discount_percentage": 0,
+        "rocket_delivery": true,
+        "rocket_delivery_valid_until": "2025-12-24",
+        "rocket_delivery_estimation_region": "전국",
+        "arrival_eta": 66,
+        "arrival_date": "2일 뒤",
+        "out_of_stock_alert": false,
+        "remaining_stock": null,
+        "mall_name": "옥션",
+        "mall_url": null,
+        "seller_name": "프리미엄아라이샵",
+        "seller_url": null,
+        "brand": "아라이",
+        "model_number": "MO-1124-009-2721",
+        "rating": 1.8,
+        "n_reviews": 719200,
+        "n_satisfied_customers": 5,
+        "n_repeated_customers": 1,
+        "product_img": "MOTO-20251124-009_0",
+        "product_detail_img": [
+          "MOTO-20251124-009_2",
+          "MOTO-20251124-009_3",
+          "MOTO-20251124-009_4",
+          "MOTO-20251124-009_5",
+          "MOTO-20251124-009_6",
+          "MOTO-20251124-009_7",
+          "MOTO-20251124-009_8",
+          "MOTO-20251124-009_9"
+        ],
+        "product_url": null,
+        "reward_points": 35960,
+        "options": [
+          {
+            "색상": [
+              "오렌지",
+              "그레이",
+              "네이비",
+              "블루"
+            ]
+          },
+          {
+            "사이즈": [
+              "S",
+              "L",
+              "XL"
+            ]
+          }
+        ]
+      },
+      {
+        "id": 10,
+        "uuid": "1d25a463-bb28-42d2-9e90-227da8f4969d",
+        "code": "MOTO-20251124-010",
+        "name": "아라이 Ari 주니어 카트 경기용 헬멧 풀페이스 CK-6K-L",
+        "category": "motorcycle",
+        "current_price": 453040,
+        "currency": "원",
+        "original_price": 453040,
+        "discount_percentage": 0,
+        "rocket_delivery": false,
+        "rocket_delivery_valid_until": null,
+        "rocket_delivery_estimation_region": null,
+        "arrival_eta": 37,
+        "arrival_date": "내일",
+        "out_of_stock_alert": false,
+        "remaining_stock": null,
+        "mall_name": "네이버쇼핑",
+        "mall_url": null,
+        "seller_name": "프리미엄아라이무역",
+        "seller_url": null,
+        "brand": "아라이",
+        "model_number": "MO-1124-010-4415",
+        "rating": 3.2,
+        "n_reviews": 453040,
+        "n_satisfied_customers": 12,
+        "n_repeated_customers": 5,
+        "product_img": "MOTO-20251124-010_0",
+        "product_detail_img": [
+          "MOTO-20251124-010_2",
+          "MOTO-20251124-010_3",
+          "MOTO-20251124-010_4",
+          "MOTO-20251124-010_5"
+        ],
+        "product_url": null,
+        "reward_points": 22652,
+        "options": [
+          {
+            "사이즈": [
+              "L",
+              "XXL",
+              "M",
+              "S"
+            ]
+          }
+        ]
+      },
+      {
+        "id": 11,
+        "uuid": "f0dee82f-49b1-4f88-8eca-9ca30130df85",
+        "code": "MOTO-20251124-011",
+        "name": "아라이 RX-7X NAKAGAMI GP2 풀 페이스 헬멧",
+        "category": "motorcycle",
+        "current_price": 949790,
+        "currency": "원",
+        "original_price": 969888,
+        "discount_percentage": 2,
+        "rocket_delivery": true,
+        "rocket_delivery_valid_until": "2025-11-30",
+        "rocket_delivery_estimation_region": "서울/경기",
+        "arrival_eta": 21,
+        "arrival_date": "오늘 중",
+        "out_of_stock_alert": false,
+        "remaining_stock": null,
+        "mall_name": "위메프",
+        "mall_url": null,
+        "seller_name": "공식아라이샵",
+        "seller_url": null,
+        "brand": "아라이",
+        "model_number": "MO-1124-011-4164",
+        "rating": 2.9,
+        "n_reviews": 969888,
+        "n_satisfied_customers": 1,
+        "n_repeated_customers": 6,
+        "product_img": "MOTO-20251124-011_0",
+        "product_detail_img": [
+          "MOTO-20251124-011_2",
+          "MOTO-20251124-011_3",
+          "MOTO-20251124-011_4",
+          "MOTO-20251124-011_5",
+          "MOTO-20251124-011_6",
+          "MOTO-20251124-011_7",
+          "MOTO-20251124-011_8",
+          "MOTO-20251124-011_9"
+        ],
+        "product_url": null,
+        "reward_points": 47489,
+        "options": [
+          {
+            "색상": [
+              "옐로우",
+              "레드",
+              "네이비",
+              "블랙"
+            ]
+          },
+          {
+            "사이즈": [
+              "S",
+              "XL",
+              "M",
+              "L"
+            ]
+          }
+        ]
+      },
+      {
+        "id": 12,
+        "uuid": "dec6b939-e929-4335-b216-ce840adeb0bf",
+        "code": "MOTO-20251124-012",
+        "name": "오토바이헬멧x 라이딩풀페이스",
+        "category": "motorcycle",
+        "current_price": 223500,
+        "currency": "원",
+        "original_price": 543268,
+        "discount_percentage": 59,
+        "rocket_delivery": false,
+        "rocket_delivery_valid_until": null,
+        "rocket_delivery_estimation_region": null,
+        "arrival_eta": 56,
+        "arrival_date": "2일 뒤",
+        "out_of_stock_alert": false,
+        "remaining_stock": null,
+        "mall_name": "티몬",
+        "mall_url": null,
+        "seller_name": "정품오토바이헬멧x몰",
+        "seller_url": null,
+        "brand": "오토바이헬멧x",
+        "model_number": "MO-1124-012-2706",
+        "rating": 4.0,
+        "n_reviews": 1,
+        "n_satisfied_customers": 39,
+        "n_repeated_customers": 22,
+        "product_img": "MOTO-20251124-012_0",
+        "product_detail_img": [
+          "MOTO-20251124-012_2",
+          "MOTO-20251124-012_3",
+          "MOTO-20251124-012_4",
+          "MOTO-20251124-012_5",
+          "MOTO-20251124-012_6",
+          "MOTO-20251124-012_7",
+          "MOTO-20251124-012_8",
+          "MOTO-20251124-012_9",
+          "MOTO-20251124-012_10",
+          "MOTO-20251124-012_11",
+          "MOTO-20251124-012_12",
+          "MOTO-20251124-012_13",
+          "MOTO-20251124-012_14",
+          "MOTO-20251124-012_15",
+          "MOTO-20251124-012_16",
+          "MOTO-20251124-012_17",
+          "MOTO-20251124-012_18",
+          "MOTO-20251124-012_19",
+          "MOTO-20251124-012_20",
+          "MOTO-20251124-012_21",
+          "MOTO-20251124-012_22",
+          "MOTO-20251124-012_23",
+          "MOTO-20251124-012_24",
+          "MOTO-20251124-012_25",
+          "MOTO-20251124-012_26",
+          "MOTO-20251124-012_27",
+          "MOTO-20251124-012_28",
+          "MOTO-20251124-012_29"
+        ],
+        "product_url": null,
+        "reward_points": 11175,
+        "options": [
+          {
+            "사이즈": [
+              "L",
+              "M",
+              "S"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "car": {
+    "source": "\\\\\\\\192.168.1.89\\\\share\\\\dummy data\\\\products\\\\자동차",
+    "items": [
+      {
+        "id": 0,
+        "uuid": "0532faab-c495-4f3d-bf75-882d6ba9d6c0",
+        "code": "CAR-20251124-000",
+        "name": "12V 겨울 스크레이퍼 제상 얼음 청소 도구 앞 유리 열 제거 삽 스노우 히터 전기 자동차 긁는",
+        "category": "car",
+        "current_price": 21000,
+        "currency": "원",
+        "original_price": 21000,
+        "discount_percentage": 0,
+        "rocket_delivery": true,
+        "rocket_delivery_valid_until": "2025-12-25",
+        "rocket_delivery_estimation_region": "전국",
+        "arrival_eta": 14,
+        "arrival_date": "오늘 중",
+        "out_of_stock_alert": false,
+        "remaining_stock": null,
+        "mall_name": "티몬",
+        "mall_url": null,
+        "seller_name": "12V몰",
+        "seller_url": null,
+        "brand": "12V",
+        "model_number": "CA-1124-000-4753",
+        "rating": 2.9,
+        "n_reviews": 21000,
+        "n_satisfied_customers": 1,
+        "n_repeated_customers": 2,
+        "product_img": "CAR-20251124-000_0",
+        "product_detail_img": [
+          "CAR-20251124-000_2",
+          "CAR-20251124-000_3",
+          "CAR-20251124-000_4",
+          "CAR-20251124-000_5",
+          "CAR-20251124-000_6",
+          "CAR-20251124-000_7",
+          "CAR-20251124-000_8",
+          "CAR-20251124-000_9",
+          "CAR-20251124-000_10",
+          "CAR-20251124-000_11",
+          "CAR-20251124-000_12",
+          "CAR-20251124-000_13",
+          "CAR-20251124-000_14",
+          "CAR-20251124-000_15",
+          "CAR-20251124-000_16",
+          "CAR-20251124-000_17",
+          "CAR-20251124-000_18",
+          "CAR-20251124-000_19",
+          "CAR-20251124-000_20",
+          "CAR-20251124-000_21",
+          "CAR-20251124-000_22",
+          "CAR-20251124-000_23",
+          "CAR-20251124-000_24",
+          "CAR-20251124-000_25",
+          "CAR-20251124-000_26",
+          "CAR-20251124-000_27"
+        ],
+        "product_url": null,
+        "reward_points": 1050,
+        "options": [
+          {
+            "색상": [
+              "블랙",
+              "화이트",
+              "레드",
+              "오렌지"
+            ]
+          }
+        ]
+      },
+      {
+        "id": 1,
+        "uuid": "1414701e-cd72-478e-a841-55f9a0836024",
+        "code": "CAR-20251124-001",
+        "name": "늘바론 점프스타터 12V",
+        "category": "car",
+        "current_price": 46550,
+        "currency": "원",
+        "original_price": 46550,
+        "discount_percentage": 0,
+        "rocket_delivery": true,
+        "rocket_delivery_valid_until": "2025-12-25",
+        "rocket_delivery_estimation_region": "서울/경기",
+        "arrival_eta": 56,
+        "arrival_date": "2일 뒤",
+        "out_of_stock_alert": false,
+        "remaining_stock": null,
+        "mall_name": "위메프",
+        "mall_url": null,
+        "seller_name": "늘바론몰",
+        "seller_url": null,
+        "brand": "늘바론",
+        "model_number": "CA-1124-001-6243",
+        "rating": 1.3,
+        "n_reviews": 156,
+        "n_satisfied_customers": 26,
+        "n_repeated_customers": 2,
+        "product_img": "CAR-20251124-001_0",
+        "product_detail_img": [
+          "CAR-20251124-001_2",
+          "CAR-20251124-001_3",
+          "CAR-20251124-001_4",
+          "CAR-20251124-001_5",
+          "CAR-20251124-001_6",
+          "CAR-20251124-001_7"
+        ],
+        "product_url": null,
+        "reward_points": 2327,
+        "options": [
+          {
+            "색상": [
+              "화이트",
+              "오렌지"
+            ]
+          }
+        ]
+      },
+      {
+        "id": 2,
+        "uuid": "cc56938b-26d2-42e1-8757-a482dcafe46c",
+        "code": "CAR-20251124-002",
+        "name": "더쎈 6팬 안마 쿨링시트 12V24V",
+        "category": "car",
+        "current_price": 63000,
+        "currency": "원",
+        "original_price": 63000,
+        "discount_percentage": 0,
+        "rocket_delivery": false,
+        "rocket_delivery_valid_until": null,
+        "rocket_delivery_estimation_region": null,
+        "arrival_eta": 29,
+        "arrival_date": "내일",
+        "out_of_stock_alert": false,
+        "remaining_stock": null,
+        "mall_name": "G마켓",
+        "mall_url": null,
+        "seller_name": "정품더쎈샵",
+        "seller_url": null,
+        "brand": "더쎈",
+        "model_number": "CA-1124-002-1448",
+        "rating": 1.6,
+        "n_reviews": 630,
+        "n_satisfied_customers": 34,
+        "n_repeated_customers": 10,
+        "product_img": "CAR-20251124-002_0",
+        "product_detail_img": [
+          "CAR-20251124-002_2"
+        ],
+        "product_url": null,
+        "reward_points": 3150,
+        "options": [
+          {
+            "색상": [
+              "옐로우",
+              "네이비",
+              "블랙"
+            ]
+          }
+        ]
+      },
+      {
+        "id": 3,
+        "uuid": "0675b7ed-77b7-4b4c-8ca1-49467c394012",
+        "code": "CAR-20251124-003",
+        "name": "디포스 자동차 점프스타터 고출력 차량용 배터리 비상시동기 충전 보조배터리",
+        "category": "car",
+        "current_price": 2765,
+        "currency": "원",
+        "original_price": 55310,
+        "discount_percentage": 95,
+        "rocket_delivery": true,
+        "rocket_delivery_valid_until": "2025-12-10",
+        "rocket_delivery_estimation_region": "전국",
+        "arrival_eta": 38,
+        "arrival_date": "내일",
+        "out_of_stock_alert": false,
+        "remaining_stock": null,
+        "mall_name": "쿠팡",
+        "mall_url": null,
+        "seller_name": "프리미엄디포스상사",
+        "seller_url": null,
+        "brand": "디포스",
+        "model_number": "CA-1124-003-5597",
+        "rating": 1.2,
+        "n_reviews": 116,
+        "n_satisfied_customers": 11,
+        "n_repeated_customers": 1,
+        "product_img": "CAR-20251124-003_0",
+        "product_detail_img": [
+          "CAR-20251124-003_2",
+          "CAR-20251124-003_3",
+          "CAR-20251124-003_4",
+          "CAR-20251124-003_5",
+          "CAR-20251124-003_6",
+          "CAR-20251124-003_7",
+          "CAR-20251124-003_8",
+          "CAR-20251124-003_9",
+          "CAR-20251124-003_10",
+          "CAR-20251124-003_11",
+          "CAR-20251124-003_12",
+          "CAR-20251124-003_13",
+          "CAR-20251124-003_14",
+          "CAR-20251124-003_15",
+          "CAR-20251124-003_16",
+          "CAR-20251124-003_17",
+          "CAR-20251124-003_18",
+          "CAR-20251124-003_19",
+          "CAR-20251124-003_20",
+          "CAR-20251124-003_21",
+          "CAR-20251124-003_22",
+          "CAR-20251124-003_23"
+        ],
+        "product_url": null,
+        "reward_points": 138,
+        "options": [
+          {
+            "색상": [
+              "화이트",
+              "그레이",
+              "블랙"
+            ]
+          }
+        ]
+      },
+      {
+        "id": 4,
+        "uuid": "6bb74f12-e7e3-4516-8911-f2897c343cc6",
+        "code": "CAR-20251124-004",
+        "name": "럭스룸 360도 회전 원터치 차량용 핸드폰 거치대 송풍구형 1초 컷",
+        "category": "car",
+        "current_price": 4100,
+        "currency": "원",
+        "original_price": 19800,
+        "discount_percentage": 79,
+        "rocket_delivery": true,
+        "rocket_delivery_valid_until": "2025-12-17",
+        "rocket_delivery_estimation_region": "전국",
+        "arrival_eta": 45,
+        "arrival_date": "내일",
+        "out_of_stock_alert": false,
+        "remaining_stock": null,
+        "mall_name": "티몬",
+        "mall_url": null,
+        "seller_name": "럭스룸마켓",
+        "seller_url": null,
+        "brand": "럭스룸",
+        "model_number": "CA-1124-004-5972",
+        "rating": 3.9,
+        "n_reviews": 103,
+        "n_satisfied_customers": 2,
+        "n_repeated_customers": 2,
+        "product_img": "CAR-20251124-004_0",
+        "product_detail_img": [
+          "CAR-20251124-004_2",
+          "CAR-20251124-004_3",
+          "CAR-20251124-004_4",
+          "CAR-20251124-004_5",
+          "CAR-20251124-004_6",
+          "CAR-20251124-004_7",
+          "CAR-20251124-004_8"
+        ],
+        "product_url": null,
+        "reward_points": 205,
+        "options": [
+          {
+            "색상": [
+              "블랙",
+              "블루",
+              "화이트"
+            ]
+          }
+        ]
+      },
+      {
+        "id": 5,
+        "uuid": "5249152e-6808-4362-a47b-555bd3484945",
+        "code": "CAR-20251124-005",
+        "name": "루메나 A1 차량용 공기청정기",
+        "category": "car",
+        "current_price": 990,
+        "currency": "원",
+        "original_price": 990,
+        "discount_percentage": 0,
+        "rocket_delivery": false,
+        "rocket_delivery_valid_until": null,
+        "rocket_delivery_estimation_region": null,
+        "arrival_eta": 70,
+        "arrival_date": "2일 뒤",
+        "out_of_stock_alert": false,
+        "remaining_stock": null,
+        "mall_name": "인터파크",
+        "mall_url": null,
+        "seller_name": "공식루메나상사",
+        "seller_url": null,
+        "brand": "루메나",
+        "model_number": "CA-1124-005-3138",
+        "rating": 2.7,
+        "n_reviews": null,
+        "n_satisfied_customers": 3,
+        "n_repeated_customers": 5,
+        "product_img": "CAR-20251124-005_0",
+        "product_detail_img": [
+          "CAR-20251124-005_2",
+          "CAR-20251124-005_3",
+          "CAR-20251124-005_4",
+          "CAR-20251124-005_5",
+          "CAR-20251124-005_6",
+          "CAR-20251124-005_7",
+          "CAR-20251124-005_8",
+          "CAR-20251124-005_9",
+          "CAR-20251124-005_10",
+          "CAR-20251124-005_11",
+          "CAR-20251124-005_12",
+          "CAR-20251124-005_13",
+          "CAR-20251124-005_14",
+          "CAR-20251124-005_15"
+        ],
+        "product_url": null,
+        "reward_points": 49,
+        "options": [
+          {
+            "색상": [
+              "레드",
+              "화이트"
+            ]
+          }
+        ]
+      },
+      {
+        "id": 6,
+        "uuid": "1956ddda-c6f2-48ad-9309-dc438a6dd306",
+        "code": "CAR-20251124-006",
+        "name": "아이나비 전후방 FHD 2채널 블랙박스 FXD8500",
+        "category": "car",
+        "current_price": 159000,
+        "currency": "원",
+        "original_price": 159000,
+        "discount_percentage": 0,
+        "rocket_delivery": true,
+        "rocket_delivery_valid_until": "2025-12-19",
+        "rocket_delivery_estimation_region": "전국",
+        "arrival_eta": 22,
+        "arrival_date": "오늘 중",
+        "out_of_stock_alert": false,
+        "remaining_stock": null,
+        "mall_name": "쿠팡",
+        "mall_url": null,
+        "seller_name": "프리미엄아이나비몰",
+        "seller_url": null,
+        "brand": "아이나비",
+        "model_number": "CA-1124-006-9585",
+        "rating": 4.7,
+        "n_reviews": 393,
+        "n_satisfied_customers": 2,
+        "n_repeated_customers": 3,
+        "product_img": "CAR-20251124-006_0",
+        "product_detail_img": [
+          "CAR-20251124-006_2",
+          "CAR-20251124-006_3"
+        ],
+        "product_url": null,
+        "reward_points": 7950,
+        "options": [
+          {
+            "색상": [
+              "오렌지",
+              "핑크"
+            ]
+          }
+        ]
+      },
+      {
+        "id": 7,
+        "uuid": "f4071277-044c-4e7b-b4a0-2f13bf099949",
+        "code": "CAR-20251124-007",
+        "name": "오보제 미니 공기청정기 차량용 공기정화기 실내겸용",
+        "category": "car",
+        "current_price": 65500,
+        "currency": "원",
+        "original_price": 65500,
+        "discount_percentage": 0,
+        "rocket_delivery": false,
+        "rocket_delivery_valid_until": null,
+        "rocket_delivery_estimation_region": null,
+        "arrival_eta": 34,
+        "arrival_date": "내일",
+        "out_of_stock_alert": false,
+        "remaining_stock": null,
+        "mall_name": "11번가",
+        "mall_url": null,
+        "seller_name": "정품오보제무역",
+        "seller_url": null,
+        "brand": "오보제",
+        "model_number": "CA-1124-007-3201",
+        "rating": 4.2,
+        "n_reviews": 65500,
+        "n_satisfied_customers": 20,
+        "n_repeated_customers": 23,
+        "product_img": "CAR-20251124-007_0",
+        "product_detail_img": [
+          "CAR-20251124-007_2",
+          "CAR-20251124-007_3",
+          "CAR-20251124-007_4",
+          "CAR-20251124-007_5",
+          "CAR-20251124-007_6",
+          "CAR-20251124-007_7",
+          "CAR-20251124-007_8",
+          "CAR-20251124-007_9",
+          "CAR-20251124-007_10",
+          "CAR-20251124-007_11",
+          "CAR-20251124-007_12",
+          "CAR-20251124-007_13",
+          "CAR-20251124-007_14",
+          "CAR-20251124-007_15",
+          "CAR-20251124-007_16",
+          "CAR-20251124-007_17"
+        ],
+        "product_url": null,
+        "reward_points": 3275,
+        "options": [
+          {
+            "색상": [
+              "레드",
+              "화이트",
+              "블랙"
+            ]
+          }
+        ]
+      },
+      {
+        "id": 8,
+        "uuid": "6a38e12a-0ff7-4858-b584-5d39b581c4b1",
+        "code": "CAR-20251124-008",
+        "name": "오토바이 스노우체인 미끄럼방지 간편설치 체인 스노우 타이 일회용",
+        "category": "car",
+        "current_price": 12400,
+        "currency": "원",
+        "original_price": 15500,
+        "discount_percentage": 20,
+        "rocket_delivery": true,
+        "rocket_delivery_valid_until": "2025-11-28",
+        "rocket_delivery_estimation_region": "서울/경기",
+        "arrival_eta": 45,
+        "arrival_date": "내일",
+        "out_of_stock_alert": false,
+        "remaining_stock": null,
+        "mall_name": "쿠팡",
+        "mall_url": null,
+        "seller_name": "정품오토바이몰",
+        "seller_url": null,
+        "brand": "오토바이",
+        "model_number": "CA-1124-008-9295",
+        "rating": 3.3,
+        "n_reviews": 16,
+        "n_satisfied_customers": 11,
+        "n_repeated_customers": 16,
+        "product_img": "CAR-20251124-008_0",
+        "product_detail_img": [
+          "CAR-20251124-008_2",
+          "CAR-20251124-008_3"
+        ],
+        "product_url": null,
+        "reward_points": 620,
+        "options": [
+          {
+            "색상": [
+              "핑크",
+              "화이트",
+              "옐로우",
+              "그린",
+              "블랙"
+            ]
+          }
+        ]
+      },
+      {
+        "id": 9,
+        "uuid": "675ef939-253e-476e-b580-ee20ff3c7df6",
+        "code": "CAR-20251124-009",
+        "name": "자동차 점프스타터 보조배터리 28000mAh",
+        "category": "car",
+        "current_price": 2950,
+        "currency": "원",
+        "original_price": 69000,
+        "discount_percentage": 96,
+        "rocket_delivery": true,
+        "rocket_delivery_valid_until": "2025-12-24",
+        "rocket_delivery_estimation_region": "전국",
+        "arrival_eta": 49,
+        "arrival_date": "2일 뒤",
+        "out_of_stock_alert": false,
+        "remaining_stock": null,
+        "mall_name": "11번가",
+        "mall_url": null,
+        "seller_name": "공식자동차샵",
+        "seller_url": null,
+        "brand": "자동차",
+        "model_number": "CA-1124-009-1695",
+        "rating": 4.1,
+        "n_reviews": 2800,
+        "n_satisfied_customers": 3,
+        "n_repeated_customers": 33,
+        "product_img": "CAR-20251124-009_0",
+        "product_detail_img": [
+          "CAR-20251124-009_2",
+          "CAR-20251124-009_3",
+          "CAR-20251124-009_4",
+          "CAR-20251124-009_5",
+          "CAR-20251124-009_6",
+          "CAR-20251124-009_7",
+          "CAR-20251124-009_8",
+          "CAR-20251124-009_9",
+          "CAR-20251124-009_10"
+        ],
+        "product_url": null,
+        "reward_points": 147,
+        "options": [
+          {
+            "색상": [
+              "핑크",
+              "그린",
+              "옐로우"
+            ]
+          }
+        ]
+      },
+      {
+        "id": 10,
+        "uuid": "36c87273-637d-4098-b78f-040c4bdc3045",
+        "code": "CAR-20251124-010",
+        "name": "자동차 트렁크 정리함 다기능 메쉬 수납 가방 네트 포켓 내부 액세서리 용품 박스 부품",
+        "category": "car",
+        "current_price": 505,
+        "currency": "원",
+        "original_price": 10100,
+        "discount_percentage": 95,
+        "rocket_delivery": true,
+        "rocket_delivery_valid_until": "2025-12-24",
+        "rocket_delivery_estimation_region": "서울/경기",
+        "arrival_eta": 36,
+        "arrival_date": "내일",
+        "out_of_stock_alert": false,
+        "remaining_stock": null,
+        "mall_name": "네이버쇼핑",
+        "mall_url": null,
+        "seller_name": "프리미엄자동차샵",
+        "seller_url": null,
+        "brand": "자동차",
+        "model_number": "CA-1124-010-6002",
+        "rating": 1.6,
+        "n_reviews": 10100,
+        "n_satisfied_customers": 8,
+        "n_repeated_customers": 20,
+        "product_img": "CAR-20251124-010_0",
+        "product_detail_img": [
+          "CAR-20251124-010_2",
+          "CAR-20251124-010_3",
+          "CAR-20251124-010_4",
+          "CAR-20251124-010_5",
+          "CAR-20251124-010_6",
+          "CAR-20251124-010_7",
+          "CAR-20251124-010_8",
+          "CAR-20251124-010_9",
+          "CAR-20251124-010_10",
+          "CAR-20251124-010_11",
+          "CAR-20251124-010_12",
+          "CAR-20251124-010_13",
+          "CAR-20251124-010_14",
+          "CAR-20251124-010_15",
+          "CAR-20251124-010_16",
+          "CAR-20251124-010_17",
+          "CAR-20251124-010_18"
+        ],
+        "product_url": null,
+        "reward_points": 25,
+        "options": [
+          {
+            "용량": [
+              "4L",
+              "2L",
+              "5L"
+            ]
+          }
+        ]
+      },
+      {
+        "id": 11,
+        "uuid": "fb13ee5e-12a7-4a05-a007-cfc440cce0e1",
+        "code": "CAR-20251124-011",
+        "name": "접이식 자동차 트렁크 정리함 특대형 112L 차량용 세차 박스 보관함",
+        "category": "car",
+        "current_price": 2270,
+        "currency": "원",
+        "original_price": 42000,
+        "discount_percentage": 95,
+        "rocket_delivery": false,
+        "rocket_delivery_valid_until": null,
+        "rocket_delivery_estimation_region": null,
+        "arrival_eta": 41,
+        "arrival_date": "내일",
+        "out_of_stock_alert": false,
+        "remaining_stock": null,
+        "mall_name": "11번가",
+        "mall_url": null,
+        "seller_name": "접이식마켓",
+        "seller_url": null,
+        "brand": "접이식",
+        "model_number": "CA-1124-011-4619",
+        "rating": 4.4,
+        "n_reviews": 9900,
+        "n_satisfied_customers": 1,
+        "n_repeated_customers": 7,
+        "product_img": "CAR-20251124-011_0",
+        "product_detail_img": [
+          "CAR-20251124-011_2",
+          "CAR-20251124-011_3",
+          "CAR-20251124-011_4",
+          "CAR-20251124-011_5",
+          "CAR-20251124-011_6"
+        ],
+        "product_url": null,
+        "reward_points": 113,
+        "options": [
+          {
+            "색상": [
+              "블루",
+              "핑크",
+              "레드",
+              "네이비",
+              "오렌지"
+            ]
+          }
+        ]
+      },
+      {
+        "id": 12,
+        "uuid": "25f8f1d1-0f4f-43bf-b64d-422601200867",
+        "code": "CAR-20251124-012",
+        "name": "차량용 수납함 자동차 기아 트렁크 보관함 K5 K3 K9 KIA 용품 틈새 정리함",
+        "category": "car",
+        "current_price": 2210,
+        "currency": "원",
+        "original_price": 40800,
+        "discount_percentage": 95,
+        "rocket_delivery": false,
+        "rocket_delivery_valid_until": null,
+        "rocket_delivery_estimation_region": null,
+        "arrival_eta": 69,
+        "arrival_date": "2일 뒤",
+        "out_of_stock_alert": false,
+        "remaining_stock": null,
+        "mall_name": "옥션",
+        "mall_url": null,
+        "seller_name": "공식차량용무역",
+        "seller_url": null,
+        "brand": "차량용",
+        "model_number": "CA-1124-012-1964",
+        "rating": 1.5,
+        "n_reviews": 9900,
+        "n_satisfied_customers": 2,
+        "n_repeated_customers": 11,
+        "product_img": "CAR-20251124-012_0",
+        "product_detail_img": [],
+        "product_url": null,
+        "reward_points": 110,
+        "options": [
+          {
+            "색상": [
+              "블루",
+              "레드",
+              "핑크",
+              "오렌지",
+              "옐로우"
+            ]
+          }
+        ]
+      },
+      {
+        "id": 13,
+        "uuid": "d088d5fd-38be-49fa-b07f-a97b97a29b43",
+        "code": "CAR-20251124-013",
+        "name": "차박 도킹 차량용 텐트 야외 자동 팝업 자동차 후면 확장 3-4 인용 운전 캠핑 쉼터 SUV 캐노피 전시 천막 릴리프 퍼걸러",
+        "category": "car",
+        "current_price": 327600,
+        "currency": "원",
+        "original_price": 327600,
+        "discount_percentage": 0,
+        "rocket_delivery": true,
+        "rocket_delivery_valid_until": "2025-11-26",
+        "rocket_delivery_estimation_region": "서울/경기",
+        "arrival_eta": 24,
+        "arrival_date": "내일",
+        "out_of_stock_alert": false,
+        "remaining_stock": null,
+        "mall_name": "티몬",
+        "mall_url": null,
+        "seller_name": "프리미엄차박무역",
+        "seller_url": null,
+        "brand": "차박",
+        "model_number": "CA-1124-013-6889",
+        "rating": 3.5,
+        "n_reviews": 327600,
+        "n_satisfied_customers": 1,
+        "n_repeated_customers": 12,
+        "product_img": "CAR-20251124-013_0",
+        "product_detail_img": [
+          "CAR-20251124-013_2",
+          "CAR-20251124-013_3"
+        ],
+        "product_url": null,
+        "reward_points": 16380,
+        "options": [
+          {
+            "색상": [
+              "그레이",
+              "오렌지",
+              "그린",
+              "화이트"
+            ]
+          }
+        ]
+      },
+      {
+        "id": 14,
+        "uuid": "299a73bf-d69e-4c74-bff5-4accb7690b33",
+        "code": "CAR-20251124-014",
+        "name": "카카오프렌즈 춘식이 대형 클리어 차량용 트렁크 보관함 트렁크 정리함 대용량 접이식 보관함",
+        "category": "car",
+        "current_price": 4500,
+        "currency": "원",
+        "original_price": 624900,
+        "discount_percentage": 99,
+        "rocket_delivery": false,
+        "rocket_delivery_valid_until": null,
+        "rocket_delivery_estimation_region": null,
+        "arrival_eta": 65,
+        "arrival_date": "2일 뒤",
+        "out_of_stock_alert": false,
+        "remaining_stock": null,
+        "mall_name": "위메프",
+        "mall_url": null,
+        "seller_name": "정품카카오프렌즈상사",
+        "seller_url": null,
+        "brand": "카카오프렌즈",
+        "model_number": "CA-1124-014-3050",
+        "rating": 2.0,
+        "n_reviews": 9999,
+        "n_satisfied_customers": 3,
+        "n_repeated_customers": 53,
+        "product_img": "CAR-20251124-014_0",
+        "product_detail_img": [
+          "CAR-20251124-014_2",
+          "CAR-20251124-014_3",
+          "CAR-20251124-014_4",
+          "CAR-20251124-014_5",
+          "CAR-20251124-014_6",
+          "CAR-20251124-014_7",
+          "CAR-20251124-014_8",
+          "CAR-20251124-014_9",
+          "CAR-20251124-014_10",
+          "CAR-20251124-014_11",
+          "CAR-20251124-014_12",
+          "CAR-20251124-014_13",
+          "CAR-20251124-014_14",
+          "CAR-20251124-014_15",
+          "CAR-20251124-014_16",
+          "CAR-20251124-014_17",
+          "CAR-20251124-014_18",
+          "CAR-20251124-014_19",
+          "CAR-20251124-014_20",
+          "CAR-20251124-014_21",
+          "CAR-20251124-014_22",
+          "CAR-20251124-014_23",
+          "CAR-20251124-014_24",
+          "CAR-20251124-014_25",
+          "CAR-20251124-014_26",
+          "CAR-20251124-014_27",
+          "CAR-20251124-014_28",
+          "CAR-20251124-014_29",
+          "CAR-20251124-014_30",
+          "CAR-20251124-014_31"
+        ],
+        "product_url": null,
+        "reward_points": 225,
+        "options": [
+          {
+            "색상": [
+              "오렌지",
+              "핑크"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "bicycle": {
+    "source": "\\\\\\\\192.168.1.89\\\\share\\\\dummy data\\\\products\\\\자전거",
+    "items": [
+      {
+        "id": 0,
+        "uuid": "92bf0d75-f83a-4066-900c-ab646941a887",
+        "code": "BIKE-20251124-000",
+        "name": "NEWBOLER 자전거 접이식 방수 가방 대용량 자전거 안장 가방 자전거 배낭 여행용 테일 백 MTB 사이클링 로드 바이크 후방 트렁크 13L",
+        "category": "bicycle",
+        "current_price": 27930,
+        "currency": "원",
+        "original_price": 27930,
+        "discount_percentage": 0,
+        "rocket_delivery": true,
+        "rocket_delivery_valid_until": "2025-12-02",
+        "rocket_delivery_estimation_region": "전국",
+        "arrival_eta": 54,
+        "arrival_date": "2일 뒤",
+        "out_of_stock_alert": false,
+        "remaining_stock": null,
+        "mall_name": "네이버쇼핑",
+        "mall_url": null,
+        "seller_name": "공식NEWBOLER샵",
+        "seller_url": null,
+        "brand": "NEWBOLER",
+        "model_number": "BI-1124-000-1452",
+        "rating": 1.9,
+        "n_reviews": 27930,
+        "n_satisfied_customers": 10,
+        "n_repeated_customers": 1,
+        "product_img": "BIKE-20251124-000_0",
+        "product_detail_img": [
+          "BIKE-20251124-000_2",
+          "BIKE-20251124-000_3",
+          "BIKE-20251124-000_4",
+          "BIKE-20251124-000_5",
+          "BIKE-20251124-000_6",
+          "BIKE-20251124-000_7",
+          "BIKE-20251124-000_8",
+          "BIKE-20251124-000_9",
+          "BIKE-20251124-000_10",
+          "BIKE-20251124-000_11",
+          "BIKE-20251124-000_12",
+          "BIKE-20251124-000_13",
+          "BIKE-20251124-000_14",
+          "BIKE-20251124-000_15",
+          "BIKE-20251124-000_16",
+          "BIKE-20251124-000_17",
+          "BIKE-20251124-000_18",
+          "BIKE-20251124-000_19"
+        ],
+        "product_url": null,
+        "reward_points": 1396,
+        "options": [
+          {
+            "색상": [
+              "블랙",
+              "옐로우"
+            ]
+          },
+          {
+            "사이즈": [
+              "29인치",
+              "26인치"
+            ]
+          }
+        ]
+      },
+      {
+        "id": 1,
+        "uuid": "afc19f38-b579-405d-a207-c750999ec301",
+        "code": "BIKE-20251124-001",
+        "name": "Topeak Micro Rocket AL 미니 바이크 펌프 경량 알루미늄 160 Psi",
+        "category": "bicycle",
+        "current_price": 60000,
+        "currency": "원",
+        "original_price": 60000,
+        "discount_percentage": 0,
+        "rocket_delivery": true,
+        "rocket_delivery_valid_until": "2025-12-07",
+        "rocket_delivery_estimation_region": "전국",
+        "arrival_eta": 49,
+        "arrival_date": "2일 뒤",
+        "out_of_stock_alert": false,
+        "remaining_stock": null,
+        "mall_name": "티몬",
+        "mall_url": null,
+        "seller_name": "공식Topeak마켓",
+        "seller_url": null,
+        "brand": "Topeak",
+        "model_number": "BI-1124-001-5640",
+        "rating": 4.5,
+        "n_reviews": 60000,
+        "n_satisfied_customers": 5,
+        "n_repeated_customers": 39,
+        "product_img": "BIKE-20251124-001_0",
+        "product_detail_img": [
+          "BIKE-20251124-001_2",
+          "BIKE-20251124-001_3"
+        ],
+        "product_url": null,
+        "reward_points": 3000,
+        "options": [
+          {
+            "색상": [
+              "옐로우",
+              "그레이",
+              "블랙",
+              "네이비",
+              "핑크"
+            ]
+          }
+        ]
+      },
+      {
+        "id": 2,
+        "uuid": "3f7ff9b5-1511-49bc-8fcb-93a605fecc99",
+        "code": "BIKE-20251124-002",
+        "name": "Topeak RaceRocket HP 고압 미니 펌프 160 Psi11 바 Presta 및 Schrader 밸브와 호환 가능130995",
+        "category": "bicycle",
+        "current_price": 80000,
+        "currency": "원",
+        "original_price": 95300,
+        "discount_percentage": 16,
+        "rocket_delivery": true,
+        "rocket_delivery_valid_until": "2025-12-19",
+        "rocket_delivery_estimation_region": "전국",
+        "arrival_eta": 27,
+        "arrival_date": "내일",
+        "out_of_stock_alert": false,
+        "remaining_stock": null,
+        "mall_name": "11번가",
+        "mall_url": null,
+        "seller_name": "공식Topeak스토어",
+        "seller_url": null,
+        "brand": "Topeak",
+        "model_number": "BI-1124-002-9798",
+        "rating": 4.3,
+        "n_reviews": 130995,
+        "n_satisfied_customers": 1,
+        "n_repeated_customers": 4,
+        "product_img": "BIKE-20251124-002_0",
+        "product_detail_img": [
+          "BIKE-20251124-002_2",
+          "BIKE-20251124-002_3",
+          "BIKE-20251124-002_4",
+          "BIKE-20251124-002_5"
+        ],
+        "product_url": null,
+        "reward_points": 4000,
+        "options": [
+          {
+            "색상": [
+              "화이트",
+              "그레이",
+              "오렌지"
+            ]
+          }
+        ]
+      },
+      {
+        "id": 3,
+        "uuid": "6c6b651b-824e-4169-8b65-e685601bf654",
+        "code": "BIKE-20251124-003",
+        "name": "나이트코어 실리콘그리스 SG7 랜턴연결부위 방수효과",
+        "category": "bicycle",
+        "current_price": 2800,
+        "currency": "원",
+        "original_price": 4490,
+        "discount_percentage": 38,
+        "rocket_delivery": true,
+        "rocket_delivery_valid_until": "2025-12-14",
+        "rocket_delivery_estimation_region": "전국",
+        "arrival_eta": 53,
+        "arrival_date": "2일 뒤",
+        "out_of_stock_alert": false,
+        "remaining_stock": null,
+        "mall_name": "티몬",
+        "mall_url": null,
+        "seller_name": "프리미엄나이트코어마켓",
+        "seller_url": null,
+        "brand": "나이트코어",
+        "model_number": "BI-1124-003-5429",
+        "rating": 2.3,
+        "n_reviews": 20,
+        "n_satisfied_customers": 12,
+        "n_repeated_customers": 10,
+        "product_img": "BIKE-20251124-003_0",
+        "product_detail_img": [
+          "BIKE-20251124-003_2",
+          "BIKE-20251124-003_3",
+          "BIKE-20251124-003_4",
+          "BIKE-20251124-003_5",
+          "BIKE-20251124-003_6"
+        ],
+        "product_url": null,
+        "reward_points": 140,
+        "options": [
+          {
+            "색상": [
+              "블랙",
+              "화이트",
+              "블루"
+            ]
+          }
+        ]
+      },
+      {
+        "id": 4,
+        "uuid": "92cac31a-24c5-4d2b-8760-b0410bfe9a8c",
+        "code": "BIKE-20251124-004",
+        "name": "런레이더 자전거 안장 가방 C",
+        "category": "bicycle",
+        "current_price": 23440,
+        "currency": "원",
+        "original_price": 53060,
+        "discount_percentage": 56,
+        "rocket_delivery": true,
+        "rocket_delivery_valid_until": "2025-12-21",
+        "rocket_delivery_estimation_region": "전국",
+        "arrival_eta": 59,
+        "arrival_date": "2일 뒤",
+        "out_of_stock_alert": false,
+        "remaining_stock": null,
+        "mall_name": "티몬",
+        "mall_url": null,
+        "seller_name": "런레이더샵",
+        "seller_url": null,
+        "brand": "런레이더",
+        "model_number": "BI-1124-004-4838",
+        "rating": 1.8,
+        "n_reviews": 36,
+        "n_satisfied_customers": 7,
+        "n_repeated_customers": 15,
+        "product_img": "BIKE-20251124-004_0",
+        "product_detail_img": [
+          "BIKE-20251124-004_2",
+          "BIKE-20251124-004_3",
+          "BIKE-20251124-004_4",
+          "BIKE-20251124-004_5",
+          "BIKE-20251124-004_6",
+          "BIKE-20251124-004_7",
+          "BIKE-20251124-004_8",
+          "BIKE-20251124-004_9",
+          "BIKE-20251124-004_10",
+          "BIKE-20251124-004_11"
+        ],
+        "product_url": null,
+        "reward_points": 1172,
+        "options": [
+          {
+            "색상": [
+              "블루",
+              "화이트"
+            ]
+          }
+        ]
+      },
+      {
+        "id": 5,
+        "uuid": "5012664f-1380-411c-bbf9-160cd8586979",
+        "code": "BIKE-20251124-005",
+        "name": "봉크백 자전거안장가방 안장가방1l 용량 자전거 안장 가방 방수 mtb 산악",
+        "category": "bicycle",
+        "current_price": 30500,
+        "currency": "원",
+        "original_price": 30500,
+        "discount_percentage": 0,
+        "rocket_delivery": true,
+        "rocket_delivery_valid_until": "2025-12-19",
+        "rocket_delivery_estimation_region": "서울/경기",
+        "arrival_eta": 52,
+        "arrival_date": "2일 뒤",
+        "out_of_stock_alert": false,
+        "remaining_stock": null,
+        "mall_name": "옥션",
+        "mall_url": null,
+        "seller_name": "봉크백상사",
+        "seller_url": null,
+        "brand": "봉크백",
+        "model_number": "BI-1124-005-8196",
+        "rating": 2.7,
+        "n_reviews": 30500,
+        "n_satisfied_customers": 3,
+        "n_repeated_customers": 13,
+        "product_img": "BIKE-20251124-005_0",
+        "product_detail_img": [
+          "BIKE-20251124-005_2",
+          "BIKE-20251124-005_3",
+          "BIKE-20251124-005_4",
+          "BIKE-20251124-005_5",
+          "BIKE-20251124-005_6",
+          "BIKE-20251124-005_7",
+          "BIKE-20251124-005_8",
+          "BIKE-20251124-005_9",
+          "BIKE-20251124-005_10",
+          "BIKE-20251124-005_11",
+          "BIKE-20251124-005_12",
+          "BIKE-20251124-005_13",
+          "BIKE-20251124-005_14",
+          "BIKE-20251124-005_15",
+          "BIKE-20251124-005_16",
+          "BIKE-20251124-005_17",
+          "BIKE-20251124-005_18",
+          "BIKE-20251124-005_19",
+          "BIKE-20251124-005_20",
+          "BIKE-20251124-005_21",
+          "BIKE-20251124-005_22",
+          "BIKE-20251124-005_23",
+          "BIKE-20251124-005_24",
+          "BIKE-20251124-005_25",
+          "BIKE-20251124-005_26",
+          "BIKE-20251124-005_27",
+          "BIKE-20251124-005_28",
+          "BIKE-20251124-005_29",
+          "BIKE-20251124-005_30",
+          "BIKE-20251124-005_31",
+          "BIKE-20251124-005_32",
+          "BIKE-20251124-005_33",
+          "BIKE-20251124-005_34",
+          "BIKE-20251124-005_35",
+          "BIKE-20251124-005_36",
+          "BIKE-20251124-005_37",
+          "BIKE-20251124-005_38",
+          "BIKE-20251124-005_39",
+          "BIKE-20251124-005_40",
+          "BIKE-20251124-005_41",
+          "BIKE-20251124-005_42"
+        ],
+        "product_url": null,
+        "reward_points": 1525,
+        "options": [
+          {
+            "사이즈": [
+              "27.5인치",
+              "26인치"
+            ]
+          }
+        ]
+      },
+      {
+        "id": 6,
+        "uuid": "4f0e0017-a476-441e-9d76-779bf500d205",
+        "code": "BIKE-20251124-006",
+        "name": "비소울 자전거 대용량 안장 가방",
+        "category": "bicycle",
+        "current_price": null,
+        "currency": "원",
+        "original_price": null,
+        "discount_percentage": null,
+        "rocket_delivery": true,
+        "rocket_delivery_valid_until": "2025-12-17",
+        "rocket_delivery_estimation_region": "서울/경기",
+        "arrival_eta": 54,
+        "arrival_date": "2일 뒤",
+        "out_of_stock_alert": false,
+        "remaining_stock": null,
+        "mall_name": "G마켓",
+        "mall_url": null,
+        "seller_name": "비소울상사",
+        "seller_url": null,
+        "brand": "비소울",
+        "model_number": "BI-1124-006-9349",
+        "rating": 3.8,
+        "n_reviews": 15,
+        "n_satisfied_customers": 5,
+        "n_repeated_customers": 1,
+        "product_img": "BIKE-20251124-006_0",
+        "product_detail_img": [
+          "BIKE-20251124-006_2"
+        ],
+        "product_url": null,
+        "reward_points": null,
+        "options": [
+          {
+            "색상": [
+              "블루",
+              "블랙"
+            ]
+          }
+        ]
+      },
+      {
+        "id": 7,
+        "uuid": "a78125ed-2d26-4e64-9351-289de37cc2f4",
+        "code": "BIKE-20251124-007",
+        "name": "스트라이다 리어 뷰 미러 셋",
+        "category": "bicycle",
+        "current_price": null,
+        "currency": "원",
+        "original_price": null,
+        "discount_percentage": null,
+        "rocket_delivery": false,
+        "rocket_delivery_valid_until": null,
+        "rocket_delivery_estimation_region": null,
+        "arrival_eta": 47,
+        "arrival_date": "내일",
+        "out_of_stock_alert": false,
+        "remaining_stock": null,
+        "mall_name": "옥션",
+        "mall_url": null,
+        "seller_name": "프리미엄스트라이다몰",
+        "seller_url": null,
+        "brand": "스트라이다",
+        "model_number": "BI-1124-007-5253",
+        "rating": 4.3,
+        "n_reviews": 7,
+        "n_satisfied_customers": 1,
+        "n_repeated_customers": 1,
+        "product_img": "BIKE-20251124-007_0",
+        "product_detail_img": [
+          "BIKE-20251124-007_2",
+          "BIKE-20251124-007_3",
+          "BIKE-20251124-007_4",
+          "BIKE-20251124-007_5",
+          "BIKE-20251124-007_6",
+          "BIKE-20251124-007_7"
+        ],
+        "product_url": null,
+        "reward_points": null,
+        "options": [
+          {
+            "색상": [
+              "레드",
+              "그린",
+              "블루",
+              "핑크",
+              "오렌지"
+            ]
+          }
+        ]
+      },
+      {
+        "id": 8,
+        "uuid": "f5472d3c-8419-4f1f-ac93-45f477241925",
+        "code": "BIKE-20251124-008",
+        "name": "시그니처베이지 자전거 체인 오일 윤활유 YPZ337",
+        "category": "bicycle",
+        "current_price": 12900,
+        "currency": "원",
+        "original_price": 19800,
+        "discount_percentage": 35,
+        "rocket_delivery": true,
+        "rocket_delivery_valid_until": "2025-12-06",
+        "rocket_delivery_estimation_region": "서울/경기",
+        "arrival_eta": 19,
+        "arrival_date": "오늘 중",
+        "out_of_stock_alert": false,
+        "remaining_stock": null,
+        "mall_name": "G마켓",
+        "mall_url": null,
+        "seller_name": "프리미엄시그니처베이지샵",
+        "seller_url": null,
+        "brand": "시그니처베이지",
+        "model_number": "BI-1124-008-6187",
+        "rating": 2.1,
+        "n_reviews": 24,
+        "n_satisfied_customers": 8,
+        "n_repeated_customers": 12,
+        "product_img": "BIKE-20251124-008_0",
+        "product_detail_img": [
+          "BIKE-20251124-008_2",
+          "BIKE-20251124-008_3",
+          "BIKE-20251124-008_4",
+          "BIKE-20251124-008_5",
+          "BIKE-20251124-008_6",
+          "BIKE-20251124-008_7",
+          "BIKE-20251124-008_8",
+          "BIKE-20251124-008_9",
+          "BIKE-20251124-008_10",
+          "BIKE-20251124-008_11",
+          "BIKE-20251124-008_12",
+          "BIKE-20251124-008_13",
+          "BIKE-20251124-008_14",
+          "BIKE-20251124-008_15",
+          "BIKE-20251124-008_16",
+          "BIKE-20251124-008_17",
+          "BIKE-20251124-008_18",
+          "BIKE-20251124-008_19",
+          "BIKE-20251124-008_20",
+          "BIKE-20251124-008_21",
+          "BIKE-20251124-008_22",
+          "BIKE-20251124-008_23",
+          "BIKE-20251124-008_24",
+          "BIKE-20251124-008_25",
+          "BIKE-20251124-008_26",
+          "BIKE-20251124-008_27",
+          "BIKE-20251124-008_28",
+          "BIKE-20251124-008_29",
+          "BIKE-20251124-008_30",
+          "BIKE-20251124-008_31",
+          "BIKE-20251124-008_32",
+          "BIKE-20251124-008_33",
+          "BIKE-20251124-008_34"
+        ],
+        "product_url": null,
+        "reward_points": 645,
+        "options": [
+          {
+            "색상": [
+              "오렌지",
+              "블랙",
+              "그레이",
+              "옐로우"
+            ]
+          }
+        ]
+      },
+      {
+        "id": 9,
+        "uuid": "8c598b25-960f-4b16-9dea-9c8b5b7a9491",
+        "code": "BIKE-20251124-009",
+        "name": "에스큐랩 SQlap 710 핸들그립",
+        "category": "bicycle",
+        "current_price": 57000,
+        "currency": "원",
+        "original_price": 57000,
+        "discount_percentage": 0,
+        "rocket_delivery": false,
+        "rocket_delivery_valid_until": null,
+        "rocket_delivery_estimation_region": null,
+        "arrival_eta": 24,
+        "arrival_date": "내일",
+        "out_of_stock_alert": false,
+        "remaining_stock": null,
+        "mall_name": "티몬",
+        "mall_url": null,
+        "seller_name": "공식에스큐랩스토어",
+        "seller_url": null,
+        "brand": "에스큐랩",
+        "model_number": "BI-1124-009-6393",
+        "rating": 1.9,
+        "n_reviews": 57000,
+        "n_satisfied_customers": 1,
+        "n_repeated_customers": 22,
+        "product_img": "BIKE-20251124-009_0",
+        "product_detail_img": [
+          "BIKE-20251124-009_2",
+          "BIKE-20251124-009_3",
+          "BIKE-20251124-009_4",
+          "BIKE-20251124-009_5",
+          "BIKE-20251124-009_6",
+          "BIKE-20251124-009_7",
+          "BIKE-20251124-009_8",
+          "BIKE-20251124-009_9",
+          "BIKE-20251124-009_10"
+        ],
+        "product_url": null,
+        "reward_points": 2850,
+        "options": [
+          {
+            "색상": [
+              "옐로우",
+              "블랙",
+              "화이트",
+              "오렌지"
+            ]
+          }
+        ]
+      },
+      {
+        "id": 10,
+        "uuid": "21e4ba20-8f9a-4720-a0c2-a311760201a8",
+        "code": "BIKE-20251124-010",
+        "name": "에이스피드 다용도 자전거 후미등, 레드, 1개",
+        "category": "bicycle",
+        "current_price": 1186,
+        "currency": "원",
+        "original_price": 19800,
+        "discount_percentage": 94,
+        "rocket_delivery": true,
+        "rocket_delivery_valid_until": "2025-12-24",
+        "rocket_delivery_estimation_region": "서울/경기",
+        "arrival_eta": 31,
+        "arrival_date": "내일",
+        "out_of_stock_alert": false,
+        "remaining_stock": null,
+        "mall_name": "인터파크",
+        "mall_url": null,
+        "seller_name": "에이스피드샵",
+        "seller_url": null,
+        "brand": "에이스피드",
+        "model_number": "BI-1124-010-3374",
+        "rating": 4.7,
+        "n_reviews": 1,
+        "n_satisfied_customers": 32,
+        "n_repeated_customers": 6,
+        "product_img": "BIKE-20251124-010_0",
+        "product_detail_img": [
+          "BIKE-20251124-010_2",
+          "BIKE-20251124-010_3",
+          "BIKE-20251124-010_4",
+          "BIKE-20251124-010_5",
+          "BIKE-20251124-010_6",
+          "BIKE-20251124-010_7",
+          "BIKE-20251124-010_8",
+          "BIKE-20251124-010_9",
+          "BIKE-20251124-010_10",
+          "BIKE-20251124-010_11",
+          "BIKE-20251124-010_12",
+          "BIKE-20251124-010_13"
+        ],
+        "product_url": null,
+        "reward_points": 59,
+        "options": [
+          {
+            "색상": [
+              "오렌지",
+              "그레이",
+              "옐로우",
+              "네이비",
+              "레드"
+            ]
+          }
+        ]
+      },
+      {
+        "id": 11,
+        "uuid": "ec11c550-9481-47ca-9566-e6d29ff6882c",
+        "code": "BIKE-20251124-011",
+        "name": "유니온 자전거 체인오일 UCO 범용 침투성 반건식 오일[100ml]",
+        "category": "bicycle",
+        "current_price": 263,
+        "currency": "원",
+        "original_price": 5260,
+        "discount_percentage": 95,
+        "rocket_delivery": true,
+        "rocket_delivery_valid_until": "2025-12-05",
+        "rocket_delivery_estimation_region": "전국",
+        "arrival_eta": 18,
+        "arrival_date": "오늘 중",
+        "out_of_stock_alert": false,
+        "remaining_stock": null,
+        "mall_name": "옥션",
+        "mall_url": null,
+        "seller_name": "유니온무역",
+        "seller_url": null,
+        "brand": "유니온",
+        "model_number": "BI-1124-011-5750",
+        "rating": 4.9,
+        "n_reviews": 490,
+        "n_satisfied_customers": 28,
+        "n_repeated_customers": 4,
+        "product_img": "BIKE-20251124-011_0",
+        "product_detail_img": [
+          "BIKE-20251124-011_2"
+        ],
+        "product_url": null,
+        "reward_points": 13,
+        "options": [
+          {
+            "색상": [
+              "네이비",
+              "블랙",
+              "화이트",
+              "오렌지",
+              "핑크"
+            ]
+          }
+        ]
+      },
+      {
+        "id": 12,
+        "uuid": "0a7debb6-9be4-4840-8e24-e9c4a7b74820",
+        "code": "BIKE-20251124-012",
+        "name": "자전거 후미등 XC-999, 혼합색상, 1개",
+        "category": "bicycle",
+        "current_price": 5620,
+        "currency": "원",
+        "original_price": 5620,
+        "discount_percentage": 0,
+        "rocket_delivery": true,
+        "rocket_delivery_valid_until": "2025-12-24",
+        "rocket_delivery_estimation_region": "전국",
+        "arrival_eta": 32,
+        "arrival_date": "내일",
+        "out_of_stock_alert": false,
+        "remaining_stock": null,
+        "mall_name": "쿠팡",
+        "mall_url": null,
+        "seller_name": "자전거샵",
+        "seller_url": null,
+        "brand": "자전거",
+        "model_number": "BI-1124-012-6719",
+        "rating": 4.7,
+        "n_reviews": 1,
+        "n_satisfied_customers": 1,
+        "n_repeated_customers": 20,
+        "product_img": "BIKE-20251124-012_0",
+        "product_detail_img": [
+          "BIKE-20251124-012_2"
+        ],
+        "product_url": null,
+        "reward_points": 281,
+        "options": [
+          {
+            "색상": [
+              "오렌지",
+              "핑크",
+              "블랙",
+              "그레이"
+            ]
+          }
+        ]
+      },
+      {
+        "id": 13,
+        "uuid": "98562d02-85f5-4c97-a22a-45c5b7c6fcce",
+        "code": "BIKE-20251124-013",
+        "name": "주스루브 자전거 체인오일 건식 습식 바이킹 세라믹 130ml",
+        "category": "bicycle",
+        "current_price": 2500,
+        "currency": "원",
+        "original_price": 13500,
+        "discount_percentage": 81,
+        "rocket_delivery": true,
+        "rocket_delivery_valid_until": "2025-11-30",
+        "rocket_delivery_estimation_region": "서울/경기",
+        "arrival_eta": 12,
+        "arrival_date": "오늘 중",
+        "out_of_stock_alert": false,
+        "remaining_stock": null,
+        "mall_name": "위메프",
+        "mall_url": null,
+        "seller_name": "프리미엄주스루브스토어",
+        "seller_url": null,
+        "brand": "주스루브",
+        "model_number": "BI-1124-013-6177",
+        "rating": 2.6,
+        "n_reviews": 78,
+        "n_satisfied_customers": 1,
+        "n_repeated_customers": 28,
+        "product_img": "BIKE-20251124-013_0",
+        "product_detail_img": [
+          "BIKE-20251124-013_2",
+          "BIKE-20251124-013_3"
+        ],
+        "product_url": null,
+        "reward_points": 125,
+        "options": [
+          {
+            "색상": [
+              "화이트",
+              "오렌지"
+            ]
+          }
+        ]
+      },
+      {
+        "id": 14,
+        "uuid": "640cda7d-1a03-4e1d-9f44-bc799b82be46",
+        "code": "BIKE-20251124-014",
+        "name": "포리어스 액션캠마운트 가민거치대 고프로마운트 듀얼마운트 HA-S020",
+        "category": "bicycle",
+        "current_price": 35000,
+        "currency": "원",
+        "original_price": 35000,
+        "discount_percentage": 0,
+        "rocket_delivery": false,
+        "rocket_delivery_valid_until": null,
+        "rocket_delivery_estimation_region": null,
+        "arrival_eta": 38,
+        "arrival_date": "내일",
+        "out_of_stock_alert": false,
+        "remaining_stock": null,
+        "mall_name": "G마켓",
+        "mall_url": null,
+        "seller_name": "공식포리어스몰",
+        "seller_url": null,
+        "brand": "포리어스",
+        "model_number": "BI-1124-014-9561",
+        "rating": 1.3,
+        "n_reviews": 4096,
+        "n_satisfied_customers": 11,
+        "n_repeated_customers": 64,
+        "product_img": "BIKE-20251124-014_0",
+        "product_detail_img": [
+          "BIKE-20251124-014_2",
+          "BIKE-20251124-014_3",
+          "BIKE-20251124-014_4",
+          "BIKE-20251124-014_5",
+          "BIKE-20251124-014_6",
+          "BIKE-20251124-014_7",
+          "BIKE-20251124-014_8",
+          "BIKE-20251124-014_9",
+          "BIKE-20251124-014_10",
+          "BIKE-20251124-014_11",
+          "BIKE-20251124-014_12",
+          "BIKE-20251124-014_13"
+        ],
+        "product_url": null,
+        "reward_points": 1750,
+        "options": [
+          {
+            "색상": [
+              "화이트",
+              "블루",
+              "오렌지",
+              "블랙",
+              "핑크"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "camping": {
+    "source": "\\\\\\\\192.168.1.89\\\\share\\\\dummy data\\\\products\\\\캠핑",
+    "items": [
+      {
+        "id": 0,
+        "uuid": "d08acd18-6beb-497d-bb94-3d9f041f55e9",
+        "code": "CAMP-20251124-000",
+        "name": "2ROOUM 접이식 발받침 리클라이너 캠핑 의자",
+        "category": "camping",
+        "current_price": 14820,
+        "currency": "원",
+        "original_price": 36800,
+        "discount_percentage": 60,
+        "rocket_delivery": true,
+        "rocket_delivery_valid_until": "2025-12-22",
+        "rocket_delivery_estimation_region": "서울/경기",
+        "arrival_eta": 50,
+        "arrival_date": "2일 뒤",
+        "out_of_stock_alert": false,
+        "remaining_stock": null,
+        "mall_name": "쿠팡",
+        "mall_url": null,
+        "seller_name": "정품2ROOUM몰",
+        "seller_url": null,
+        "brand": "2ROOUM",
+        "model_number": "CA-1124-000-3964",
+        "rating": 3.3,
+        "n_reviews": 61,
+        "n_satisfied_customers": 4,
+        "n_repeated_customers": 1,
+        "product_img": "CAMP-20251124-000_0",
+        "product_detail_img": [
+          "CAMP-20251124-000_2",
+          "CAMP-20251124-000_3",
+          "CAMP-20251124-000_4",
+          "CAMP-20251124-000_5",
+          "CAMP-20251124-000_6",
+          "CAMP-20251124-000_7",
+          "CAMP-20251124-000_8",
+          "CAMP-20251124-000_9",
+          "CAMP-20251124-000_10",
+          "CAMP-20251124-000_11",
+          "CAMP-20251124-000_12",
+          "CAMP-20251124-000_13",
+          "CAMP-20251124-000_14",
+          "CAMP-20251124-000_15",
+          "CAMP-20251124-000_16",
+          "CAMP-20251124-000_17"
+        ],
+        "product_url": null,
+        "reward_points": 741,
+        "options": [
+          {
+            "사이즈": [
+              "중형",
+              "소형",
+              "대형"
+            ]
+          }
+        ]
+      },
+      {
+        "id": 1,
+        "uuid": "0a236e59-055d-4047-9a85-4a0d8c5bb48a",
+        "code": "CAMP-20251124-001",
+        "name": "Allilio 자동 속개 방수 휴대용 텐트 초대형 타프 포함 차양이 두 개 있습니다",
+        "category": "camping",
+        "current_price": 40950,
+        "currency": "원",
+        "original_price": 40950,
+        "discount_percentage": 0,
+        "rocket_delivery": true,
+        "rocket_delivery_valid_until": "2025-11-26",
+        "rocket_delivery_estimation_region": "서울/경기",
+        "arrival_eta": 17,
+        "arrival_date": "오늘 중",
+        "out_of_stock_alert": false,
+        "remaining_stock": null,
+        "mall_name": "위메프",
+        "mall_url": null,
+        "seller_name": "Allilio상사",
+        "seller_url": null,
+        "brand": "Allilio",
+        "model_number": "CA-1124-001-7040",
+        "rating": 2.9,
+        "n_reviews": 2,
+        "n_satisfied_customers": 3,
+        "n_repeated_customers": 1,
+        "product_img": "CAMP-20251124-001_0",
+        "product_detail_img": [
+          "CAMP-20251124-001_2",
+          "CAMP-20251124-001_3",
+          "CAMP-20251124-001_4",
+          "CAMP-20251124-001_5",
+          "CAMP-20251124-001_6",
+          "CAMP-20251124-001_7",
+          "CAMP-20251124-001_8",
+          "CAMP-20251124-001_9",
+          "CAMP-20251124-001_10",
+          "CAMP-20251124-001_11",
+          "CAMP-20251124-001_12",
+          "CAMP-20251124-001_13",
+          "CAMP-20251124-001_14",
+          "CAMP-20251124-001_15",
+          "CAMP-20251124-001_16",
+          "CAMP-20251124-001_17",
+          "CAMP-20251124-001_18",
+          "CAMP-20251124-001_19",
+          "CAMP-20251124-001_20",
+          "CAMP-20251124-001_21",
+          "CAMP-20251124-001_22",
+          "CAMP-20251124-001_23",
+          "CAMP-20251124-001_24",
+          "CAMP-20251124-001_25",
+          "CAMP-20251124-001_26",
+          "CAMP-20251124-001_27",
+          "CAMP-20251124-001_28",
+          "CAMP-20251124-001_29"
+        ],
+        "product_url": null,
+        "reward_points": 2047,
+        "options": [
+          {
+            "색상": [
+              "네이비",
+              "그레이",
+              "블랙",
+              "블루"
+            ]
+          },
+          {
+            "인원": [
+              "1-2인용",
+              "2-3인용"
+            ]
+          }
+        ]
+      },
+      {
+        "id": 2,
+        "uuid": "57613e42-a684-4cea-b5b8-c71a7808d574",
+        "code": "CAMP-20251124-002",
+        "name": "KLIFE 접이식 캠핑의자 4단 각도조절 아웃도어 경량 낚시 체어 휴대용 사무실 야외 차박용 발받침대, 1개, 카키",
+        "category": "camping",
+        "current_price": 3888,
+        "currency": "원",
+        "original_price": 32800,
+        "discount_percentage": 88,
+        "rocket_delivery": true,
+        "rocket_delivery_valid_until": "2025-12-05",
+        "rocket_delivery_estimation_region": "서울/경기",
+        "arrival_eta": 60,
+        "arrival_date": "2일 뒤",
+        "out_of_stock_alert": false,
+        "remaining_stock": null,
+        "mall_name": "G마켓",
+        "mall_url": null,
+        "seller_name": "프리미엄KLIFE샵",
+        "seller_url": null,
+        "brand": "KLIFE",
+        "model_number": "CA-1124-002-5512",
+        "rating": 1.7,
+        "n_reviews": 1,
+        "n_satisfied_customers": 17,
+        "n_repeated_customers": 5,
+        "product_img": "CAMP-20251124-002_0",
+        "product_detail_img": [
+          "CAMP-20251124-002_2",
+          "CAMP-20251124-002_3",
+          "CAMP-20251124-002_4",
+          "CAMP-20251124-002_5",
+          "CAMP-20251124-002_6",
+          "CAMP-20251124-002_7",
+          "CAMP-20251124-002_8",
+          "CAMP-20251124-002_9",
+          "CAMP-20251124-002_10",
+          "CAMP-20251124-002_11",
+          "CAMP-20251124-002_12",
+          "CAMP-20251124-002_13",
+          "CAMP-20251124-002_14",
+          "CAMP-20251124-002_15",
+          "CAMP-20251124-002_16",
+          "CAMP-20251124-002_17"
+        ],
+        "product_url": null,
+        "reward_points": 194,
+        "options": [
+          {
+            "색상": [
+              "옐로우",
+              "그린",
+              "핑크"
+            ]
+          },
+          {
+            "사이즈": [
+              "소형",
+              "대형"
+            ]
+          }
+        ]
+      },
+      {
+        "id": 3,
+        "uuid": "dc0de3b5-93d9-45d1-9376-f88cfdf00506",
+        "code": "CAMP-20251124-003",
+        "name": "로티캠프 경량 로우 캠핑 의자 2p + 전용가방 2p 세트, 탄, 1세트",
+        "category": "camping",
+        "current_price": 348,
+        "currency": "원",
+        "original_price": 50690,
+        "discount_percentage": 99,
+        "rocket_delivery": true,
+        "rocket_delivery_valid_until": "2025-11-27",
+        "rocket_delivery_estimation_region": "서울/경기",
+        "arrival_eta": 62,
+        "arrival_date": "2일 뒤",
+        "out_of_stock_alert": false,
+        "remaining_stock": null,
+        "mall_name": "티몬",
+        "mall_url": null,
+        "seller_name": "프리미엄로티캠프상사",
+        "seller_url": null,
+        "brand": "로티캠프",
+        "model_number": "CA-1124-003-8614",
+        "rating": 2.4,
+        "n_reviews": 800,
+        "n_satisfied_customers": 3,
+        "n_repeated_customers": 26,
+        "product_img": "CAMP-20251124-003_0",
+        "product_detail_img": [
+          "CAMP-20251124-003_2",
+          "CAMP-20251124-003_3"
+        ],
+        "product_url": null,
+        "reward_points": 17,
+        "options": [
+          {
+            "색상": [
+              "핑크",
+              "네이비"
+            ]
+          },
+          {
+            "사이즈": [
+              "대형",
+              "소형",
+              "중형"
+            ]
+          }
+        ]
+      },
+      {
+        "id": 4,
+        "uuid": "0011eab8-a140-4755-990e-43bff3f6dda0",
+        "code": "CAMP-20251124-004",
+        "name": "산레뮤 4077MUC 멀티 나이프 캠핑용품 낚시용품",
+        "category": "camping",
+        "current_price": 22000,
+        "currency": "원",
+        "original_price": 22000,
+        "discount_percentage": 0,
+        "rocket_delivery": false,
+        "rocket_delivery_valid_until": null,
+        "rocket_delivery_estimation_region": null,
+        "arrival_eta": 66,
+        "arrival_date": "2일 뒤",
+        "out_of_stock_alert": false,
+        "remaining_stock": null,
+        "mall_name": "네이버쇼핑",
+        "mall_url": null,
+        "seller_name": "프리미엄산레뮤상사",
+        "seller_url": null,
+        "brand": "산레뮤",
+        "model_number": "CA-1124-004-7197",
+        "rating": 3.8,
+        "n_reviews": 4077,
+        "n_satisfied_customers": 3,
+        "n_repeated_customers": 29,
+        "product_img": "CAMP-20251124-004_0",
+        "product_detail_img": [
+          "CAMP-20251124-004_2",
+          "CAMP-20251124-004_3",
+          "CAMP-20251124-004_4"
+        ],
+        "product_url": null,
+        "reward_points": 1100,
+        "options": [
+          {
+            "색상": [
+              "그레이",
+              "블루",
+              "화이트",
+              "그린",
+              "핑크"
+            ]
+          }
+        ]
+      },
+      {
+        "id": 5,
+        "uuid": "2d0225c9-1260-4fb6-ac61-856bd894ebc2",
+        "code": "CAMP-20251124-005",
+        "name": "센리토(SENLEETO) 에어텐트 캠핑텐트 에어텐트 7-8인용 옥스포드 천 텐트",
+        "category": "camping",
+        "current_price": 663760,
+        "currency": "원",
+        "original_price": 969668,
+        "discount_percentage": 32,
+        "rocket_delivery": true,
+        "rocket_delivery_valid_until": "2025-12-18",
+        "rocket_delivery_estimation_region": "서울/경기",
+        "arrival_eta": 49,
+        "arrival_date": "2일 뒤",
+        "out_of_stock_alert": false,
+        "remaining_stock": null,
+        "mall_name": "쿠팡",
+        "mall_url": null,
+        "seller_name": "센리토(SENLEETO)샵",
+        "seller_url": null,
+        "brand": "센리토(SENLEETO)",
+        "model_number": "CA-1124-005-2799",
+        "rating": 3.3,
+        "n_reviews": 969668,
+        "n_satisfied_customers": 1,
+        "n_repeated_customers": 6,
+        "product_img": "CAMP-20251124-005_0",
+        "product_detail_img": [
+          "CAMP-20251124-005_2",
+          "CAMP-20251124-005_3",
+          "CAMP-20251124-005_4",
+          "CAMP-20251124-005_5",
+          "CAMP-20251124-005_6",
+          "CAMP-20251124-005_7",
+          "CAMP-20251124-005_8",
+          "CAMP-20251124-005_9",
+          "CAMP-20251124-005_10",
+          "CAMP-20251124-005_11",
+          "CAMP-20251124-005_12",
+          "CAMP-20251124-005_13",
+          "CAMP-20251124-005_14",
+          "CAMP-20251124-005_15",
+          "CAMP-20251124-005_16",
+          "CAMP-20251124-005_17"
+        ],
+        "product_url": null,
+        "reward_points": 33188,
+        "options": [
+          {
+            "색상": [
+              "블랙",
+              "핑크"
+            ]
+          },
+          {
+            "인원": [
+              "1-2인용",
+              "4-5인용",
+              "2-3인용"
+            ]
+          }
+        ]
+      },
+      {
+        "id": 6,
+        "uuid": "43261974-8c22-4bb4-a1be-643efb2d28e6",
+        "code": "CAMP-20251124-006",
+        "name": "스위스마운틴 헥사돔 원터치 텐트",
+        "category": "camping",
+        "current_price": 3000,
+        "currency": "원",
+        "original_price": 93800,
+        "discount_percentage": 97,
+        "rocket_delivery": true,
+        "rocket_delivery_valid_until": "2025-12-03",
+        "rocket_delivery_estimation_region": "전국",
+        "arrival_eta": 39,
+        "arrival_date": "내일",
+        "out_of_stock_alert": false,
+        "remaining_stock": null,
+        "mall_name": "티몬",
+        "mall_url": null,
+        "seller_name": "프리미엄스위스마운틴몰",
+        "seller_url": null,
+        "brand": "스위스마운틴",
+        "model_number": "CA-1124-006-1210",
+        "rating": 3.9,
+        "n_reviews": 3000,
+        "n_satisfied_customers": 1,
+        "n_repeated_customers": 1,
+        "product_img": "CAMP-20251124-006_0",
+        "product_detail_img": [
+          "CAMP-20251124-006_2",
+          "CAMP-20251124-006_3",
+          "CAMP-20251124-006_4",
+          "CAMP-20251124-006_5",
+          "CAMP-20251124-006_6",
+          "CAMP-20251124-006_7",
+          "CAMP-20251124-006_8"
+        ],
+        "product_url": null,
+        "reward_points": 150,
+        "options": [
+          {
+            "색상": [
+              "옐로우",
+              "핑크",
+              "그레이",
+              "블랙",
+              "오렌지"
+            ]
+          },
+          {
+            "인원": [
+              "4-5인용",
+              "1-2인용"
+            ]
+          }
+        ]
+      },
+      {
+        "id": 7,
+        "uuid": "7423013d-a86a-4c08-a5d5-89c92e4f21b6",
+        "code": "CAMP-20251124-007",
+        "name": "인피니 전기펌프 자동 공기주입식 에어텐트 에어쉘터 사계절 방수 중형 대형 가족 캠핑텐트",
+        "category": "camping",
+        "current_price": 399000,
+        "currency": "원",
+        "original_price": 429000,
+        "discount_percentage": 7,
+        "rocket_delivery": false,
+        "rocket_delivery_valid_until": null,
+        "rocket_delivery_estimation_region": null,
+        "arrival_eta": 54,
+        "arrival_date": "2일 뒤",
+        "out_of_stock_alert": false,
+        "remaining_stock": null,
+        "mall_name": "네이버쇼핑",
+        "mall_url": null,
+        "seller_name": "프리미엄인피니상사",
+        "seller_url": null,
+        "brand": "인피니",
+        "model_number": "CA-1124-007-2722",
+        "rating": 2.9,
+        "n_reviews": 6,
+        "n_satisfied_customers": 1,
+        "n_repeated_customers": 1,
+        "product_img": "CAMP-20251124-007_0",
+        "product_detail_img": [
+          "CAMP-20251124-007_2",
+          "CAMP-20251124-007_3",
+          "CAMP-20251124-007_4",
+          "CAMP-20251124-007_5",
+          "CAMP-20251124-007_6",
+          "CAMP-20251124-007_7",
+          "CAMP-20251124-007_8",
+          "CAMP-20251124-007_9",
+          "CAMP-20251124-007_10",
+          "CAMP-20251124-007_11",
+          "CAMP-20251124-007_12",
+          "CAMP-20251124-007_13",
+          "CAMP-20251124-007_14",
+          "CAMP-20251124-007_15",
+          "CAMP-20251124-007_16",
+          "CAMP-20251124-007_17",
+          "CAMP-20251124-007_18"
+        ],
+        "product_url": null,
+        "reward_points": 19950,
+        "options": [
+          {
+            "색상": [
+              "레드",
+              "블루",
+              "그레이",
+              "핑크",
+              "네이비"
+            ]
+          },
+          {
+            "인원": [
+              "3-4인용",
+              "4-5인용"
+            ]
+          }
+        ]
+      },
+      {
+        "id": 8,
+        "uuid": "4f2fc6d1-db01-4e86-a239-3b0d3c7d2a64",
+        "code": "CAMP-20251124-008",
+        "name": "일광표 캠핑 휴대용 랜턴 무선 충전식 파우치 포함 Black 색상, 1개",
+        "category": "camping",
+        "current_price": 39900,
+        "currency": "원",
+        "original_price": 49900,
+        "discount_percentage": 20,
+        "rocket_delivery": true,
+        "rocket_delivery_valid_until": "2025-11-27",
+        "rocket_delivery_estimation_region": "서울/경기",
+        "arrival_eta": 25,
+        "arrival_date": "내일",
+        "out_of_stock_alert": false,
+        "remaining_stock": null,
+        "mall_name": "쿠팡",
+        "mall_url": null,
+        "seller_name": "정품일광표샵",
+        "seller_url": null,
+        "brand": "일광표",
+        "model_number": "CA-1124-008-5597",
+        "rating": 1.9,
+        "n_reviews": 131,
+        "n_satisfied_customers": 11,
+        "n_repeated_customers": 1,
+        "product_img": "CAMP-20251124-008_0",
+        "product_detail_img": [
+          "CAMP-20251124-008_2",
+          "CAMP-20251124-008_3",
+          "CAMP-20251124-008_4",
+          "CAMP-20251124-008_5",
+          "CAMP-20251124-008_6"
+        ],
+        "product_url": null,
+        "reward_points": 1995,
+        "options": [
+          {
+            "색상": [
+              "화이트",
+              "블랙"
+            ]
+          }
+        ]
+      },
+      {
+        "id": 9,
+        "uuid": "28ec3275-8b7a-4998-93ad-e947c3444546",
+        "code": "CAMP-20251124-009",
+        "name": "캠핑텐트 육각형 자동텐트 캠핑텐트3~4인용 방습 매트+수납팩 증정",
+        "category": "camping",
+        "current_price": 4398,
+        "currency": "원",
+        "original_price": 404670,
+        "discount_percentage": 99,
+        "rocket_delivery": true,
+        "rocket_delivery_valid_until": "2025-12-01",
+        "rocket_delivery_estimation_region": "서울/경기",
+        "arrival_eta": 58,
+        "arrival_date": "2일 뒤",
+        "out_of_stock_alert": false,
+        "remaining_stock": null,
+        "mall_name": "인터파크",
+        "mall_url": null,
+        "seller_name": "공식캠핑텐트몰",
+        "seller_url": null,
+        "brand": "캠핑텐트",
+        "model_number": "CA-1124-009-1353",
+        "rating": 1.1,
+        "n_reviews": 199,
+        "n_satisfied_customers": 11,
+        "n_repeated_customers": 15,
+        "product_img": "CAMP-20251124-009_0",
+        "product_detail_img": [
+          "CAMP-20251124-009_2",
+          "CAMP-20251124-009_3",
+          "CAMP-20251124-009_4",
+          "CAMP-20251124-009_5",
+          "CAMP-20251124-009_6",
+          "CAMP-20251124-009_7",
+          "CAMP-20251124-009_8",
+          "CAMP-20251124-009_9",
+          "CAMP-20251124-009_10",
+          "CAMP-20251124-009_11",
+          "CAMP-20251124-009_12",
+          "CAMP-20251124-009_13",
+          "CAMP-20251124-009_14",
+          "CAMP-20251124-009_15",
+          "CAMP-20251124-009_16",
+          "CAMP-20251124-009_17",
+          "CAMP-20251124-009_18",
+          "CAMP-20251124-009_19",
+          "CAMP-20251124-009_20",
+          "CAMP-20251124-009_21",
+          "CAMP-20251124-009_22"
+        ],
+        "product_url": null,
+        "reward_points": 219,
+        "options": [
+          {
+            "색상": [
+              "네이비",
+              "그린",
+              "레드",
+              "블랙"
+            ]
+          },
+          {
+            "인원": [
+              "3-4인용",
+              "2-3인용",
+              "4-5인용"
+            ]
+          }
+        ]
+      },
+      {
+        "id": 10,
+        "uuid": "0c2a7063-289f-4d08-85dc-2ace4bd2b6a3",
+        "code": "CAMP-20251124-010",
+        "name": "코멧 걸어서 사용하는 충전식 LED 감성 캠핑 랜턴",
+        "category": "camping",
+        "current_price": 2000,
+        "currency": "원",
+        "original_price": 7236,
+        "discount_percentage": 72,
+        "rocket_delivery": true,
+        "rocket_delivery_valid_until": "2025-12-07",
+        "rocket_delivery_estimation_region": "전국",
+        "arrival_eta": 57,
+        "arrival_date": "2일 뒤",
+        "out_of_stock_alert": false,
+        "remaining_stock": null,
+        "mall_name": "티몬",
+        "mall_url": null,
+        "seller_name": "프리미엄코멧몰",
+        "seller_url": null,
+        "brand": "코멧",
+        "model_number": "CA-1124-010-5081",
+        "rating": 3.4,
+        "n_reviews": 2000,
+        "n_satisfied_customers": 1,
+        "n_repeated_customers": 6,
+        "product_img": "CAMP-20251124-010_0",
+        "product_detail_img": [
+          "CAMP-20251124-010_2",
+          "CAMP-20251124-010_3",
+          "CAMP-20251124-010_4"
+        ],
+        "product_url": null,
+        "reward_points": 100,
+        "options": [
+          {
+            "색상": [
+              "오렌지",
+              "그린",
+              "옐로우",
+              "핑크",
+              "블루"
+            ]
+          }
+        ]
+      },
+      {
+        "id": 11,
+        "uuid": "c93df054-26bd-4478-9ff4-8740374e6c47",
+        "code": "CAMP-20251124-011",
+        "name": "코멧 아웃도어 릴렉스 폴딩 캠핑체어",
+        "category": "camping",
+        "current_price": 14860,
+        "currency": "원",
+        "original_price": 47088,
+        "discount_percentage": 68,
+        "rocket_delivery": true,
+        "rocket_delivery_valid_until": "2025-11-28",
+        "rocket_delivery_estimation_region": "전국",
+        "arrival_eta": 21,
+        "arrival_date": "오늘 중",
+        "out_of_stock_alert": false,
+        "remaining_stock": null,
+        "mall_name": "11번가",
+        "mall_url": null,
+        "seller_name": "코멧스토어",
+        "seller_url": null,
+        "brand": "코멧",
+        "model_number": "CA-1124-011-8192",
+        "rating": 5.0,
+        "n_reviews": 49,
+        "n_satisfied_customers": 8,
+        "n_repeated_customers": 2,
+        "product_img": "CAMP-20251124-011_0",
+        "product_detail_img": [
+          "CAMP-20251124-011_2"
+        ],
+        "product_url": null,
+        "reward_points": 743,
+        "options": [
+          {
+            "색상": [
+              "핑크",
+              "네이비",
+              "오렌지",
+              "그린",
+              "블랙"
+            ]
+          }
+        ]
+      },
+      {
+        "id": 12,
+        "uuid": "37a14347-de65-4076-8516-5dfddc5c0e7b",
+        "code": "CAMP-20251124-012",
+        "name": "코멧 아웃도어 와이드 캠핑 체어 세트, 블랙, 2개",
+        "category": "camping",
+        "current_price": 12810,
+        "currency": "원",
+        "original_price": 84088,
+        "discount_percentage": 85,
+        "rocket_delivery": true,
+        "rocket_delivery_valid_until": "2025-12-15",
+        "rocket_delivery_estimation_region": "서울/경기",
+        "arrival_eta": 35,
+        "arrival_date": "내일",
+        "out_of_stock_alert": false,
+        "remaining_stock": null,
+        "mall_name": "11번가",
+        "mall_url": null,
+        "seller_name": "프리미엄코멧샵",
+        "seller_url": null,
+        "brand": "코멧",
+        "model_number": "CA-1124-012-7666",
+        "rating": 2.9,
+        "n_reviews": 12810,
+        "n_satisfied_customers": 3,
+        "n_repeated_customers": 3,
+        "product_img": "CAMP-20251124-012_0",
+        "product_detail_img": [
+          "CAMP-20251124-012_2",
+          "CAMP-20251124-012_3",
+          "CAMP-20251124-012_4",
+          "CAMP-20251124-012_5",
+          "CAMP-20251124-012_6",
+          "CAMP-20251124-012_7",
+          "CAMP-20251124-012_8",
+          "CAMP-20251124-012_9",
+          "CAMP-20251124-012_10",
+          "CAMP-20251124-012_11",
+          "CAMP-20251124-012_12",
+          "CAMP-20251124-012_13",
+          "CAMP-20251124-012_14"
+        ],
+        "product_url": null,
+        "reward_points": 640,
+        "options": [
+          {
+            "색상": [
+              "옐로우",
+              "핑크",
+              "그린",
+              "오렌지",
+              "화이트"
+            ]
+          }
+        ]
+      },
+      {
+        "id": 13,
+        "uuid": "b192bb73-fb37-42ee-ac32-237e843d4257",
+        "code": "CAMP-20251124-013",
+        "name": "코멧 휴대용 충전식 아웃도어 LED 캠핑 랜턴 + 보조배터리 10000mAh 세트",
+        "category": "camping",
+        "current_price": 1000,
+        "currency": "원",
+        "original_price": 18990,
+        "discount_percentage": 95,
+        "rocket_delivery": true,
+        "rocket_delivery_valid_until": "2025-12-21",
+        "rocket_delivery_estimation_region": "서울/경기",
+        "arrival_eta": 19,
+        "arrival_date": "오늘 중",
+        "out_of_stock_alert": false,
+        "remaining_stock": null,
+        "mall_name": "인터파크",
+        "mall_url": null,
+        "seller_name": "공식코멧마켓",
+        "seller_url": null,
+        "brand": "코멧",
+        "model_number": "CA-1124-013-4256",
+        "rating": 4.4,
+        "n_reviews": 1000,
+        "n_satisfied_customers": 1,
+        "n_repeated_customers": 9,
+        "product_img": "CAMP-20251124-013_0",
+        "product_detail_img": [
+          "CAMP-20251124-013_2",
+          "CAMP-20251124-013_3",
+          "CAMP-20251124-013_4"
+        ],
+        "product_url": null,
+        "reward_points": 50,
+        "options": [
+          {
+            "색상": [
+              "옐로우",
+              "블랙",
+              "오렌지",
+              "그레이"
+            ]
+          }
+        ]
+      },
+      {
+        "id": 14,
+        "uuid": "3e95ebea-d473-4d46-8e19-101a83bdc40d",
+        "code": "CAMP-20251124-014",
+        "name": "타닥 로이스토 캠핑 랜턴 IPX4등급 방수 밝기조절 4 Color 감성 LED 조명, 1개, 샌드베이지M",
+        "category": "camping",
+        "current_price": 10950,
+        "currency": "원",
+        "original_price": 46988,
+        "discount_percentage": 77,
+        "rocket_delivery": true,
+        "rocket_delivery_valid_until": "2025-12-02",
+        "rocket_delivery_estimation_region": "서울/경기",
+        "arrival_eta": 46,
+        "arrival_date": "내일",
+        "out_of_stock_alert": false,
+        "remaining_stock": null,
+        "mall_name": "11번가",
+        "mall_url": null,
+        "seller_name": "타닥몰",
+        "seller_url": null,
+        "brand": "타닥",
+        "model_number": "CA-1124-014-1015",
+        "rating": 3.2,
+        "n_reviews": 956,
+        "n_satisfied_customers": 10,
+        "n_repeated_customers": 16,
+        "product_img": "CAMP-20251124-014_0",
+        "product_detail_img": [
+          "CAMP-20251124-014_2",
+          "CAMP-20251124-014_3",
+          "CAMP-20251124-014_4",
+          "CAMP-20251124-014_5"
+        ],
+        "product_url": null,
+        "reward_points": 547,
+        "options": [
+          {
+            "색상": [
+              "블랙",
+              "블루"
+            ]
+          }
+        ]
+      },
+      {
+        "id": 15,
+        "uuid": "e521e0c8-58ea-463f-b015-890b696f6cb2",
+        "code": "CAMP-20251124-015",
+        "name": "패스트캠프 베이직3 PLUS+ 원터치 팝업 텐트 그늘막",
+        "category": "camping",
+        "current_price": 549,
+        "currency": "원",
+        "original_price": 54900,
+        "discount_percentage": 99,
+        "rocket_delivery": true,
+        "rocket_delivery_valid_until": "2025-12-03",
+        "rocket_delivery_estimation_region": "전국",
+        "arrival_eta": 27,
+        "arrival_date": "내일",
+        "out_of_stock_alert": false,
+        "remaining_stock": null,
+        "mall_name": "티몬",
+        "mall_url": null,
+        "seller_name": "정품패스트캠프스토어",
+        "seller_url": null,
+        "brand": "패스트캠프",
+        "model_number": "CA-1124-015-8683",
+        "rating": 2.2,
+        "n_reviews": 1041,
+        "n_satisfied_customers": 38,
+        "n_repeated_customers": 1,
+        "product_img": "CAMP-20251124-015_0",
+        "product_detail_img": [
+          "CAMP-20251124-015_2"
+        ],
+        "product_url": null,
+        "reward_points": 27,
+        "options": [
+          {
+            "색상": [
+              "블루",
+              "옐로우",
+              "블랙",
+              "화이트",
+              "핑크"
+            ]
+          },
+          {
+            "인원": [
+              "2-3인용",
+              "3-4인용",
+              "1-2인용"
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

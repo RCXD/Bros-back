@@ -4,7 +4,7 @@ from pathlib import Path
 import pytest
 from apps.config.server import db
 from apps.auth.models import User
-from apps.post.models import Image
+from apps.image.models import Image
 import random
 from PIL import Image as PILImage
 

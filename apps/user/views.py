@@ -14,6 +14,51 @@ from apps.user.models import Follow, Friend
 bp = Blueprint("user", __name__)
 
 
+@bp.get("/api_info")
+def api_info():
+    """
+    사용자 API 정보 제공 (개발용)
+    """
+    info = {
+        "module": "user",
+        "base_path": "/user",
+        "description": "사용자 프로필 조회 및 팔로우 관리",
+        "endpoints": [
+            {
+                "path": "/user/<user_id>",
+                "method": "GET",
+                "auth_required": False,
+                "description": "특정 사용자 프로필 조회",
+            },
+            {
+                "path": "/user/<user_id>/follow",
+                "method": "PATCH",
+                "auth_required": True,
+                "description": "사용자 팔로우 토글 (추가/제거)",
+            },
+            {
+                "path": "/user/<user_id>/followers",
+                "method": "GET",
+                "auth_required": False,
+                "description": "팔로워 목록 조회",
+            },
+            {
+                "path": "/user/<user_id>/following",
+                "method": "GET",
+                "auth_required": False,
+                "description": "팔로잉 목록 조회",
+            },
+            {
+                "path": "/user/api_info",
+                "method": "GET",
+                "auth_required": False,
+                "description": "API 정보 조회 (개발용)",
+            },
+        ],
+    }
+    return jsonify(info), 200
+
+
 @bp.get("/<int:user_id>")
 def get_user(user_id):
     """ID로 사용자 프로필 조회"""
