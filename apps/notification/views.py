@@ -5,6 +5,7 @@ Migrated from: app/blueprints/notification.py
 
 from flask import Blueprint, jsonify, request
 from flask_jwt_extended import jwt_required, get_jwt_identity
+from sqlalchemy import and_, or_
 from sqlalchemy.exc import IntegrityError
 from apps.config.server import db
 from apps.notification.models import Notification, NotificationType
@@ -125,53 +126,43 @@ def get_my_notifications():
     notifications = query.order_by(Notification.created_at.desc()).paginate(
         page=page, per_page=per_page, error_out=False
     )
+
+    
+    if follow_state:
+        follow_state_list = []
+        for notification_ in notifications.items:
+            from_user = User.query.filter_by(user_id=notification_.from_user_id).first()
+            # if not from_user:
+            #     follow_state_list.append({"following": False, "followed": False})
+            #     continue
+            follow_state_ = {
+                "following": Follow.query.filter_by(
+                    from_user_id=current_user_id,
+                    to_user_id=from_user.user_id,
+                ).count()
+                > 0,  # 팔로잉 (내가 그 사람을 팔로우)
+                "followed": Follow.query.filter_by(
+                    from_user_id=from_user.user_id,
+                    to_user_id=current_user_id,
+                ).count()
+                > 0,  # 팔로우 당함 (나를 팔로우 하는 사람)
+                # followed==True인 상태에서 following==False이면 버튼 상태: 맞팔로우 / following==True이면 맞팔로잉(회색)
+                # followed==False인 상태에서 following==False이면 버튼 상태: 팔로우 / following==True이면 팔로잉(회색)
+            }
+            print("###########follow_state_: ", follow_state_)  # 디버깅용
+
+            follow_state_list.append(follow_state_)
+
     result = {
         "items": [n.to_dict() for n in notifications.items],
         "total": notifications.total,
-        "page": page,
-        "per_page": per_page,
-        "pages": notifications.pages,
+
         "has_next": notifications.has_next,
         "has_prev": notifications.has_prev,
     }
+
     if follow_state:
-        from_user_ids = {
-            notification_.from_user_id
-            for notification_ in notifications.items
-            if notification_.from_user_id
-        }
-
-        following = set()
-        followed = set()
-        if from_user_ids:
-            following = {
-                to_user_id
-                for (to_user_id,) in Follow.query.with_entities(
-                    Follow.to_user_id
-                ).filter(
-                    Follow.from_user_id == current_user_id,
-                    Follow.to_user_id.in_(from_user_ids),
-                )
-            }
-            followed = {
-                from_user_id
-                for (from_user_id,) in Follow.query.with_entities(
-                    Follow.from_user_id
-                ).filter(
-                    Follow.to_user_id == current_user_id,
-                    Follow.from_user_id.in_(from_user_ids),
-                )
-            }
-
-        for notification_ in notifications.items:
-            item_dict = notification_.to_dict()
-
-            if follow_state:
-                from_user_id = notification_.from_user_id
-                item_dict["to_user_id"] = from_user_id in following
-                item_dict["from_user_id"] = from_user_id in followed
-
-            result["items"].append(item_dict)
+        result["follow_state"] = {"items": follow_state_list}
 
     # if follow_state:
     #     result["follow_state"] = {"items": follow_state_list}
