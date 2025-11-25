@@ -2,13 +2,13 @@
 Cosmetic API - Items, Sets, User inventory/state, and uploads
 """
 
+import base64
 import os
 from datetime import datetime
 from werkzeug.utils import secure_filename
 from flask import Blueprint, jsonify, request, current_app
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from sqlalchemy.exc import SQLAlchemyError, IntegrityError
-from functools import wraps
 
 from apps.config.server import db
 from apps.cosmetics.models import (
@@ -16,16 +16,16 @@ from apps.cosmetics.models import (
     CosmeticSet,
     CosmeticSetItem,
     UserItem,
-    UserCosmeticState,
     ItemType,
 )
 from apps.cosmetics.utils import (
     _get_or_create_user_state,
     _item_to_dict,
-    _require_admin,
     _set_to_dict,
     _validate_ownership,
 )
+
+from apps.admin.views import admin_required
 
 bp = Blueprint("cosmetic", __name__)
 
@@ -52,11 +52,11 @@ def _get_pagination_params(
         page = int(request.args.get("page", 1))
         per_page = int(request.args.get("per_page", default_per_page))
     except (TypeError, ValueError):
-        return None, None, (jsonify({"error": "invalid_pagination_parameters"}), 400)
+        return None, None, (jsonify({"message": "invalid_pagination_parameters"}), 400)
     if page < 1:
-        return None, None, (jsonify({"error": "page must be >= 1"}), 400)
+        return None, None, (jsonify({"message": "page must be >= 1"}), 400)
     if per_page < 1:
-        return None, None, (jsonify({"error": "per_page must be >= 1"}), 400)
+        return None, None, (jsonify({"message": "per_page must be >= 1"}), 400)
     per_page = min(per_page, max_per_page)
     return page, per_page, None
 
@@ -70,50 +70,106 @@ def _paginate_query(
     return query.paginate(page=page, per_page=per_page, error_out=False), None
 
 
-def _admin_route(func):
-    @wraps(func)
-    def wrapper(*args, **kwargs):
-        _, err = _require_admin()
-        if err:
-            return err
-        return func(*args, **kwargs)
+def _save_cosmetic_upload(file_storage, subdir=None):
+    if not file_storage or not file_storage.filename:
+        raise ValueError("file missing")
+    fname = secure_filename(file_storage.filename)
+    if not fname:
+        raise ValueError("invalid filename")
+    subdir = subdir or "cosmetic_overlays"
+    base = current_app.static_folder or os.path.join(current_app.root_path, "static")
+    target_dir = os.path.join(base, subdir)
+    os.makedirs(target_dir, exist_ok=True)
+    path = os.path.join(target_dir, fname)
+    file_storage.save(path)
+    rel = os.path.relpath(path, base).replace("\\", "/")
+    static_url_path = current_app.static_url_path or "/static"
+    url = f"{static_url_path.rstrip('/')}/{rel.lstrip('/')}"
+    return rel, url
 
-    return wrapper
+
+def _delete_cosmetic_asset(image_path):
+    if not image_path:
+        return
+    base = current_app.static_folder or os.path.join(current_app.root_path, "static")
+    base_abs = os.path.abspath(base)
+    asset_path = os.path.abspath(os.path.normpath(os.path.join(base_abs, image_path)))
+    try:
+        if os.path.commonpath([base_abs, asset_path]) != base_abs:
+            return
+    except ValueError:
+        return
+    try:
+        os.remove(asset_path)
+    except FileNotFoundError:
+        pass
+
+
+_VISUAL_ITEM_TYPES = frozenset(
+    t
+    for t in (
+        getattr(ItemType, "overlay", None),
+        getattr(ItemType, "border", None),
+        getattr(ItemType, "bedge", None),
+    )
+    if t is not None
+)
+
+
+def _enforce_visual_asset_requirement(item_type, image_path):
+    if item_type not in _VISUAL_ITEM_TYPES:
+        return
+    if image_path and image_path.strip():
+        return
+    raise ValueError(f"{item_type.value} items require an image or svg asset")
 
 
 # ---- Items (Admin) ----
 
-
 @bp.post("/items")
 @jwt_required()
-@_admin_route
 def create_item():
-    data = request.get_json(silent=True) or {}
+    error = admin_required()
+    if error:
+        return error
+    data = request.get_json(silent=True)
+    if data is None:
+        data = request.form.to_dict(flat=True)
+    file_obj = request.files.get("image") or request.files.get("file")
+    subdir = request.form.get("subdir") or data.get("subdir")
+    try:
+        if file_obj:
+            image_path, _ = _save_cosmetic_upload(file_obj, subdir=subdir)
+            data["image_path"] = image_path
+    except ValueError as exc:
+        return jsonify({"message": str(exc)}), 400
     try:
         itype = data.get("type")
         if itype is None:
-            return jsonify({"error": "type is required"}), 400
+            return jsonify({"message": "type is required"}), 400
         try:
             itype = ItemType(itype)
         except Exception:
-            return jsonify({"error": "invalid type"}), 400
+            return jsonify({"message": "invalid type"}), 400
+        image_path = (data.get("image_path") or "").strip() or None
+        _enforce_visual_asset_requirement(itype, image_path)
         item = CosmeticItem(
             type=itype,
             name=(data.get("name") or "").strip(),
             price=int(data.get("price") or 0),
             rarity=(data.get("rarity") or None),
-            image_path=(data.get("image_path") or None),
+            image_path=image_path,
             theme_color=(data.get("theme_color") or None),
             description=(data.get("description") or None),
         )
         if not item.name:
-            return jsonify({"error": "name is required"}), 400
+            return jsonify({"message": "name is required"}), 400
         db.session.add(item)
         db.session.commit()
         return jsonify({"item": _item_to_dict(item)}), 201
-    except (ValueError, SQLAlchemyError) as exc:
+    except (ValueError, SQLAlchemyError, OSError) as exc:
         db.session.rollback()
-        return jsonify({"error": str(exc)}), 400
+        return jsonify({"message": str(exc)}), 400
 
 
 @bp.get("/items")
@@ -125,7 +181,7 @@ def list_items():
         try:
             q = q.filter_by(type=ItemType(itype))
         except Exception:
-            return jsonify({"error": "invalid type"}), 400
+            return jsonify({"message": "invalid type"}), 400
     q = q.order_by(CosmeticItem.created_at.desc())
     pagination, err = _paginate_query(q)
     if err:
@@ -147,58 +203,61 @@ def list_items():
 def get_item(item_id):
     i = CosmeticItem.query.get(item_id)
     if not i:
-        return jsonify({"error": "not_found"}), 404
+        return jsonify({"message": "not_found"}), 404
     return jsonify({"item": _item_to_dict(i)}), 200
 
 
 @bp.put("/items/<int:item_id>")
 @jwt_required()
-@_admin_route
 def update_item(item_id):
     i = CosmeticItem.query.get(item_id)
     if not i:
-        return jsonify({"error": "not_found"}), 404
+        return jsonify({"message": "not_found"}), 404
     data = request.get_json(silent=True) or {}
     try:
         if "type" in data:
             try:
                 i.type = ItemType(data.get("type"))
             except Exception:
-                return jsonify({"error": "invalid type"}), 400
+                return jsonify({"message": "invalid type"}), 400
         if "name" in data:
             name = (data.get("name") or "").strip()
             if not name:
-                return jsonify({"error": "name cannot be empty"}), 400
+                return jsonify({"message": "name cannot be empty"}), 400
             i.name = name
         if "price" in data:
             i.price = int(data.get("price") or 0)
-        for key in ("rarity", "image_path", "theme_color", "description"):
+        for key in ("rarity", "theme_color", "description"):
             if key in data:
                 setattr(i, key, data.get(key))
+        if "image_path" in data:
+            i.image_path = (data.get("image_path") or "").strip() or None
+        _enforce_visual_asset_requirement(i.type, i.image_path)
         db.session.commit()
         return jsonify({"item": _item_to_dict(i)}), 200
     except (ValueError, SQLAlchemyError) as exc:
         db.session.rollback()
-        return jsonify({"error": str(exc)}), 400
+        return jsonify({"message": str(exc)}), 400
 
 
 @bp.delete("/items/<int:item_id>")
 @jwt_required()
-@_admin_route
 def delete_item(item_id):
     i = CosmeticItem.query.get(item_id)
     if not i:
-        return jsonify({"error": "not_found"}), 404
+        return jsonify({"message": "not_found"}), 404
+    image_path = i.image_path
     try:
         db.session.delete(i)
         db.session.commit()
+        _delete_cosmetic_asset(image_path)
         return jsonify({"message": "deleted"}), 200
     except IntegrityError as exc:
         db.session.rollback()
-        return jsonify({"error": "in_use", "detail": str(exc)}), 409
-    except SQLAlchemyError as exc:
+        return jsonify({"message": "in_use", "detail": str(exc)}), 409
+    except (SQLAlchemyError, OSError) as exc:
         db.session.rollback()
-        return jsonify({"error": str(exc)}), 400
+        return jsonify({"message": str(exc)}), 400
 
 
 # ---- Sets (Admin) ----
@@ -206,12 +265,11 @@ def delete_item(item_id):
 
 @bp.post("/sets")
 @jwt_required()
-@_admin_route
 def create_set():
     data = request.get_json(silent=True) or {}
     name = (data.get("name") or "").strip()
     if not name:
-        return jsonify({"error": "name is required"}), 400
+        return jsonify({"message": "name is required"}), 400
     price = int(data.get("price") or 0)
     try:
         s = CosmeticSet(
@@ -230,7 +288,7 @@ def create_set():
         return jsonify({"set": _set_to_dict(s, include_items=True)}), 201
     except (ValueError, SQLAlchemyError) as exc:
         db.session.rollback()
-        return jsonify({"error": str(exc)}), 400
+        return jsonify({"message": str(exc)}), 400
 
 
 @bp.get("/sets")
@@ -257,23 +315,22 @@ def list_sets():
 def get_set(set_id):
     s = CosmeticSet.query.get(set_id)
     if not s:
-        return jsonify({"error": "not_found"}), 404
+        return jsonify({"message": "not_found"}), 404
     return jsonify({"set": _set_to_dict(s, include_items=True)}), 200
 
 
 @bp.put("/sets/<int:set_id>")
 @jwt_required()
-@_admin_route
 def update_set(set_id):
     s = CosmeticSet.query.get(set_id)
     if not s:
-        return jsonify({"error": "not_found"}), 404
+        return jsonify({"message": "not_found"}), 404
     data = request.get_json(silent=True) or {}
     try:
         if "name" in data:
             name = (data.get("name") or "").strip()
             if not name:
-                return jsonify({"error": "name cannot be empty"}), 400
+                return jsonify({"message": "name cannot be empty"}), 400
             s.name = name
         if "price" in data:
             s.price = int(data.get("price") or 0)
@@ -291,16 +348,15 @@ def update_set(set_id):
         return jsonify({"set": _set_to_dict(s, include_items=True)}), 200
     except (ValueError, SQLAlchemyError) as exc:
         db.session.rollback()
-        return jsonify({"error": str(exc)}), 400
+        return jsonify({"message": str(exc)}), 400
 
 
 @bp.delete("/sets/<int:set_id>")
 @jwt_required()
-@_admin_route
 def delete_set(set_id):
     s = CosmeticSet.query.get(set_id)
     if not s:
-        return jsonify({"error": "not_found"}), 404
+        return jsonify({"message": "not_found"}), 404
     try:
         CosmeticSetItem.query.filter_by(set_id=set_id).delete()
         db.session.delete(s)
@@ -308,7 +364,7 @@ def delete_set(set_id):
         return jsonify({"message": "deleted"}), 200
     except SQLAlchemyError as exc:
         db.session.rollback()
-        return jsonify({"error": str(exc)}), 400
+        return jsonify({"message": str(exc)}), 400
 
 
 @bp.get("/sets/<int:set_id>/items")
@@ -316,7 +372,7 @@ def delete_set(set_id):
 def list_set_items(set_id):
     s = CosmeticSet.query.get(set_id)
     if not s:
-        return jsonify({"error": "not_found"}), 404
+        return jsonify({"message": "not_found"}), 404
     q = (
         CosmeticItem.query.join(
             CosmeticSetItem,
@@ -343,6 +399,36 @@ def list_set_items(set_id):
 # ---- User Inventory ----
 
 
+def _collect_item_image_files(items):
+    img_files = {}
+    if not items:
+        return img_files
+    base = current_app.static_folder or os.path.join(current_app.root_path, "static")
+    base_abs = os.path.abspath(base)
+    static_url_path = current_app.static_url_path or "/static"
+    for item in items:
+        rel_path = (item.get("image_path") or "").strip()
+        if not rel_path or rel_path in img_files:
+            continue
+        abs_path = os.path.abspath(os.path.normpath(os.path.join(base_abs, rel_path)))
+        try:
+            if os.path.commonpath([base_abs, abs_path]) != base_abs:
+                continue
+        except ValueError:
+            continue
+        try:
+            with open(abs_path, "rb") as fh:
+                encoded = base64.b64encode(fh.read()).decode("ascii")
+        except (OSError, ValueError):
+            continue
+        img_files[rel_path] = {
+            "path": rel_path,
+            "url": f"{static_url_path.rstrip('/')}/{rel_path.lstrip('/')}",
+            "data": encoded,
+        }
+    return img_files
+
+
 @bp.get("/user/items")
 @jwt_required()
 def list_user_items():
@@ -359,6 +445,7 @@ def list_user_items():
     if item_ids:
         items = CosmeticItem.query.filter(CosmeticItem.item_id.in_(item_ids)).all()
     by_id = {i.item_id: _item_to_dict(i) for i in items}
+    img_files = _collect_item_image_files(by_id.values())
     payload = [
         {
             "user_item_id": r.user_item_id,
@@ -372,6 +459,7 @@ def list_user_items():
         jsonify(
             {
                 "items": payload,
+                "img_files": img_files,
                 "pagination": _pagination_meta(pagination),
             }
         ),
@@ -387,9 +475,9 @@ def acquire_item():
     try:
         item_id = int(data.get("item_id"))
     except Exception:
-        return jsonify({"error": "item_id required"}), 400
+        return jsonify({"message": "item_id required"}), 400
     if not CosmeticItem.query.get(item_id):
-        return jsonify({"error": "invalid_item"}), 404
+        return jsonify({"message": "invalid_item"}), 404
     try:
         ui = UserItem(user_id=uid, item_id=item_id, acquired_at=datetime.utcnow())
         db.session.add(ui)
@@ -405,7 +493,7 @@ def acquire_item():
         )
     except SQLAlchemyError as exc:
         db.session.rollback()
-        return jsonify({"error": str(exc)}), 400
+        return jsonify({"message": str(exc)}), 400
 
 
 @bp.post("/user/sets/acquire")
@@ -416,10 +504,10 @@ def acquire_set():
     try:
         set_id = int(data.get("set_id"))
     except Exception:
-        return jsonify({"error": "set_id required"}), 400
+        return jsonify({"message": "set_id required"}), 400
     s = CosmeticSet.query.get(set_id)
     if not s:
-        return jsonify({"error": "invalid_set"}), 404
+        return jsonify({"message": "invalid_set"}), 404
     rel = CosmeticSetItem.query.filter_by(set_id=set_id).all()
     item_ids = [r.item_id for r in rel]
     created, existing = [], []
@@ -437,32 +525,10 @@ def acquire_set():
         return jsonify({"acquired": created, "existing": existing}), 200
     except SQLAlchemyError as exc:
         db.session.rollback()
-        return jsonify({"error": str(exc)}), 400
+        return jsonify({"message": str(exc)}), 400
 
 
 # ---- User Cosmetic State ----
-
-
-def _get_or_create_user_state(uid):
-    st = UserCosmeticState.query.filter_by(user_id=uid).first()
-    if not st:
-        st = UserCosmeticState(user_id=uid, last_updated=datetime.utcnow())
-        db.session.add(st)
-        db.session.commit()
-    return st
-
-
-def _validate_ownership(uid, item_id, required_type=None):
-    if item_id is None:
-        return True, None
-    itm = CosmeticItem.query.get(item_id)
-    if not itm:
-        return False, "invalid_item"
-    if required_type and itm.type != required_type:
-        return False, "type_mismatch"
-    if not UserItem.query.filter_by(user_id=uid, item_id=item_id).first():
-        return False, "not_owned"
-    return True, None
 
 
 @bp.get("/user/state")
@@ -521,7 +587,7 @@ def update_user_state():
     for field, req_type in validations:
         ok, reason = _validate_ownership(uid, updates[field], req_type)
         if not ok:
-            return jsonify({"error": reason, "field": field}), 400
+            return jsonify({"message": reason, "field": field}), 400
 
     try:
         for k, v in updates.items():
@@ -531,29 +597,4 @@ def update_user_state():
         return jsonify({"message": "updated"}), 200
     except SQLAlchemyError as exc:
         db.session.rollback()
-        return jsonify({"error": str(exc)}), 400
-
-
-# ---- Uploads ----
-
-
-@bp.post("/upload")
-@jwt_required()
-def upload_overlay():
-    # optional admin-only; for now allow authenticated
-    if "file" not in request.files:
-        return jsonify({"error": "file missing"}), 400
-    f = request.files["file"]
-    if not f.filename:
-        return jsonify({"error": "empty filename"}), 400
-    fname = secure_filename(f.filename)
-    subdir = request.form.get("subdir") or "cosmetic_overlays"
-    base = current_app.static_folder or os.path.join(current_app.root_path, "static")
-    target_dir = os.path.join(base, subdir)
-    os.makedirs(target_dir, exist_ok=True)
-    path = os.path.join(target_dir, fname)
-    f.save(path)
-    rel = os.path.relpath(path, base).replace("\\", "/")
-    static_url_path = current_app.static_url_path or "/static"
-    url = f"{static_url_path.rstrip('/')}/{rel.lstrip('/')}"
-    return jsonify({"path": rel, "url": url}), 201
+        return jsonify({"message": str(exc)}), 400

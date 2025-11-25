@@ -21,14 +21,6 @@ def _is_admin(user_id):
     u = User.query.filter_by(user_id=user_id).first()
     return bool(u and u.account_type == AccountType.ADMIN)
 
-
-def _require_admin():
-    uid = get_jwt_identity()
-    if not _is_admin(uid):
-        return None, (jsonify({"error": "admin_only"}), 403)
-    return uid, None
-
-
 def _item_to_dict(item: CosmeticItem):
     return {
         "item_id": item.item_id,
