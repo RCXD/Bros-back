@@ -254,4 +254,39 @@ def setup_logging(app):
     # SQLAlchemy echo 비활성화
     app.config["SQLALCHEMY_ECHO"] = False
 
+    # === Werkzeug 로거 커스터마이징 (IP에 닉네임 추가) ===
+    werkzeug_logger = logging.getLogger("werkzeug")
+    werkzeug_logger.setLevel(logging.INFO)
+
+    # IP 닉네임 매핑
+    ip_nicknames = app.config.get("IP_NICKNAMES", {})
+
+    # 커스텀 포맷터 클래스
+    class IPNicknameFormatter(logging.Formatter):
+        def format(self, record):
+            # 원본 메시지 가져오기
+            original_msg = super().format(record)
+
+            # IP 주소 패턴 찾아서 닉네임 추가
+            for ip, nickname in ip_nicknames.items():
+                if ip in original_msg:
+                    # "192.168.1.89 - -" -> "192.168.1.89(DEV3) - -"
+                    original_msg = original_msg.replace(
+                        f"{ip} - -", f"{ip}({nickname}) - -"
+                    )
+                    break
+
+            return original_msg
+
+    # Werkzeug 로거의 모든 핸들러에 커스텀 포맷터 적용
+    werkzeug_formatter = IPNicknameFormatter()
+    for handler in werkzeug_logger.handlers:
+        handler.setFormatter(werkzeug_formatter)
+
+    # 핸들러가 없으면 새로 추가
+    if not werkzeug_logger.handlers:
+        werkzeug_handler = logging.StreamHandler()
+        werkzeug_handler.setFormatter(werkzeug_formatter)
+        werkzeug_logger.addHandler(werkzeug_handler)
+
     logger.info("Logging configured successfully")
