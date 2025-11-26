@@ -2,7 +2,7 @@
 게시글 모듈 - 게시글 CRUD 및 상호작용
 """
 
-from flask import Blueprint, jsonify, request, send_from_directory
+from flask import Blueprint, jsonify, request, send_from_directory, session
 from flask_jwt_extended import jwt_required, get_jwt_identity, get_current_user
 from sqlalchemy.exc import IntegrityError
 
@@ -17,6 +17,18 @@ from apps.common.image_handlers import compress_image, save_to_disk, IMAGE_EXTEN
 from apps.user.models import Follow
 
 bp = Blueprint("post", __name__)
+VIEWED_POSTS_SESSION_KEY = "viewed_posts"  # 세션에 저장할 조회된 게시물 ID 목록 키
+MAX_VIEWED_RECORDS = 200  # 세션당 최대 조회 기록 수
+
+
+def _register_post_view(post_id):  # 세션에 게시물 조회 기록 등록
+    viewed = session.get(VIEWED_POSTS_SESSION_KEY, [])
+    if post_id in viewed:
+        return False
+
+    viewed.append(post_id)
+    session[VIEWED_POSTS_SESSION_KEY] = viewed[-MAX_VIEWED_RECORDS:]
+    return True
 
 
 @bp.get("/api_info")
@@ -338,9 +350,10 @@ def get_post(post_id):
     """ID로 단일 게시글 조회"""
     post = Post.query.get_or_404(post_id)
 
-    # 조회수 증가
-    post.add_view_counts()
-    db.session.commit()
+    # 세션당 중복 카운팅 방지
+    if _register_post_view(post_id):
+        post.add_view_counts()
+        db.session.commit()
 
     # 좋아요 수 조회
     like_count = PostLike.query.filter_by(post_id=post_id).count()
