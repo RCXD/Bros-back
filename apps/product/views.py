@@ -8,13 +8,43 @@ from sqlalchemy import or_, and_
 from decimal import Decimal
 
 from apps.config.server import db
-from apps.product.models import Product
+from apps.product.models import (
+    Product,
+    ProductSeller,
+    ProductMall,
+    ProductBrand,
+)
 from apps.image.models import Image
 from apps.favorite.models import Favorite, FavoriteType
 from apps.auth.models import User, AccountType
 from apps.product.utils import get_product_images
 
 bp = Blueprint("product", __name__)
+
+
+def _serialize_metadata(entity):
+    return entity.to_dict() if entity else None
+
+
+def _assign_metadata_from_data(product, data, id_key, name_key, entity_attr, model):
+    if id_key in data:
+        raw_id = data.get(id_key)
+        entity = model.query.get(raw_id) if raw_id else None
+        setattr(product, entity_attr, entity)
+    elif name_key in data:
+        setattr(product, name_key, data.get(name_key))
+
+
+def _apply_metadata_updates(product, data):
+    _assign_metadata_from_data(
+        product, data, "seller_id", "seller_name", "seller_entity", ProductSeller
+    )
+    _assign_metadata_from_data(
+        product, data, "mall_id", "mall_name", "mall_entity", ProductMall
+    )
+    _assign_metadata_from_data(
+        product, data, "brand_id", "brand", "brand_entity", ProductBrand
+    )
 
 
 @bp.get("/api_info")
@@ -181,6 +211,9 @@ def get_products():
                 "discount_percentage": product.discount_percentage,
                 "currency": product.currency,
                 "brand": product.brand,
+                "seller_meta": _serialize_metadata(product.seller_entity),
+                "mall_meta": _serialize_metadata(product.mall_entity),
+                "brand_meta": _serialize_metadata(product.brand_entity),
                 "rating": float(product.rating) if product.rating else None,
                 "n_reviews": product.n_reviews,
                 "stock": product.stock,
@@ -286,6 +319,8 @@ def create_product():
             is_active=data.get("is_active", True),
         )
 
+        _apply_metadata_updates(product, data)
+
         db.session.add(product)
         db.session.commit()
 
@@ -350,6 +385,9 @@ def get_product(product_id):
             "seller_name": product.seller_name,
             "seller_url": product.seller_url,
             "brand": product.brand,
+            "seller_meta": _serialize_metadata(product.seller_entity),
+            "mall_meta": _serialize_metadata(product.mall_entity),
+            "brand_meta": _serialize_metadata(product.brand_entity),
             "model_number": product.model_number,
             "rating": float(product.rating) if product.rating else None,
             "n_reviews": product.n_reviews,
@@ -434,6 +472,8 @@ def update_product(product_id):
                     setattr(product, field, Decimal(str(data[field])))
                 else:
                     setattr(product, field, data[field])
+
+        _apply_metadata_updates(product, data)
 
         product.update()  # updated_at 갱신
         db.session.commit()

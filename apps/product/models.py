@@ -2,11 +2,98 @@
 상품 모델
 """
 
+import re
 import uuid as uuid_lib
 from datetime import datetime
 from decimal import Decimal
+
+from sqlalchemy import func
 from sqlalchemy.dialects.mysql import CHAR
+
 from apps.config.server import db
+
+
+def _slugify_value(value: str) -> str:
+    """간단한 슬러그 생성"""
+    cleaned = re.sub(r"[^\w]+", "-", value.strip().lower())
+    cleaned = cleaned.strip("-")
+    return cleaned or "meta"
+
+
+class ProductMetadataMixin:
+    __abstract__ = True
+
+    name = db.Column(db.String(100), unique=True, nullable=False)
+    slug = db.Column(db.String(120), unique=True, nullable=False)
+    logo_filename = db.Column(db.String(255), nullable=True)
+    id_field = None
+
+    @classmethod
+    def _build_unique_slug(cls, base: str) -> str:
+        candidate = base
+        suffix = 1
+        while cls.query.filter_by(slug=candidate).first():
+            suffix += 1
+            candidate = f"{base}-{suffix}"
+        return candidate
+
+    @classmethod
+    def get_or_create(cls, name: str, logo_filename: str = None):
+        if not name:
+            return None
+        normalized = name.strip()
+        existing = cls.query.filter(func.lower(cls.name) == normalized.lower()).first()
+        if existing:
+            return existing
+        base_slug = _slugify_value(normalized)
+        slug = cls._build_unique_slug(base_slug)
+        logo = logo_filename or f"{slug}.png"
+        entry = cls(name=normalized, slug=slug, logo_filename=logo)
+        db.session.add(entry)
+        db.session.flush()
+        return entry
+
+    def to_dict(self):
+        if not self.id_field:
+            raise NotImplementedError("id_field must be defined on metadata subclasses")
+        return {
+            "id": getattr(self, self.id_field),
+            "name": self.name,
+            "slug": self.slug,
+            "logo_url": self.logo_url,
+        }
+
+    @property
+    def logo_url(self):
+        filename = self.logo_filename or f"{self.slug}.png"
+        return f"/static/logo_images/{filename}"
+
+    def __repr__(self):
+        return f"<{self.__class__.__name__} {self.name}>"
+
+
+class ProductSeller(ProductMetadataMixin, db.Model):
+    __tablename__ = "product_sellers"
+    id_field = "seller_id"
+
+    seller_id = db.Column(db.Integer, primary_key=True)
+    products = db.relationship("Product", back_populates="seller_entity")
+
+
+class ProductMall(ProductMetadataMixin, db.Model):
+    __tablename__ = "product_malls"
+    id_field = "mall_id"
+
+    mall_id = db.Column(db.Integer, primary_key=True)
+    products = db.relationship("Product", back_populates="mall_entity")
+
+
+class ProductBrand(ProductMetadataMixin, db.Model):
+    __tablename__ = "product_brands"
+    id_field = "brand_id"
+
+    brand_id = db.Column(db.Integer, primary_key=True)
+    products = db.relationship("Product", back_populates="brand_entity")
 
 
 class Product(db.Model):
@@ -41,14 +128,38 @@ class Product(db.Model):
     stock = db.Column(db.Integer, default=0)  # remaining_stock
     out_of_stock_alert = db.Column(db.Boolean, default=False)
 
-    # 판매자 정보
-    mall_name = db.Column(db.String(100), nullable=True)
-    mall_url = db.Column(db.String(500), nullable=True)
-    seller_name = db.Column(db.String(100), nullable=True)
+    # 판매자/몰/브랜드 참조
+    seller_id = db.Column(
+        db.Integer, db.ForeignKey("product_sellers.seller_id"), nullable=True
+    )
+    mall_id = db.Column(db.Integer, db.ForeignKey("product_malls.mall_id"), nullable=True)
+    brand_id = db.Column(
+        db.Integer, db.ForeignKey("product_brands.brand_id"), nullable=True
+    )
+
+    seller_entity = db.relationship(
+        "ProductSeller",
+        back_populates="products",
+        lazy="joined",
+        foreign_keys=[seller_id],
+    )
+    mall_entity = db.relationship(
+        "ProductMall",
+        back_populates="products",
+        lazy="joined",
+        foreign_keys=[mall_id],
+    )
+    brand_entity = db.relationship(
+        "ProductBrand",
+        back_populates="products",
+        lazy="joined",
+        foreign_keys=[brand_id],
+    )
+
     seller_url = db.Column(db.String(500), nullable=True)
+    mall_url = db.Column(db.String(500), nullable=True)
 
     # 상품 정보
-    brand = db.Column(db.String(100), nullable=True)
     model_number = db.Column(db.String(100), nullable=True)
 
     # 리뷰 정보
@@ -97,12 +208,25 @@ class Product(db.Model):
         self.stock = kwargs.get("stock", 0)
         self.out_of_stock_alert = kwargs.get("out_of_stock_alert", False)
 
-        self.mall_name = kwargs.get("mall_name")
+        # 메타 엔티티 (seller, mall, brand)
+        if "seller_entity" in kwargs and kwargs["seller_entity"] is not None:
+            self.seller_entity = kwargs["seller_entity"]
+        else:
+            self.seller_name = kwargs.get("seller_name")
+
+        if "mall_entity" in kwargs and kwargs["mall_entity"] is not None:
+            self.mall_entity = kwargs["mall_entity"]
+        else:
+            self.mall_name = kwargs.get("mall_name")
+
+        if "brand_entity" in kwargs and kwargs["brand_entity"] is not None:
+            self.brand_entity = kwargs["brand_entity"]
+        else:
+            self.brand = kwargs.get("brand")
+
         self.mall_url = kwargs.get("mall_url")
-        self.seller_name = kwargs.get("seller_name")
         self.seller_url = kwargs.get("seller_url")
 
-        self.brand = kwargs.get("brand")
         self.model_number = kwargs.get("model_number")
 
         self.rating = (
@@ -116,6 +240,45 @@ class Product(db.Model):
         self.options = kwargs.get("options")
 
         self.is_active = kwargs.get("is_active", True)
+
+    @property
+    def seller_name(self):
+        return self.seller_entity.name if self.seller_entity else None
+
+    @seller_name.setter
+    def seller_name(self, value):
+        if isinstance(value, ProductSeller):
+            self.seller_entity = value
+        elif value:
+            self.seller_entity = ProductSeller.get_or_create(value)
+        else:
+            self.seller_entity = None
+
+    @property
+    def mall_name(self):
+        return self.mall_entity.name if self.mall_entity else None
+
+    @mall_name.setter
+    def mall_name(self, value):
+        if isinstance(value, ProductMall):
+            self.mall_entity = value
+        elif value:
+            self.mall_entity = ProductMall.get_or_create(value)
+        else:
+            self.mall_entity = None
+
+    @property
+    def brand(self):
+        return self.brand_entity.name if self.brand_entity else None
+
+    @brand.setter
+    def brand(self, value):
+        if isinstance(value, ProductBrand):
+            self.brand_entity = value
+        elif value:
+            self.brand_entity = ProductBrand.get_or_create(value)
+        else:
+            self.brand_entity = None
 
     def __repr__(self):
         return f"<Product {self.product_id}: {self.name}>"
