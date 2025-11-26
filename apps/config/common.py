@@ -58,6 +58,20 @@ class Config:
     # CORS
     CORS_ORIGINS = os.getenv("CORS_ORIGINS", "*")
 
+    # IP 닉네임 매핑 (로그용)
+    IP_NICKNAMES = {
+        "192.168.1.89": "MASTER",
+        "192.168.1.79": "SLAVE",
+        "192.168.1.86": "SUBMISIVE",
+        "192.168.1.83": "WOOSIK_PT",
+        "192.168.1.82": "SU_KARINA",
+        "192.168.1.78": "YUNJAE_GOD",
+        "192.168.1.87": "TAK_BEAR",
+        "127.0.0.1": "LOCAL",
+        "::1": "LOCAL",
+        # 필요한 IP 추가
+    }
+
     # Session
     SESSION_COOKIE_SAMESITE = os.getenv("SESSION_COOKIE_SAMESITE", "None")
     SESSION_COOKIE_SECURE = get_bool("SESSION_COOKIE_SECURE", True)
