@@ -1,0 +1,105 @@
+{
+  "module": "feed",
+  "base_path": "/feed",
+  "description": "팔로우 기반 포스트, 쇼핑, 릴스, 추천, 하이라이트 피드를 제공하며, 운영/QA팀이 요청에 맞게 활용하는 것을 목표로 합니다.",
+  "response_patterns": {
+    "pagination": "{ items: [...], total, pages, page, per_page, has_next, has_prev }",
+    "post": "{ post_id, author: { nickname, profile_img }, content, category, view_counts, like_count, images, created_at }",
+    "product": "{ product_id, uuid, code, name, category, price, original_price, discount_percentage, currency, mall_name, seller_name, product_url, rating, n_reviews, is_active, updated_at }"
+  },
+  "endpoints": [
+    {
+      "path": "/feed",
+      "method": "GET",
+      "auth_required": true,
+      "description": "팔로우/자신의 게시글을 시간순으로 정렬한 기본 피드",
+      "query_params": {
+        "page": "페이지 번호 (기본 1)",
+        "per_page": "페이지당 항목 수 (기본 20)"
+      },
+      "usage": "로그인된 사용자의 팔로우한 계정 및 자신 게시글을 한 번에 확인하고 싶은 경우"
+    },
+    {
+      "path": "/feed/trending",
+      "method": "GET",
+      "auth_required": false,
+      "description": "기간(오늘/주/월) 내 조회수 기반 상위 콘텐츠",
+      "query_params": {
+        "period": "today | week | month (기본 week)",
+        "limit": "반환 개수 (기본 20)"
+      },
+      "usage": "운영팀이 트렌드 콘텐츠를 빠르게 확인하거나, 자동 추천 알고리즘의 기초 자료로 활용"
+    },
+    {
+      "path": "/feed/explore",
+      "method": "GET",
+      "auth_required": false,
+      "description": "카테고리 필터가 가능한 최신 콘텐츠 스트림",
+      "query_params": {
+        "page": "페이지 번호",
+        "per_page": "페이지당 개수",
+        "category": "카테고리 이름"
+      },
+      "usage": "서비스 내 탐색 탭이나 카테고리 별 미리보기에서 사용"
+    },
+    {
+      "path": "/feed/nearby",
+      "method": "GET",
+      "auth_required": true,
+      "description": "위치 기반 검색 준비 중 (현재는 장소 정보 미지원)",
+      "query_params": {
+        "lat": "필수 위도",
+        "lon": "필수 경도",
+        "radius": "반경 km (기본 10km)"
+      },
+      "usage": "향후 지역 기반 캠페인 및 이벤트용"
+    },
+    {
+      "path": "/feed/reels",
+      "method": "GET",
+      "auth_required": true,
+      "description": "140자 이하 콘텐츠를 릴스/숏폼처럼 보여주는 피드",
+      "query_params": {
+        "page": "페이지 번호",
+        "per_page": "개수 (기본 12)",
+        "max_length": "허용 글자 수 (기본 140)"
+      },
+      "usage": "짧은 영상 또는 간결한 문구 중심 콘텐츠를 테스트할 때 사용"
+    },
+    {
+      "path": "/feed/recommendations",
+      "method": "GET",
+      "auth_required": true,
+      "description": "팔로우 하지 않은 계정 중 사용자 취향(좋아요 카테고리) 기반 추천",
+      "query_params": {
+        "page": "페이지 번호",
+        "per_page": "페이지당 개수"
+      },
+      "usage": "신규 계정 파트너십 제안/추천 알고리즘 A/B 테스트용"
+    },
+    {
+      "path": "/feed/shop",
+      "method": "GET",
+      "auth_required": false,
+      "description": "상품 중심 피드 (Product 모델 기준)",
+      "query_params": {
+        "page": "페이지 번호",
+        "per_page": "페이지당 개수",
+        "category": "카테고리 필터"
+      },
+      "usage": "쇼핑 캐러셀 또는 백오피스에서 상품 목록을 빠르게 조회"
+    },
+    {
+      "path": "/feed/highlights",
+      "method": "GET",
+      "auth_required": true,
+      "description": "팔로우 대상의 고조회 콘텐츠 하이라이트",
+      "query_params": {
+        "limit": "최대 아이템 수 (기본 12)",
+        "min_views": "최소 조회수 (기본 200)"
+      },
+      "usage": "친밀 계정 콘텐츠 요약을 UI 상단에 노출하는 경우"
+    }
+  ],
+  "recommendation": "운영팀은 이 JSON을 참조해 필요한 피드 유형과 파라미터를 확인하고, QA/모니터링에서도 재현 시나리오로 활용하세요. /feed/highlights는 팔로우한 사용자 중심, /feed/shop은 Product 기반 콘텐츠 전용이며, 인증 정보가 없는 경우 공용 콘텐츠만 확인 가능합니다."
+}
