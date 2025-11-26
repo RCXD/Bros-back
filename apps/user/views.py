@@ -160,7 +160,14 @@ def get_followers(user_id):
     # 사용자 존재 확인
     User.query.get_or_404(user_id)
 
-    followers = Follow.query.filter_by(to_user_id=user_id).all()
+    # 페이지네이션 파라미터
+    page = request.args.get("page", default=1, type=int)
+    per_page = request.args.get("per_page", default=20, type=int)
+
+    pagination = Follow.query.filter_by(to_user_id=user_id).paginate(
+        page=page, per_page=per_page, error_out=False
+    )
+    followers = pagination.items
 
     result = []
     for follow in followers:
@@ -175,7 +182,20 @@ def get_followers(user_id):
                 }
             )
 
-    return jsonify({"followers": result, "count": len(result)}), 200
+    return (
+        jsonify(
+            {
+                "items": result,
+                "total": pagination.total,
+                "pages": pagination.pages,
+                "page": page,
+                "per_page": per_page,
+                "has_next": pagination.has_next,
+                "has_prev": pagination.has_prev,
+            }
+        ),
+        200,
+    )
 
 
 @bp.get("/<int:user_id>/following")
@@ -184,7 +204,14 @@ def get_following(user_id):
     # 사용자 존재 확인
     User.query.get_or_404(user_id)
 
-    following = Follow.query.filter_by(from_user_id=user_id).all()
+    # 페이지네이션 파라미터
+    page = request.args.get("page", default=1, type=int)
+    per_page = request.args.get("per_page", default=20, type=int)
+
+    pagination = Follow.query.filter_by(from_user_id=user_id).paginate(
+        page=page, per_page=per_page, error_out=False
+    )
+    following = pagination.items
 
     result = []
     for follow in following:
@@ -199,7 +226,20 @@ def get_following(user_id):
                 }
             )
 
-    return jsonify({"following": result, "count": len(result)}), 200
+    return (
+        jsonify(
+            {
+                "items": result,
+                "total": pagination.total,
+                "pages": pagination.pages,
+                "page": page,
+                "per_page": per_page,
+                "has_next": pagination.has_next,
+                "has_prev": pagination.has_prev,
+            }
+        ),
+        200,
+    )
 
 
 @bp.post("/<int:user_id>/friend")
