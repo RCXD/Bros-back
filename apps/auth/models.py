@@ -58,6 +58,9 @@ class User(db.Model):
     # Statistics
     follower_count = db.Column(db.Integer, default=0)
 
+    # Points (cosmetic store 등에서 사용)
+    points = db.Column(db.Integer, default=0, nullable=False)
+
     # Relationships (to be defined in respective modules)
     # posts = db.relationship("Post", backref="author", lazy=True)
     # replies = db.relationship("Reply", backref="author", lazy=True)
@@ -101,6 +104,7 @@ class User(db.Model):
             "account_type": self.account_type.name,
             "oauth_type": self.oauth_type.name,
             "follower_count": self.follower_count,
+            "points": self.points,
         }
 
     def __repr__(self):
