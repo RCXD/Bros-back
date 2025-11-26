@@ -6,6 +6,7 @@ import re
 from flask_jwt_extended import create_access_token, create_refresh_token, get_csrf_token
 from flask import jsonify
 from apps.auth.models import User, OauthType, AccountType
+from apps.user.reward_utils import get_medal_summary, get_user_league_info
 
 
 # Phone validation regex
@@ -98,6 +99,12 @@ def generate_login_response(user, db_session):
     user.renew_login()
     db_session.commit()
 
+    # 메달 정보 조회
+    medal_info = get_medal_summary(user.user_id)
+
+    # 리그 정보 조회 (미래 구현용)
+    league_info = get_user_league_info(user.user_id)
+
     # Generate tokens with additional claims
     tokens = token_provider(
         user.user_id,
@@ -109,6 +116,14 @@ def generate_login_response(user, db_session):
             "profile_img": user.profile_img,
             "account_type": user.account_type.name,
             "oauth_type": user.oauth_type.name,
+            "points": user.points,
+            # 메달 정보
+            "medal": medal_info,
+            # 리그 정보 (미래 구현용)
+            "league": {
+                "enabled": league_info.get("enabled", False),
+                "id": league_info.get("league", {}).get("id", "unranked"),
+            },
         },
     )
 
