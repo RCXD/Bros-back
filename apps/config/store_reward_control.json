@@ -1,0 +1,151 @@
+{
+  "_description": "리워드 포인트 설정 - 사용자 활동에 따른 포인트 지급 규칙",
+  "_version": "1.0.0",
+  "_last_updated": "2025-11-26",
+
+  "enabled": true,
+  "debug_mode": true,
+
+  "view_rewards": {
+    "_description": "조회수 기반 리워드 (게시글 작성자에게 지급)",
+    "enabled": true,
+    "thresholds": [
+      { "views": 100, "points": 10, "one_time": true },
+      { "views": 500, "points": 30, "one_time": true },
+      { "views": 1000, "points": 50, "one_time": true },
+      { "views": 5000, "points": 100, "one_time": true },
+      { "views": 10000, "points": 200, "one_time": true }
+    ],
+    "incremental": {
+      "_description": "증가율 기반 리워드 (매 N회 조회마다 지급)",
+      "enabled": false,
+      "every_n_views": 100,
+      "points_per_increment": 5,
+      "max_increments_per_post": 50
+    },
+    "category_multipliers": {
+      "_description": "카테고리별 포인트 배율",
+      "STORY": 1.0,
+      "REVIEW": 1.5,
+      "ROUTE": 2.0,
+      "REPORT": 2.5,
+      "default": 1.0
+    }
+  },
+
+  "action_rewards": {
+    "_description": "행동 기반 리워드",
+
+    "post_like_received": {
+      "_description": "내 게시글이 좋아요를 받았을 때 (게시글 작성자에게)",
+      "enabled": true,
+      "points": 2,
+      "daily_limit": 50,
+      "category_multipliers": {
+        "STORY": 1.0,
+        "REVIEW": 1.2,
+        "ROUTE": 1.5,
+        "REPORT": 2.0,
+        "default": 1.0
+      }
+    },
+
+    "post_like_given": {
+      "_description": "게시글에 좋아요를 눌렀을 때 (좋아요 누른 사람에게)",
+      "enabled": true,
+      "points": 1,
+      "daily_limit": 20
+    },
+
+    "reply_created": {
+      "_description": "댓글을 작성했을 때",
+      "enabled": true,
+      "points": 3,
+      "daily_limit": 30
+    },
+
+    "reply_received": {
+      "_description": "내 게시글에 댓글이 달렸을 때 (게시글 작성자에게)",
+      "enabled": true,
+      "points": 2,
+      "daily_limit": 50
+    },
+
+    "nested_reply_created": {
+      "_description": "대댓글을 작성했을 때",
+      "enabled": true,
+      "points": 2,
+      "daily_limit": 30
+    },
+
+    "nested_reply_received": {
+      "_description": "내 댓글에 대댓글이 달렸을 때 (댓글 작성자에게)",
+      "enabled": true,
+      "points": 1,
+      "daily_limit": 50
+    },
+
+    "reply_like_received": {
+      "_description": "내 댓글이 좋아요를 받았을 때",
+      "enabled": true,
+      "points": 1,
+      "daily_limit": 30
+    },
+
+    "reply_like_given": {
+      "_description": "댓글에 좋아요를 눌렀을 때",
+      "enabled": true,
+      "points": 1,
+      "daily_limit": 20
+    },
+
+    "post_shared": {
+      "_description": "게시글이 공유되었을 때 (게시글 작성자에게)",
+      "enabled": true,
+      "points": 5,
+      "daily_limit": 20
+    },
+
+    "follower_gained": {
+      "_description": "다른 사람이 나를 팔로우했을 때",
+      "enabled": true,
+      "points": 5,
+      "daily_limit": 30
+    },
+
+    "follow_special_user": {
+      "_description": "특정 조건의 유저를 팔로우했을 때",
+      "enabled": true,
+      "points": 10,
+      "conditions": {
+        "min_follower_count": 100,
+        "account_types": ["ADMIN"],
+        "verified_only": false
+      },
+      "daily_limit": 5
+    },
+
+    "product_purchase": {
+      "_description": "제휴상품 구매 시 (미래 구현)",
+      "enabled": false,
+      "points_percentage": 1.0,
+      "min_points": 10,
+      "max_points": 1000
+    }
+  },
+
+  "daily_limits": {
+    "_description": "일일 최대 획득 포인트",
+    "enabled": true,
+    "max_points_per_day": 500,
+    "reset_time_utc": "00:00"
+  },
+
+  "bonus_multipliers": {
+    "_description": "보너스 배율 이벤트",
+    "enabled": false,
+    "current_multiplier": 1.0,
+    "event_name": null,
+    "event_end_date": null
+  }
+}
