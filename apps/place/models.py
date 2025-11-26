@@ -55,13 +55,19 @@ class Place(db.Model):
         db.Index("idx_place_point", "coordinate"),
         db.Index("idx_place_geom_spatial", "geom", mysql_prefix="SPATIAL"),
     )
-
+    # 장소 아이디(저장용)
     place_id = db.Column(db.Integer, primary_key=True)
+    # 장소 이름(없을 시 주소 저장)
     name = db.Column(db.String(255), nullable=False)
+    # 대표 이름(ex)코엑스, 서울역, ...)
     alt_name = db.Column(db.String(255))
+    # 좌표(위도, 경도, 자동으로 입력)
     coordinate = db.Column(Geometry(geometry_type="POINT", srid=4326), nullable=False)
+    # 장소 공간(차지하는)
     geom = db.Column(Geometry(geometry_type="POLYGON", srid=4326))
+    # 설명
     description = db.Column(db.Text)
+    # 원본 응답
     tags = db.Column(JSON)
     created_at = db.Column(db.DateTime, default=datetime.now)
     updated_at = db.Column(db.DateTime, default=datetime.now, onupdate=datetime.now)
