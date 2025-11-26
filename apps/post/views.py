@@ -15,6 +15,11 @@ from apps.image.models import Image
 from apps.auth.models import User
 from apps.common.image_handlers import compress_image, save_to_disk, IMAGE_EXTENSIONS
 from apps.user.models import Follow
+from apps.user.reward_utils import (
+    reward_post_like_received,
+    reward_post_like_given,
+    reward_view_threshold,
+)
 
 bp = Blueprint("post", __name__)
 VIEWED_POSTS_SESSION_KEY = "viewed_posts"  # 세션에 저장할 조회된 게시물 ID 목록 키
@@ -352,8 +357,18 @@ def get_post(post_id):
 
     # 세션당 중복 카운팅 방지
     if _register_post_view(post_id):
+        old_views = post.view_counts
         post.add_view_counts()
         db.session.commit()
+
+        # 조회수 임계값 달성 시 리워드 지급
+        category_name = post.category.category_name if post.category else "default"
+        reward_view_threshold(
+            post_id=post.post_id,
+            post_author_id=post.user_id,
+            current_views=post.view_counts,
+            category=category_name,
+        )
 
     # 좋아요 수 조회
     like_count = PostLike.query.filter_by(post_id=post_id).count()
@@ -566,7 +581,7 @@ def like_post(post_id):
     current_user_id = int(get_jwt_identity())
 
     # 게시글 존재 확인
-    Post.query.get_or_404(post_id)
+    post = Post.query.get_or_404(post_id)
 
     # 이미 좋아요 했는지 확인
     existing = PostLike.query.filter_by(
@@ -590,6 +605,15 @@ def like_post(post_id):
         db.session.add(like)
         db.session.commit()
         like_count = PostLike.query.filter_by(post_id=post_id).count()
+
+        # 리워드 지급 (자기 게시글 좋아요 제외)
+        if post.user_id != current_user_id:
+            category_name = post.category.category_name if post.category else "default"
+            # 게시글 작성자에게 리워드
+            reward_post_like_received(post.user_id, category=category_name)
+            # 좋아요 누른 사람에게도 리워드
+            reward_post_like_given(current_user_id)
+
         return (
             jsonify({"message": "좋아요", "liked": True, "like_count": like_count}),
             201,
