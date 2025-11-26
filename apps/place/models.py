@@ -64,7 +64,7 @@ class Place(db.Model):
     # 좌표(위도, 경도, 자동으로 입력)
     coordinate = db.Column(Geometry(geometry_type="POINT", srid=4326), nullable=False)
     # 장소 공간(차지하는)
-    geom = db.Column(Geometry(geometry_type="POLYGON", srid=4326))
+    geom = db.Column(Geometry(srid=4326))
     # 설명
     description = db.Column(db.Text)
     # 원본 응답
@@ -95,7 +95,7 @@ class Place(db.Model):
     def _point_from_latlon(lat, lon):
         if lat is None or lon is None:
             return None
-        return func.ST_GeomFromText(f"POINT({float(lon)} {float(lat)})", 4326)
+        return func.ST_GeomFromText(f"POINT({float(lat)} {float(lon)})", 4326)
 
     def set_lat_lon(self, lat, lon):
         if lat is None or lon is None:
