@@ -7,10 +7,6 @@ from flask_jwt_extended import jwt_required, get_jwt_identity
 from sqlalchemy.exc import IntegrityError
 
 from apps.notification.models import Notification, NotificationType
-from apps.notification.utils import (
-    create_follow_notification,
-    create_unfollow_notification,
-)
 from apps.config.server import db
 from apps.auth.models import User
 from apps.user.models import Follow, Friend
@@ -108,9 +104,6 @@ def follow_user(user_id):
             else:
                 status_message = "팔로우"  # 서로 팔로우하지 않음
 
-            # 언팔로우 알림 전송
-            create_unfollow_notification(current_user_id, user_id)
-
             return (
                 jsonify(
                     {
@@ -133,9 +126,6 @@ def follow_user(user_id):
                 status_message = "맞팔로잉"  # 서로 팔로우
             else:
                 status_message = "팔로잉"  # 내가 상대를 팔로우, 상대는 나를 팔로우 안함
-
-            # 팔로우 알림 전송
-            create_follow_notification(current_user_id, user_id, follow.follow_id)
 
             return (
                 jsonify(
@@ -164,7 +154,9 @@ def get_followers(user_id):
     page = request.args.get("page", default=1, type=int)
     per_page = request.args.get("per_page", default=20, type=int)
 
-    pagination = Follow.query.filter_by(to_user_id=user_id).paginate(page=page, per_page=per_page, error_out=False)
+    pagination = Follow.query.filter_by(to_user_id=user_id).paginate(
+        page=page, per_page=per_page, error_out=False
+    )
     followers = pagination.items
 
     result = []
@@ -180,13 +172,20 @@ def get_followers(user_id):
                 }
             )
 
-    return jsonify({
-        "followers": result,
-        "count": pagination.total,
-        "page": page,
-        "per_page": per_page,
-        "pages": pagination.pages
-    }), 200
+    return (
+        jsonify(
+            {
+                "items": result,
+                "total": pagination.total,
+                "pages": pagination.pages,
+                "page": page,
+                "per_page": per_page,
+                "has_next": pagination.has_next,
+                "has_prev": pagination.has_prev,
+            }
+        ),
+        200,
+    )
 
 
 @bp.get("/<int:user_id>/following")
@@ -199,7 +198,9 @@ def get_following(user_id):
     page = request.args.get("page", default=1, type=int)
     per_page = request.args.get("per_page", default=20, type=int)
 
-    pagination = Follow.query.filter_by(from_user_id=user_id).paginate(page=page, per_page=per_page, error_out=False)
+    pagination = Follow.query.filter_by(from_user_id=user_id).paginate(
+        page=page, per_page=per_page, error_out=False
+    )
     following = pagination.items
 
     result = []
@@ -215,13 +216,20 @@ def get_following(user_id):
                 }
             )
 
-    return jsonify({
-        "following": result,
-        "count": pagination.total,
-        "page": page,
-        "per_page": per_page,
-        "pages": pagination.pages
-    }), 200
+    return (
+        jsonify(
+            {
+                "items": result,
+                "total": pagination.total,
+                "pages": pagination.pages,
+                "page": page,
+                "per_page": per_page,
+                "has_next": pagination.has_next,
+                "has_prev": pagination.has_prev,
+            }
+        ),
+        200,
+    )
 
 
 @bp.post("/<int:user_id>/friend")
@@ -252,12 +260,15 @@ def send_friend_request(user_id):
         db.session.add(friend1)
         db.session.add(friend2)
 
-        # 알림 발생 (commit 전에 import 추가)
-        from apps.notification.utils import create_friend_request_notification
+        # 알림 발생
+        notification = Notification(
+            type=NotificationType.FRIEND_REQUEST,
+            from_user_id=current_user_id,
+            to_user_id=user_id,
+        )
 
+        db.session.add(notification)
         db.session.commit()
-
-        create_friend_request_notification(current_user_id, user_id)
 
         return jsonify({"message": "친구 추가 성공"}), 201
     except IntegrityError:
