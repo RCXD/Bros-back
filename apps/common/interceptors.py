@@ -190,9 +190,10 @@ def setup_logging(app):
     error_log_file = os.path.join(log_dir, "error.log")
     error_handler = RotatingFileHandler(
         error_log_file,
-        maxBytes=10 * 1024 * 1024,  # 10MB
-        backupCount=10,
+        maxBytes=50 * 1024 * 1024,  # 50MB (Windows 롤오버 문제 완화)
+        backupCount=5,
         encoding="utf-8",
+        delay=True,  # 파일 열기 지연 (잠금 문제 완화)
     )
     error_handler.setLevel(logging.WARNING)
     error_handler.setFormatter(formatter)
@@ -207,9 +208,10 @@ def setup_logging(app):
     success_log_file = os.path.join(log_dir, "success.log")
     success_handler = RotatingFileHandler(
         success_log_file,
-        maxBytes=10 * 1024 * 1024,  # 10MB
-        backupCount=10,
+        maxBytes=50 * 1024 * 1024,  # 50MB (Windows 롤오버 문제 완화)
+        backupCount=5,
         encoding="utf-8",
+        delay=True,  # 파일 열기 지연 (잠금 문제 완화)
     )
     success_handler.setLevel(logging.INFO)
     success_handler.setFormatter(formatter)
