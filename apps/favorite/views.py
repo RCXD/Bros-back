@@ -276,6 +276,8 @@ def toggle_favorite(item_type, item_id):
         actual_favorite_type = FavoriteType.PRODUCT
     elif favorite_type == FavoriteType.PLACE:
         item = Place.query.get(item_id)
+        if item:
+            actual_favorite_type= FavoriteType.PLACE
     else:
         # Post인 경우 실제 카테고리 확인
         item = Post.query.get(item_id)

@@ -4,6 +4,7 @@ from flask import Blueprint, jsonify, request, current_app
 from flask_jwt_extended import jwt_required
 from sqlalchemy import cast
 from sqlalchemy.exc import SQLAlchemyError
+from geoalchemy2.elements import WKTElement
 
 from apps.config.server import db
 from apps.place.models import Place, func
@@ -76,50 +77,53 @@ DEFAULT_POINT_RADIUS_METERS = 500
 MAX_POINT_RADIUS_METERS = 50000
 
 
+def _fix_coords_order(coords):
+    """
+    coords array that may contain [lat, lon] or [lon, lat].
+    Detect wrong order and fix it.
+    """
+    if not isinstance(coords, list):
+        return coords
+
+    # Base case: [x, y]
+    if len(coords) == 2 and all(isinstance(v, (int, float)) for v in coords):
+        x, y = coords
+
+        # if x is latitude (> 90 or < -90), it's wrong → swap
+        if abs(x) > 90 and abs(y) <= 90:
+            return [y, x]
+
+        # if y is longitude (> 180), it's wrong → swap
+        if abs(y) > 90 and abs(x) <= 90:
+            return [y, x]
+
+        # Looks normal
+        return coords
+
+    # Recursive case: nested arrays
+    return [_fix_coords_order(c) for c in coords]
+
+
 def _store_place_area(place, geom_obj, lat=None, lon=None):
-    """Prefer spatial geometry column when available, fall back to JSON edges."""
-    lat_val = lat if lat is not None else getattr(place, "lat", None)
-    lon_val = lon if lon is not None else getattr(place, "lon", None)
-    has_geom_column = hasattr(Place, "geom")
-    has_edges_column = hasattr(place, "edges")
-    geom_type = None
-    if isinstance(geom_obj, dict):
-        geom_type_raw = geom_obj.get("type")
-        if isinstance(geom_type_raw, str):
-            geom_type = geom_type_raw.strip().lower()
-    if geom_type in {"polygon", "multipolygon"}:
-        stored_geom = _build_bbox(None, None, geom_obj) if has_geom_column else None
-        if has_geom_column:
-            place.geom = _build_bbox(lat_val, lon_val)
-        if has_edges_column:
-            place.edges = None
+    """
+    Normalize GeoJSON geometry into MySQL Geometry field.
+    Ensures (lon, lat) order and valid polygon structures.
+    """
+    if isinstance(geom_obj, dict) and geom_obj.get("type") in (
+        "Polygon",
+        "MultiPolygon",
+        "LineString",
+    ):
+        try:
+            geom_copy = json.loads(json.dumps(geom_obj))  # deep copy
+            geom_copy["coordinates"] = _fix_coords_order(geom_copy["coordinates"])
+            geojson_str = json.dumps(geom_copy)
+            place.geom = func.ST_GeomFromGeoJSON(geojson_str)
+        except Exception:
+            place.geom = None
         return
 
-    if has_geom_column:
-        geom_value = _build_bbox(lat_val, lon_val, geom_obj)
-        if geom_value is not None:
-            place.geom = geom_value
-            if has_edges_column:
-                place.edges = None
-            return
-
-    if has_edges_column:
-        place.edges = geom_obj
-        if has_geom_column:
-            place.geom = None
-
-
-def _set_place_coordinate(place, lat, lon):
-    place.coordinate = _place_lat_lon(lat, lon)
-
-
-def _place_lat_lon(place):
-    lat, lon = _set_place_coordinate(getattr(place, "coordinate", None))
-    if lat is None and hasattr(place, "lat"):
-        lat = getattr(place, "lat")
-    if lon is None and hasattr(place, "lon"):
-        lon = getattr(place, "lon")
-    return lat, lon
+    place.geom = None
 
 
 def _lat_column():
@@ -417,7 +421,8 @@ def create_place():
     lat_val = payload.pop("lat", None)
     lon_val = payload.pop("lon", None)
     place = Place(**payload)
-    _set_place_coordinate(place, lat_val, lon_val)
+    place.set_lat_lon(payload["lat"], payload["lon"])
+
     _store_place_area(place, geom_obj, lat_val, lon_val)
     try:
         db.session.add(place)
@@ -565,7 +570,8 @@ def _derive_pin_type(properties, extratags=None):
     properties: nominatim 'properties' dict
     extratags: nominatim 'extratags'
     """
-
+    if not isinstance(properties, dict):
+        properties = {}
     category = (properties.get("category") or "").lower()
     ptype = (properties.get("type") or "").lower()
     addresstype = (properties.get("addresstype") or "").lower()
@@ -576,9 +582,6 @@ def _derive_pin_type(properties, extratags=None):
     extraclass = (extratags.get("class") or "").lower()
     extratype = (extratags.get("type") or "").lower()
 
-    # -----------------------------
-    # 1. 정밀 매핑 (category + type)
-    # -----------------------------
     CATEGORY_TYPE_MAP = {
         ("amenity", "cafe"): "cafe",
         ("amenity", "fast_food"): "restaurant",
@@ -602,6 +605,35 @@ def _derive_pin_type(properties, extratags=None):
         ("highway", "crossing"): "traffic",
         ("highway", "traffic_signals"): "traffic",
     }
+    if (category, ptype) in CATEGORY_TYPE_MAP:
+        return CATEGORY_TYPE_MAP[(category, ptype)]
+
+    if addresstype in ("house", "building", "residential", "apartment"):
+        return "house"
+    if addresstype in ("city", "town", "village", "country", "state", "region"):
+        return "city"
+
+    if category == "amenity":
+        return "amenity"
+    if category == "shop":
+        return "shopping"
+    if category == "leisure":
+        return "leisure"
+    if category == "sport":
+        return "sport"
+    if category == "historic":
+        return "historic"
+    if category == "tourism":
+        return "tourism"
+    if category == "place":
+        if ptype in ("city", "town", "village", "hamlet", "suburb"):
+            return "city"
+        return "place"
+
+    if extraclass in ("building", "landuse"):
+        return "building"
+
+    return "default"
 
 
 def _build_label(name=None, alt_name=None, display_name=None):
@@ -629,6 +661,7 @@ def place_to_pin(place):
         "createdAt": raw.get("created_at"),
         "updatedAt": raw.get("updated_at"),
         "raw": raw,
+        "type": pin_type,
     }
 
 
@@ -767,7 +800,8 @@ def _ingest_nominatim_places(search_text, limit):
             description=payload.get("description"),
             tags=payload.get("tags"),
         )
-        _set_place_coordinate(place, lat_val, lon_val)
+        place.set_lat_lon(payload["lat"], payload["lon"])
+
         _store_place_area(place, payload.get("geom"), lat_val, lon_val)
         db.session.add(place)
         inserted = True
@@ -785,21 +819,36 @@ def _ingest_nominatim_places(search_text, limit):
 
 
 def _serialize_transient_place(payload):
-    tags = (
-        payload.get("tags") if isinstance(payload.get("tags"), (dict, list)) else None
-    )
+    tags_raw = payload.get("tags")
+    tags = None
+
+    if isinstance(tags_raw, (dict, list)):
+        # 이미 딕셔너리 또는 리스트인 경우
+        tags = tags_raw
+    elif isinstance(tags_raw, str):
+        # 문자열인 경우, JSON 파싱을 시도합니다.
+        try:
+            tags = json.loads(tags_raw)
+        except json.JSONDecodeError:
+            # 유효하지 않은 JSON 문자열인 경우, None으로 처리하거나 로깅합니다.
+            print(f"JSON Decode Error for tags: {tags_raw}")
+            tags = None
+
+    # tags가 최종적으로 딕셔너리 또는 None이 되었는지 확인합니다.
+
     raw = {
         "place_id": None,
         "name": payload.get("name"),
         "alt_name": payload.get("alt_name"),
         "display_name": payload.get("alt_name") or payload.get("name"),
         "description": payload.get("description"),
-        "tags": tags,
+        "tags": tags,  # 파싱된 딕셔너리 또는 None
         "lat": payload.get("lat"),
         "lon": payload.get("lon"),
         "created_at": None,
         "updated_at": None,
     }
+
     return {
         "id": None,
         "placeId": None,
@@ -807,7 +856,9 @@ def _serialize_transient_place(payload):
         "label": payload.get("alt_name") or payload.get("name"),
         "lat": payload.get("lat"),
         "lng": payload.get("lon"),
+        # _derive_pin_type에 파싱된 tags 딕셔너리를 전달
         "type": _derive_pin_type(payload.get("name"), tags),
+        # tags가 None일 경우 빈 딕셔너리를 사용하도록 보장
         "tags": tags or {},
         "source": "nominatim",
         "createdAt": None,
@@ -885,3 +936,84 @@ def search_places():
         ),
         200,
     )
+
+
+@bp.get("/reverse")
+def reverse_geocode():
+    """
+    Reverse geocoding (Always save to DB except duplicates)
+    GET /place/reverse?lat=37.57&lon=126.98
+    """
+    lat_raw = request.args.get("lat")
+    lon_raw = request.args.get("lon")
+
+    if lat_raw is None or lon_raw is None:
+        return jsonify({"message": "lat and lon are required"}), 400
+
+    lat, lat_err = _parse_float(lat_raw, "lat", -90, 90)
+    lon, lon_err = _parse_float(lon_raw, "lon", -180, 180)
+    if lat_err or lon_err:
+        return jsonify({"message": lat_err or lon_err}), 400
+
+    params = {
+        "format": "jsonv2",
+        "lat": lat,
+        "lon": lon,
+        "addressdetails": 1,
+        "namedetails": 1,
+        "extratags": 1,
+        "polygon_geojson": 1,
+    }
+
+    try:
+        resp = requests.get(
+            NOMINATIM_REVERSE_URL,
+            params=params,
+            headers=NOMINATIM_HEADERS,
+            timeout=5,
+        )
+        resp.raise_for_status()
+        raw_data = resp.json()
+    except requests.RequestException as exc:
+        current_app.logger.error("Reverse nominatim failed", exc_info=exc)
+        return jsonify({"message": "Reverse geocoding failed"}), 500
+
+    payload, raw_origin, geom_obj = _normalize_reverse_response(
+        raw_data, fallback_lat=lat, fallback_lon=lon
+    )
+
+    if payload is None:
+        return jsonify({"message": "Invalid reverse data"}), 500
+
+    name = payload.get("name") or payload.get("alt_name") or payload.get("description")
+    if not name:
+        return jsonify({"message": "No valid name in reverse result"}), 500
+
+    duplicate = _find_existing_place(name, payload["lat"], payload["lon"])
+    if duplicate:
+        return jsonify({"place": place_to_pin(duplicate), "source": "existing"}), 200
+
+    try:
+        place = Place(
+            name=payload.get("name"),
+            alt_name=payload.get("alt_name"),
+            description=payload.get("description"),
+            tags=payload.get("tags"),
+        )
+
+        place.set_lat_lon(payload["lat"], payload["lon"])
+
+        _store_place_area(place, geom_obj, payload["lat"], payload["lon"])
+        print(place)
+        db.session.add(place)
+        db.session.commit()
+
+        return jsonify({"place": place_to_pin(place), "source": "stored"}), 201
+
+    except SQLAlchemyError as exc:
+        db.session.rollback()
+        current_app.logger.error("Failed to save reverse place", exc_info=exc)
+
+        tmp = _serialize_transient_place(payload)
+        tmp["source"] = "reverse-db-error"
+        return jsonify({"place": tmp}), 200
