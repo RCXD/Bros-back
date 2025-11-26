@@ -14,6 +14,14 @@ from apps.notification.utils import (
 from apps.reply.models import Reply, ReplyLike
 from apps.post.models import Post
 from apps.auth.models import User
+from apps.user.reward_utils import (
+    reward_reply_created,
+    reward_reply_received,
+    reward_nested_reply_created,
+    reward_nested_reply_received,
+    reward_reply_like_received,
+    reward_reply_like_given,
+)
 
 bp = Blueprint("reply", __name__)
 
@@ -290,10 +298,22 @@ def create_reply():
                 create_reply_to_reply_notification(
                     current_user.user_id, parent_reply, reply.reply_id
                 )
+                # 대댓글 리워드 지급
+                reward_nested_reply_created(current_user.user_id, commit=False)
+                reward_nested_reply_received(parent_reply.user_id, commit=False)
+            else:
+                # 자기 댓글에 대댓글 (작성자에게만 리워드)
+                reward_nested_reply_created(current_user.user_id, commit=False)
         else:
             # 자기 자신의 게시글에 댓글을 다는 경우 알림 생성하지 않음
             if post.user_id != current_user.user_id:
                 create_reply_notification(current_user.user_id, post, reply.reply_id)
+                # 댓글 리워드 지급
+                reward_reply_created(current_user.user_id, commit=False)
+                reward_reply_received(post.user_id, commit=False)
+            else:
+                # 자기 게시글에 댓글 (작성자에게만 리워드)
+                reward_reply_created(current_user.user_id, commit=False)
 
         db.session.commit()
 
@@ -412,7 +432,7 @@ def like_reply(reply_id):
     current_user_id = int(get_jwt_identity())
 
     # 댓글 존재 확인
-    Reply.query.get_or_404(reply_id)
+    reply = Reply.query.get_or_404(reply_id)
 
     # 이미 좋아요 했는지 확인
     existing = ReplyLike.query.filter_by(
@@ -442,6 +462,12 @@ def like_reply(reply_id):
         db.session.commit()
         # 커밋 후에 개수 세기
         like_count = ReplyLike.query.filter_by(reply_id=reply_id).count()
+
+        # 리워드 지급 (자기 댓글 좋아요 제외)
+        if reply.user_id != current_user_id:
+            reward_reply_like_received(reply.user_id)
+            reward_reply_like_given(current_user_id)
+
         return (
             jsonify(
                 {"message": "댓글 좋아요", "liked": True, "like_count": like_count}
