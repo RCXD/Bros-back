@@ -147,6 +147,11 @@ def register_blueprints(app):
 
     app.register_blueprint(favorite_bp, url_prefix="/favorite")
 
+    # 결제 모듈
+    from apps.payment.views import bp as payment_bp
+
+    app.register_blueprint(payment_bp, url_prefix="/payment")
+
     # 알림 모듈
     from apps.notification.views import bp as notification_bp
 

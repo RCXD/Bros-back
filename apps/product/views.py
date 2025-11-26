@@ -211,6 +211,8 @@ def get_products():
                 "discount_percentage": product.discount_percentage,
                 "currency": product.currency,
                 "brand": product.brand,
+                "seller_name":product.seller_name,
+                "mall_name":product.mall_name,
                 "seller_meta": _serialize_metadata(product.seller_entity),
                 "mall_meta": _serialize_metadata(product.mall_entity),
                 "brand_meta": _serialize_metadata(product.brand_entity),

@@ -46,7 +46,7 @@ class Config:
     DB_PASSWORD = os.getenv("DB_PASSWORD", "1234")
     DB_HOST = os.getenv("DB_HOST", "192.168.1.79")
     DB_PORT = os.getenv("DB_PORT", "3306")
-    DB_NAME = os.getenv("DB_NAME", "404found_test1")
+    DB_NAME = os.getenv("DB_NAME", "404found_test2")
     SQLALCHEMY_DATABASE_URI = (
         f"mysql+pymysql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
     )
@@ -114,7 +114,7 @@ class Config:
     KAKAO_ADMIN_KEY = os.getenv("KAKAO_ADMIN_KEY")
     KAKAO_APPROVAL_URL = os.getenv(
         "KAKAO_APPROVAL_URL",
-        "http://localhost:5000/payment/approve",  # 카카오에서 다시 돌아오는 URL
+        "http://localhost:5173/payment/success",  # 카카오에서 다시 돌아오는 URL
     )
     KAKAO_CANCEL_URL = os.getenv(
         "KAKAO_CANCEL_URL",
