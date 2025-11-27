@@ -535,19 +535,32 @@ def list_user_items():
         200,
     )
 
-
 @bp.post("/user/items/acquire")
+@bp.post("/user/items/acquire/<int:item_id>")
+@bp.post("/user/items/acquire/<int:item_id>/<int:item_price>")
 @jwt_required()
-def acquire_item():
+def acquire_item(item_id=None, item_price=None):
     uid = get_jwt_identity()
     data = request.get_json(silent=True) or {}
-    try:
-        item_id = int(data.get("item_id"))
-    except Exception:
+    if not data:
+        data = request.form.to_dict(flat=True)
+
+    def _first_int(*values):
+        for v in values:
+            try:
+                return int(v)
+            except (TypeError, ValueError):
+                continue
+        return None
+
+    item_id = _first_int(item_id, data.get("item_id"), request.args.get("item_id"))
+    item_price = _first_int(
+        item_price, data.get("item_price"), request.args.get("item_price")
+    )
+
+    if item_id is None:
         return jsonify({"error": "item_id required"}), 400
-    try:
-        item_price = int(data.get("item_price"))
-    except Exception:
+    if item_price is None:
         return jsonify({"error": "item_price required"}), 400
     if not CosmeticItem.query.get(item_id):
         return jsonify({"message": "invalid_item"}), 404
