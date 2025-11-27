@@ -11,13 +11,16 @@ from flask import (
     request,
     send_from_directory,
 )
+from flask_jwt_extended import current_user, jwt_required
 from sqlalchemy.exc import IntegrityError
 from apps.config.server import db
 from .models import Order, PaymentLog
 from ..auth.models import User
+from ..cosmetic.models import CosmeticItem
 import logging
+import urllib.parse
 
-bp = Blueprint("order", __name__)
+bp = Blueprint("payment", __name__)
 
 
 @bp.get("/api_info")
@@ -26,56 +29,63 @@ def api_info():
     주문 API 정보 제공 (개발용)
     """
     info = {
-        "module": "order",
-        "base_path": "/order",
-        "description": "주문 및 결제 관리 (KakaoPay 연동)",
+        "module": "payment",
+        "base_path": "/payment",
+        "description": "KakaoPay payment flows",
         "endpoints": [
             {
-                "path": "/order",
+                "path": "/payment/ready",
                 "method": "POST",
                 "auth_required": True,
-                "description": "주문 생성",
-                "json_body": {
-                    "item_name": "상품명 (필수)",
-                    "quantity": "수량 (필수)",
-                    "total_amount": "총액 (필수)",
-                },
+                "description": "Prepare KakaoPay payment",
             },
             {
-                "path": "/order/<order_id>",
-                "method": "GET",
-                "auth_required": True,
-                "description": "주문 조회",
-            },
-            {
-                "path": "/order/payment/ready",
-                "method": "POST",
-                "auth_required": True,
-                "description": "결제 준비 (KakaoPay)",
-            },
-            {
-                "path": "/order/payment/approve",
-                "method": "POST",
-                "auth_required": True,
-                "description": "결제 승인",
-            },
-            {
-                "path": "/order/api_info",
+                "path": "/payment/approve",
                 "method": "GET",
                 "auth_required": False,
-                "description": "API 정보 조회 (개발용)",
+                "description": "Approve KakaoPay payment",
+            },
+            {
+                "path": "/payment/cancel",
+                "method": "GET",
+                "auth_required": False,
+                "description": "Handle payment cancellation callback",
+            },
+            {
+                "path": "/payment/fail",
+                "method": "GET",
+                "auth_required": False,
+                "description": "Handle payment failure callback",
+            },
+            {
+                "path": "/payment/purchase/result",
+                "method": "GET",
+                "auth_required": True,
+                "description": "Query purchase status",
+            },
+            {
+                "path": "/payment/api_info",
+                "method": "GET",
+                "auth_required": False,
+                "description": "API overview endpoint",
             },
         ],
     }
     return jsonify(info), 200
 
 
-def save_ready_order(order_id, user_id, item_name, quantity, total_amount):
-    """Persist an order as READY so KakaoPay /ready can reference it."""
+def save_ready_order(
+    order_id,
+    user_id,
+    item_id,
+    quantity,
+    total_amount,
+):
+    """Create a new READY order with item snapshot values."""
     order = Order(
         order_id=order_id,
         user_id=user_id,
-        item_name=item_name,
+        item_id=item_id,
         quantity=quantity,
         total_amount=total_amount,
         status="READY",
@@ -183,11 +193,15 @@ def kakao_headers():
 
 
 def kakao_post_with_retry(url, data, max_attempts=3, backoff_factor=0.5):
+    encoded_data = urllib.parse.urlencode(data)
     delay = backoff_factor
     for attempt in range(max_attempts):
         try:
-            resp = requests.post(url, headers=kakao_headers(), data=data)
+            resp = requests.post(url, headers=kakao_headers(), data=encoded_data)
+            print("🔹 Kakao Response Status:", resp.status_code)
+            print("🔹 Kakao Response Text:", resp.text)
             resp.raise_for_status()
+
             return resp
         except requests.RequestException as exc:
             if attempt == max_attempts - 1:
@@ -196,61 +210,90 @@ def kakao_post_with_retry(url, data, max_attempts=3, backoff_factor=0.5):
             delay *= 2
 
 
-@bp.post("/ready")
+@bp.route("/ready", methods=["POST", "OPTIONS"])
 def pay_ready():
     """
-    React → POST /payment/ready
-    body: { orderId, username, itemName, quantity, amount }
+    React → POST /order/ready
+    body: { orderId, user_id, itemId, quantity, amount }
     """
+    # CORS preflight
+    if request.method == "OPTIONS":
+        return "", 200
 
-    data = request.get_json() or {}
+    # JSON 파싱
+    try:
+        data = request.get_json(force=True) or {}
+        print("🔹 Received JSON:", data)
+    except Exception as e:
+        return jsonify({"error": "Invalid JSON", "detail": str(e)}), 400
 
-    required = ["orderId", "username", "itemName", "amount"]
+    # 필수 필드 검증
+    required = ["orderId", "userId", "itemId", "amount"]
     validation_error = validate_request_fields(data, required)
     if validation_error:
         return validation_error
 
+    # Payload 추출
     order_id = data["orderId"]
-    user_name = data["username"]
-    item_name = data["itemName"]
+    user_id = data["userId"]
+    item_id = int(data["itemId"])
     quantity = int(data.get("quantity", 1))
     total_amount = int(data["amount"])
 
-    user = User.query.filter_by(username=user_name).first()
+    # 유저 확인
+    user = User.query.filter_by(user_id=user_id).first()
     if not user:
         return jsonify({"error": "User not found"}), 404
     user_id = user.user_id
 
+    # 아이템 확인
+    item = CosmeticItem.query.get(item_id)
+    if not item:
+        return jsonify({"error": "Item not found"}), 404
+
+    # 서버 기준 가격 검증
+    correct_amount = (item.price or 0) * quantity
+    if total_amount != correct_amount:
+        return jsonify({"error": "Amount mismatch"}), 400
+
+    # 기존 주문 여부 확인
     order = Order.query.filter_by(order_id=order_id).first()
+
     if order:
+        # 현재 사용자와 일치하는지 확인
         if order.user_id != user_id:
-            return jsonify({"error": "Order ID already in use"}), 400
-        order.item_name = item_name
+            return jsonify({"error": "Order ID already in use by another user"}), 400
+
+        # 이미 READY/SUCCESS면 재요청 막기 (원하면 정책 조정)
+        if order.status in ["READY", "SUCCESS"]:
+            return jsonify({"error": f"Order already in {order.status} status"}), 400
+
+        # 주문 정보 업데이트
+        order.item_id = item_id
         order.quantity = quantity
-        order.total_amount = total_amount
+        order.total_amount = correct_amount
         order.status = "READY"
         db.session.commit()
     else:
+        # 신규 생성 (여기서 내부 commit까지 처리)
         order = save_ready_order(
             order_id=order_id,
             user_id=user_id,
-            item_name=item_name,
+            item_id=item_id,
             quantity=quantity,
-            total_amount=total_amount,
+            total_amount=correct_amount,
         )
 
+    # KakaoPay 요청 body
     body = {
         "cid": current_app.config["KAKAO_CID"],
         "partner_order_id": order_id,
         "partner_user_id": user_id,
-        "item_name": item_name,
+        "item_name": item.name,  # DB에는 안 저장해도, 카카오에 보낼 용도로만 사용
         "quantity": quantity,
-        "total_amount": total_amount,
+        "total_amount": correct_amount,
         "tax_free_amount": 0,
-        "approval_url": (
-            f"{current_app.config['KAKAO_APPROVAL_URL']}"
-            f"?order_id={order_id}&user_id={user_id}"
-        ),
+        "approval_url": f"{current_app.config['KAKAO_APPROVAL_URL']}?order_id={order_id}&user_id={user_id}",
         "cancel_url": current_app.config["KAKAO_CANCEL_URL"],
         "fail_url": current_app.config["KAKAO_FAIL_URL"],
     }
@@ -261,48 +304,75 @@ def pay_ready():
             body,
         )
     except Exception as e:
-
         return (
             jsonify({"error": "KakaoPay ready request failed", "detail": str(e)}),
             500,
         )
 
     result = resp.json()
+    print("🔸 Kakao /ready response:", result)
 
-    persist_order_tid(order, result["tid"])
-    log_payment_event(order, "READY", "READY", result, tid=result.get("tid"))
+    # tid 없으면 바로 에러 반환
+    tid = result.get("tid")
+    if not tid:
+        return (
+            jsonify(
+                {
+                    "error": "KakaoPay did not return tid",
+                    "detail": result,
+                }
+            ),
+            502,
+        )
 
+    # 주문에 tid 저장 + 로그
+    order.tid = tid
+    order.status = "READY"  # 또는 "IN_PROGRESS" 등으로 세분화 가능
+    db.session.commit()
+
+    log_payment_event(order, "READY", order.status, result, tid=tid)
+
+    # 프론트로 redirect URL 반환
     return jsonify(
         {
-            "tid": result["tid"],
+            "tid": tid,
             "next_redirect_pc_url": result.get("next_redirect_pc_url"),
             "next_redirect_mobile_url": result.get("next_redirect_mobile_url"),
         }
     )
 
 
-@bp.get("/approve")
+@bp.route("/approve", methods=["GET", "OPTIONS"])
 def pay_approve():
     """
     KakaoPay redirect → GET /approve
     query: pg_token, order_id, user_id
     """
-
-    order_id = request.args.get("order_id")
-    user_id = request.args.get("user_id")
+    print("🔥 APPROVE HIT")
+    # --- Step 1. Query validation ---
     validation_error = validate_request_fields(request.args, ["order_id", "user_id"])
     if validation_error:
         return validation_error
 
+    order_id = request.args.get("order_id")
+    user_id = request.args.get("user_id")
     pg_token = request.args.get("pg_token")
 
     if not pg_token:
         return "Invalid pg_token", 400
 
+    # --- Step 2. Valid order check ---
     order = Order.query.filter_by(order_id=order_id, user_id=user_id).first()
     if not order or not order.tid:
-        return "Invalid order", 400
+        return "Invalid or incomplete order", 400
 
+    # 🛑 이미 승인된 주문 재승인 방지
+    if order.status == "SUCCESS":
+        return redirect(
+            f"{current_app.config['FRONTEND_URL']}/payment/success?order_id={order.order_id}"
+        )
+
+    # --- Step 3. Kakao API 호출 ---
     body = {
         "cid": current_app.config["KAKAO_CID"],
         "tid": order.tid,
@@ -316,6 +386,7 @@ def pay_approve():
             "https://kapi.kakao.com/v1/payment/approve",
             body,
         )
+        result = resp.json()
     except Exception as e:
         logging.error(f"Payment approval failed: {e}")
         order.status = "FAILED"
@@ -325,31 +396,53 @@ def pay_approve():
         )
         return "Payment approval failed", 500
 
-    result = resp.json()
-
-    order.status = "APPROVED"
+    # --- Step 4. 승인 성공 후 처리 ---
+    order.status = "SUCCESS"  # FINAL 결제 완료
     db.session.commit()
     log_payment_event(order, "APPROVE", order.status, result, tid=order.tid)
 
-    redirect_url = (
-        f"{current_app.config['FRONTEND_URL']}/order/success?order_id={order.order_id}"
-    )
+    # --- Step 5. 유저에게 CosmeticItem 지급 (UserItem 테이블 등록) ---
+    from apps.cosmetic.models import UserItem
+
+    existing = UserItem.query.filter_by(
+        user_id=order.user_id, item_id=order.item_id
+    ).first()
+
+    if not existing:
+        new_item = UserItem(
+            user_id=order.user_id, item_id=order.item_id, is_equipped=False
+        )
+        db.session.add(new_item)
+        db.session.commit()
+        log_payment_event(
+            order, "ITEM_GRANTED", order.status, {"item_id": order.item_id}
+        )
+
+    # --- Step 6. Redirect to Frontend success page ---
+    redirect_url = f"{current_app.config['FRONTEND_URL']}/payment/success?order_id={order.order_id}"
     return redirect(redirect_url)
 
 
-def log_payment_event(order, event, status=None, payload=None, tid=None):
-    """Keep a lightweight audit trail for each KakaoPay call."""
-    payload_dump = json.dumps(payload, ensure_ascii=False) if payload else None
-    log = PaymentLog(
-        order=order,
-        order_id=order.order_id,
-        order_ref_id=order.id,
-        user_id=order.user_id,
-        tid=tid,
-        event=event,
-        status=status,
-        payload=payload_dump,
+@bp.get("/purchase/result")
+@jwt_required
+def purchase_result():
+    order_id = request.args.get("order_id")
+    if not order_id:
+        return jsonify({"error": "order_id required"}), 400
+
+    uid = current_user.user_id
+    order = Order.query.filter_by(order_id=order_id, user_id=uid).first()
+    if not order:
+        return jsonify({"error": "order_not_found"}), 404
+
+    item = CosmeticItem.query.get(order.item_id)
+    return jsonify(
+        {
+            "order_id": order.order_id,
+            "status": order.status,
+            "item_id": order.item_id,
+            "item_name": item.name if item else None,
+            "amount": order.total_amount,
+            "granted": order.status == "SUCCESS",
+        }
     )
-    db.session.add(log)
-    db.session.commit()
-    return log

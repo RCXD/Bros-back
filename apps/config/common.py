@@ -46,7 +46,7 @@ class Config:
     DB_PASSWORD = os.getenv("DB_PASSWORD", "1234")
     DB_HOST = os.getenv("DB_HOST", "192.168.1.79")
     DB_PORT = os.getenv("DB_PORT", "3306")
-    DB_NAME = os.getenv("DB_NAME", "404found_test1")
+    DB_NAME = os.getenv("DB_NAME", "404found_test2")
     SQLALCHEMY_DATABASE_URI = (
         f"mysql+pymysql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
     )
@@ -57,6 +57,20 @@ class Config:
 
     # CORS
     CORS_ORIGINS = os.getenv("CORS_ORIGINS", "*")
+
+    # IP 닉네임 매핑 (로그용)
+    IP_NICKNAMES = {
+        "192.168.1.89": "MASTER",
+        "192.168.1.79": "SLAVE",
+        "192.168.1.86": "SUBMISIVE",
+        "192.168.1.83": "WOOSIK_PT",
+        "192.168.1.82": "SU_KARINA",
+        "192.168.1.78": "YUNJAE_GOD",
+        "192.168.1.87": "TAK_BEAR",
+        "127.0.0.1": "LOCAL",
+        "::1": "LOCAL",
+        # 필요한 IP 추가
+    }
 
     # Session
     SESSION_COOKIE_SAMESITE = os.getenv("SESSION_COOKIE_SAMESITE", "None")
@@ -100,7 +114,7 @@ class Config:
     KAKAO_ADMIN_KEY = os.getenv("KAKAO_ADMIN_KEY")
     KAKAO_APPROVAL_URL = os.getenv(
         "KAKAO_APPROVAL_URL",
-        "http://localhost:5000/payment/approve",  # 카카오에서 다시 돌아오는 URL
+        "http://localhost:5173/payment/success",  # 카카오에서 다시 돌아오는 URL
     )
     KAKAO_CANCEL_URL = os.getenv(
         "KAKAO_CANCEL_URL",

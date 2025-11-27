@@ -84,6 +84,7 @@ def import_all_models():
     from apps.report.models import Report
     from apps.report.models import ReportType
     from apps.place.models import Place
+    from apps.search.models import SearchHistory, SearchCache
 
     # 필요한 다른 모델들도 여기에 추가
 
@@ -146,6 +147,11 @@ def register_blueprints(app):
 
     app.register_blueprint(favorite_bp, url_prefix="/favorite")
 
+    # 결제 모듈
+    from apps.payment.views import bp as payment_bp
+
+    app.register_blueprint(payment_bp, url_prefix="/payment")
+
     # 알림 모듈
     from apps.notification.views import bp as notification_bp
 
@@ -179,6 +185,11 @@ def register_blueprints(app):
     from apps.admin.views import bp as admin_bp
 
     app.register_blueprint(admin_bp, url_prefix="/admin")
+
+    # 검색 모듈
+    from apps.search.views import bp as search_bp
+
+    app.register_blueprint(search_bp, url_prefix="/search")
 
     # 테스트 모듈 (개발 환경인 경우)
     # if app.config.get('DEBUG'):

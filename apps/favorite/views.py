@@ -122,6 +122,9 @@ def get_favorites():
                 "total": pagination.total,
                 "pages": pagination.pages,
                 "page": page,
+                "per_page": per_page,
+                "has_next": pagination.has_next,
+                "has_prev": pagination.has_prev,
             }
         ),
         200,
@@ -134,7 +137,7 @@ def get_favorites_by_type(item_type):
     """
     현재 사용자의 특정 타입 즐겨찾기 조회 (실제 Post/Product 목록 반환)
     Path params:
-        - item_type: story, route, review, report, product
+        - item_type: story, route, review, report, product, place
     """
     current_user_id = int(get_jwt_identity())
 
@@ -179,6 +182,22 @@ def get_favorites_by_type(item_type):
                         "favorited_at": fav.created_at.isoformat(),
                     }
                 )
+    elif favorite_type == FavoriteType.PLACE:
+        for fav in favorites:
+            place = Place.query.get(fav.item_id)
+            if place:
+                items_list.append(
+                    {
+                        "place_id":place.place_id,
+                        "name":place.name,
+                        "alt_name":place.alt_name,
+                        "coordinate":place.coordinate,
+                        "geom":place.geom,
+                        "description":place.description,
+                        "created_at":place.created_at
+                    }
+                )
+
     # Post 타입인 경우 (story, route, review, report)
     else:
         for fav in favorites:
@@ -257,6 +276,8 @@ def toggle_favorite(item_type, item_id):
         actual_favorite_type = FavoriteType.PRODUCT
     elif favorite_type == FavoriteType.PLACE:
         item = Place.query.get(item_id)
+        if item:
+            actual_favorite_type= FavoriteType.PLACE
     else:
         # Post인 경우 실제 카테고리 확인
         item = Post.query.get(item_id)

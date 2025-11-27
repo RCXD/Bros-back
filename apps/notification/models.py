@@ -10,20 +10,26 @@ from apps.config.server import db
 class NotificationType(enum.Enum):
     """알림 유형"""
 
-    # === LEGACY: app/models/notification.py에서 가져온 타입 ===
-    MENTION = "MENTION"  # 멘션 (레거시)
-    POST_LIKE = "POST_LIKE"  # 게시글 좋아요 (레거시)
-    REPLY_LIKE = "REPLY_LIKE"  # 댓글 좋아요 (레거시)
-    COMMENT = "COMMENT"  # 새 댓글 (레거시: REPLY와 동일 개념)
-    FOLLOW = "FOLLOW"  # 팔로우 (레거시)
-    # === END LEGACY ===
-
-    # === 기존 apps/notification 타입 (레거시와 중복되지 않는 것만 유지) ===
+    MENTION = "MENTION"  # 멘션
+    POST_LIKE = "POST_LIKE"  # 게시글 좋아요
+    REPLY_LIKE = "REPLY_LIKE"  # 댓글 좋아요
+    FOLLOW = "FOLLOW"  # 팔로우
+    UNFOLLOW = "UNFOLLOW"  # 언팔로우
     FRIEND_REQUEST = "FRIEND_REQUEST"  # 친구 등록
-    REPLY = "REPLY"  # 댓글 (COMMENT와 동일, 호환성 유지)
+    REPLY = "REPLY"  # 댓글
     REPLY_TO_REPLY = "REPLY_TO_REPLY"  # 대댓글
     PRODUCT_RECOMMENDATION = "PRODUCT_RECOMMENDATION"  # 상품 추천
-    # === END 기존 타입 ===
+
+
+class NotificationItemType(enum.Enum):
+    """알림 대상 아이템 타입"""
+
+    POST = "POST"
+    REPLY = "REPLY"
+    MENTION = "MENTION"
+    PRODUCT = "PRODUCT"
+    FOLLOW = "FOLLOW"
+    USER = "USER"
 
 
 class Notification(db.Model):
@@ -32,6 +38,9 @@ class Notification(db.Model):
     __tablename__ = "notifications"
 
     notification_id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+
+    # 알림 메시지
+    message = db.Column(db.String(255), nullable=True)
 
     # 알림 유형
     type = db.Column(db.Enum(NotificationType), nullable=False)
@@ -46,23 +55,12 @@ class Notification(db.Model):
         db.Integer, db.ForeignKey("users.user_id", ondelete="CASCADE"), nullable=False
     )
 
-    # 관련 대상 (선택적)
-    post_id = db.Column(
-        db.Integer, db.ForeignKey("posts.post_id", ondelete="CASCADE"), nullable=True
-    )
-    reply_id = db.Column(
-        db.Integer, db.ForeignKey("replies.reply_id", ondelete="CASCADE"), nullable=True
-    )
-    mention_id = db.Column(
-        db.Integer,
-        db.ForeignKey("mentions.mention_id", ondelete="CASCADE"),
-        nullable=True,
-    )
-    product_id = db.Column(
-        db.Integer,
-        db.ForeignKey("products.product_id", ondelete="CASCADE"),
-        nullable=True,
-    )
+    # 관련 대상 (Favorite 모델과 동일한 방식)
+    item_type = db.Column(db.Enum(NotificationItemType), nullable=True)
+    item_id = db.Column(db.Integer, nullable=True)
+
+    # 바로가기 URL (추후 DB 업데이트 시 활성화)
+    # url = db.Column(db.String(500), nullable=True)
 
     # 읽음 여부
     is_checked = db.Column(db.Boolean, default=False)
@@ -70,7 +68,7 @@ class Notification(db.Model):
     # 생성 시각
     created_at = db.Column(db.DateTime, default=datetime.now)
 
-    # === 관계 설정 (LEGACY와 동일) ===
+    # 관계 설정
     from_user = db.relationship(
         "User",
         foreign_keys=[from_user_id],
@@ -87,36 +85,14 @@ class Notification(db.Model):
         ),
     )
 
-    post = db.relationship(
-        "Post",
-        backref=db.backref(
-            "post_notifications", lazy="dynamic", cascade="all, delete-orphan"
-        ),
+    __table_args__ = (
+        db.Index("idx_notification_receiver", "to_user_id", "is_checked"),
+        db.Index("idx_notification_item", "item_type", "item_id"),
     )
-
-    reply = db.relationship(
-        "Reply",
-        backref=db.backref(
-            "reply_notifications", lazy="dynamic", cascade="all, delete-orphan"
-        ),
-    )
-    # === REMOVED from LEGACY: mention relationship (레거시에 있었으나 apps에서 제거됨) ===
-    # mention = db.relationship("Mention", backref=db.backref("mention_notifications", ...))
-    # === END REMOVED ===
 
     def to_dict(self, follow_state_map=None):
         """
         알림 정보를 직렬화
-
-        === LEGACY vs 기존 비교 ===
-        - LEGACY (serialize): from_user 정보 거의 그대로 반환
-        - 기존 (to_dict): from_user 상세 정보 포함
-        - 선택: 기존 apps 버전 유지 (정보 많이 제공)
-        === 변경사항===
-        - profile_image -> profile_img (필드명 변경)
-        - nickname 필드 추가
-        - follow_state_map 제공 시 from_user에 follow_state 추가
-        === END ===
         """
         if self.from_user:
             from_user_info = {
@@ -136,13 +112,13 @@ class Notification(db.Model):
         return {
             "notification_id": self.notification_id,
             "type": self.type.value,
+            "message": self.message,
             "from_user_id": self.from_user_id,
             "from_user": from_user_info,
             "to_user_id": self.to_user_id,
-            "post_id": self.post_id,
-            "reply_id": self.reply_id,
-            "mention_id": self.mention_id,
-            "product_id": self.product_id,  # LEGACY에서 쓰던 필드 (apps에서 추가)
+            "item_type": self.item_type.value if self.item_type else None,
+            "item_id": self.item_id,
+            "url": getattr(self, "url", None),  # 추후 DB 컬럼 추가 시 활성화
             "is_checked": self.is_checked,
             "created_at": self.created_at.isoformat() if self.created_at else None,
         }

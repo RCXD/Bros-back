@@ -147,6 +147,7 @@ def create_notification():
         reply_id=reply_id,
         mention_id=mention_id,
         product_id=product_id,
+        message=f"{from_user_id.username}가 당신에게 알림을 보냈습니다. [개발용]",
     )
 
     db.session.add(notification)
@@ -162,7 +163,7 @@ def create_notification():
     # === LEGACY: serialize() 호환 (to_dict()로 통일됨) ===
     return jsonify(notification.to_dict()), 201
 
-# TODO: 현재 쿼리를 이중으로 반환함 && 
+
 @bp.get("")
 @jwt_required()
 def get_my_notifications():
@@ -196,8 +197,51 @@ def get_my_notifications():
         page=page, per_page=per_page, error_out=False
     )
 
+    if follow_state:
+        list_follow_state = []
+        for notification_ in notifications.items:
+            from_user = User.query.filter_by(user_id=notification_.from_user_id).first()
+            # if not from_user:
+            #     follow_state_list.append({"following": False, "followed": False})
+            #     continue
+            follow_state_ = {
+                "following": Follow.query.filter_by(
+                    from_user_id=current_user_id,
+                    to_user_id=from_user.user_id,
+                ).count()
+                > 0,  # 팔로잉 (내가 그 사람을 팔로우)
+                "followed": Follow.query.filter_by(
+                    from_user_id=from_user.user_id,
+                    to_user_id=current_user_id,
+                ).count()
+                > 0,  # 팔로우 당함 (나를 팔로우 하는 사람)
+            }
+            # followed==True인 상태에서 following==False이면 버튼 상태: 맞팔로우 / following==True이면 맞팔로잉(회색)
+            # followed==False인 상태에서 following==False이면 버튼 상태: 팔로우 / following==True이면 팔로잉(회색)
+            if follow_state_["following"] and follow_state_["followed"]:
+                follow_state_["button_state"] = (
+                    "맞팔로잉"  # 맞팔로우 : 서로 팔로우하는 상태에서 내가 팔로우 삭제요청
+                )
+            elif follow_state_["following"] and not follow_state_["followed"]:
+                follow_state_["button_state"] = (
+                    "팔로잉"  # 팔로잉(회색) : 상대가 팔로우하지 않는 상태에서 내가 팔로우 삭제요청
+                )
+            elif not follow_state_["following"] and follow_state_["followed"]:
+                follow_state_["button_state"] = (
+                    "맞팔로우"  # 맞팔로우 : 상대가 팔로우하는 상태에서 내가 팔로우 요청
+                )
+            else:
+                follow_state_["button_state"] = (
+                    "팔로우"  # 팔로우: 서로 팔로우하지 않는 상태에서 내가 팔로우 요청
+                )
+
+            list_follow_state.append(follow_state_)
+
     result = {
-        "items": [],
+        "items": [
+            dict(list(n.to_dict().items()) + [("follow_state", list_follow_state[i])])
+            for i, n in enumerate(notifications.items)
+        ],  # follow_state 포함됨
         "total": notifications.total,
         "page": page,
         "per_page": per_page,
@@ -205,46 +249,6 @@ def get_my_notifications():
         "has_next": notifications.has_next,
         "has_prev": notifications.has_prev,
     }
-
-    follow_state_map = {}
-    follow_state_map_for_items = None
-    if follow_state:
-        from_user_ids = {
-            n.from_user_id
-            for n in notifications.items
-            if n.from_user_id is not None
-        }
-
-        if from_user_ids:
-            following = {
-                row.to_user_id
-                for row in Follow.query.filter(
-                    Follow.from_user_id == current_user_id,
-                    Follow.to_user_id.in_(from_user_ids),
-                ).all()
-            }
-
-            followed = {
-                row.from_user_id
-                for row in Follow.query.filter(
-                    Follow.to_user_id == current_user_id,
-                    Follow.from_user_id.in_(from_user_ids),
-                ).all()
-            }
-
-            follow_state_map = {
-                uid: {
-                    "following": uid in following,
-                    "followed": uid in followed,
-                }
-                for uid in from_user_ids
-            }
-
-        follow_state_map_for_items = follow_state_map
-
-    for notification_ in notifications.items:
-        item_dict = notification_.to_dict(follow_state_map_for_items)
-        result["items"].append(item_dict)
 
     return jsonify(result), 200
 

@@ -196,6 +196,7 @@ def create_notification_db(
             reply_id=reply_id,
             created_at=datetime.now() - timedelta(days=random.randint(0, 30)),
             is_checked=random.choice([True, False]),
+            message="생성된 알림입니다.",  # 기본 메시지
         )
         notifications.append(notification)
 

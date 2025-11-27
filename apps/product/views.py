@@ -8,12 +8,43 @@ from sqlalchemy import or_, and_
 from decimal import Decimal
 
 from apps.config.server import db
-from apps.product.models import Product
+from apps.product.models import (
+    Product,
+    ProductSeller,
+    ProductMall,
+    ProductBrand,
+)
 from apps.image.models import Image
 from apps.favorite.models import Favorite, FavoriteType
 from apps.auth.models import User, AccountType
+from apps.product.utils import get_product_images
 
 bp = Blueprint("product", __name__)
+
+
+def _serialize_metadata(entity):
+    return entity.to_dict() if entity else None
+
+
+def _assign_metadata_from_data(product, data, id_key, name_key, entity_attr, model):
+    if id_key in data:
+        raw_id = data.get(id_key)
+        entity = model.query.get(raw_id) if raw_id else None
+        setattr(product, entity_attr, entity)
+    elif name_key in data:
+        setattr(product, name_key, data.get(name_key))
+
+
+def _apply_metadata_updates(product, data):
+    _assign_metadata_from_data(
+        product, data, "seller_id", "seller_name", "seller_entity", ProductSeller
+    )
+    _assign_metadata_from_data(
+        product, data, "mall_id", "mall_name", "mall_entity", ProductMall
+    )
+    _assign_metadata_from_data(
+        product, data, "brand_id", "brand", "brand_entity", ProductBrand
+    )
 
 
 @bp.get("/api_info")
@@ -85,6 +116,66 @@ def api_info():
                 "method": "GET",
                 "auth_required": False,
                 "description": "API 정보 조회 (개발용)",
+            },
+            # 메타데이터 기반 조회
+            {
+                "path": "/product/brands",
+                "method": "GET",
+                "auth_required": False,
+                "description": "모든 브랜드 목록 및 상품 수 조회",
+            },
+            {
+                "path": "/product/brand/<brand_id>",
+                "method": "GET",
+                "auth_required": False,
+                "description": "브랜드 ID로 상품 목록 조회",
+                "query_params": {
+                    "page": "페이지 번호",
+                    "per_page": "페이지당 개수",
+                    "sort": "정렬",
+                },
+            },
+            {
+                "path": "/product/brand/slug/<slug>",
+                "method": "GET",
+                "auth_required": False,
+                "description": "브랜드 슬러그로 상품 목록 조회",
+            },
+            {
+                "path": "/product/sellers",
+                "method": "GET",
+                "auth_required": False,
+                "description": "모든 판매자 목록 및 상품 수 조회",
+            },
+            {
+                "path": "/product/seller/<seller_id>",
+                "method": "GET",
+                "auth_required": False,
+                "description": "판매자 ID로 상품 목록 조회",
+            },
+            {
+                "path": "/product/seller/slug/<slug>",
+                "method": "GET",
+                "auth_required": False,
+                "description": "판매자 슬러그로 상품 목록 조회",
+            },
+            {
+                "path": "/product/malls",
+                "method": "GET",
+                "auth_required": False,
+                "description": "모든 몰 목록 및 상품 수 조회",
+            },
+            {
+                "path": "/product/mall/<mall_id>",
+                "method": "GET",
+                "auth_required": False,
+                "description": "몰 ID로 상품 목록 조회",
+            },
+            {
+                "path": "/product/mall/slug/<slug>",
+                "method": "GET",
+                "auth_required": False,
+                "description": "몰 슬러그로 상품 목록 조회",
             },
         ],
     }
@@ -163,6 +254,9 @@ def get_products():
         # 결과 직렬화
         products = []
         for product in pagination.items:
+            # 상품이미지 가져오기
+            images = get_product_images(product.product_id)
+
             product_data = {
                 "product_id": product.product_id,
                 "uuid": product.uuid,
@@ -177,6 +271,11 @@ def get_products():
                 "discount_percentage": product.discount_percentage,
                 "currency": product.currency,
                 "brand": product.brand,
+                "seller_name":product.seller_name,
+                "mall_name":product.mall_name,
+                "seller_meta": _serialize_metadata(product.seller_entity),
+                "mall_meta": _serialize_metadata(product.mall_entity),
+                "brand_meta": _serialize_metadata(product.brand_entity),
                 "rating": float(product.rating) if product.rating else None,
                 "n_reviews": product.n_reviews,
                 "stock": product.stock,
@@ -186,19 +285,21 @@ def get_products():
                 "created_at": (
                     product.created_at.isoformat() if product.created_at else None
                 ),
+                "product_img": images[0] if images else None,
+                "product_detail_img": (images[1:] if len(images) > 1 else []),
             }
             products.append(product_data)
-
+        
         return (
             jsonify(
                 {
                     "items": products,
-                    "pagination": {
-                        "page": pagination.page,
-                        "per_page": pagination.per_page,
-                        "total": pagination.total,
-                        "pages": pagination.pages,
-                    },
+                    "page": pagination.page,
+                    "per_page": pagination.per_page,
+                    "total": pagination.total,
+                    "pages": pagination.pages,
+                    "has_next": pagination.has_next,
+                    "has_prev": pagination.has_prev,
                 }
             ),
             200,
@@ -280,6 +381,8 @@ def create_product():
             is_active=data.get("is_active", True),
         )
 
+        _apply_metadata_updates(product, data)
+
         db.session.add(product)
         db.session.commit()
 
@@ -311,12 +414,8 @@ def get_product(product_id):
     try:
         product = Product.query.get_or_404(product_id)
 
-        # 이미지 조회 (product_img 필드에서 UUID 추출)
-        # 예: "FISH-20251124-000_0" -> apps/static/extracted_product_images/FISH-20251124-000_0.png
-        product_image_uuid = None
-        if hasattr(product, "product_img"):
-            # product_img가 있다면 해당 정보 포함
-            product_image_uuid = product.product_img
+        # 이미지 조회
+        images = get_product_images(product.product_id)
 
         product_data = {
             "product_id": product.product_id,
@@ -348,6 +447,9 @@ def get_product(product_id):
             "seller_name": product.seller_name,
             "seller_url": product.seller_url,
             "brand": product.brand,
+            "seller_meta": _serialize_metadata(product.seller_entity),
+            "mall_meta": _serialize_metadata(product.mall_entity),
+            "brand_meta": _serialize_metadata(product.brand_entity),
             "model_number": product.model_number,
             "rating": float(product.rating) if product.rating else None,
             "n_reviews": product.n_reviews,
@@ -362,6 +464,8 @@ def get_product(product_id):
             "updated_at": (
                 product.updated_at.isoformat() if product.updated_at else None
             ),
+            "product_img": images[0] if images else None,
+            "product_detail_img": (images[1:] if len(images) > 1 else []),
         }
 
         return jsonify(product_data), 200
@@ -430,6 +534,8 @@ def update_product(product_id):
                     setattr(product, field, Decimal(str(data[field])))
                 else:
                     setattr(product, field, data[field])
+
+        _apply_metadata_updates(product, data)
 
         product.update()  # updated_at 갱신
         db.session.commit()
@@ -509,3 +615,286 @@ def search_products():
     Query params: get_products와 동일
     """
     return get_products()
+
+
+# =============================================================================
+# 메타데이터 기반 상품 조회 엔드포인트
+# =============================================================================
+
+
+def _get_metadata_list(entity_class, id_field, fk_field, list_key):
+    """
+    메타데이터 리스트 조회 공통 로직
+
+    Query params:
+        - search: 이름 검색
+        - min_products: 최소 상품 수 (기본: 0, 상품 없는 것도 포함)
+        - sort: 정렬 기준 (product_count, name, created)
+        - order: 정렬 순서 (asc, desc)
+        - page: 페이지 번호
+        - per_page: 페이지당 개수
+    """
+    search = request.args.get("search", "").strip()
+    min_products = request.args.get("min_products", 0, type=int)
+    sort = request.args.get("sort", "product_count")
+    order = request.args.get("order", "desc")
+    page = request.args.get("page", 1, type=int)
+    per_page = min(request.args.get("per_page", 50, type=int), 100)
+
+    # 기본 쿼리: 엔티티 + 상품 수
+    query = (
+        db.session.query(
+            entity_class,
+            db.func.count(Product.product_id).label("product_count"),
+        )
+        .outerjoin(
+            Product,
+            and_(
+                getattr(Product, fk_field) == getattr(entity_class, id_field),
+                Product.is_active == True,
+            ),
+        )
+        .group_by(getattr(entity_class, id_field))
+    )
+
+    # 검색 필터
+    if search:
+        query = query.filter(entity_class.name.ilike(f"%{search}%"))
+
+    # 최소 상품 수 필터 (HAVING 사용)
+    if min_products > 0:
+        query = query.having(db.func.count(Product.product_id) >= min_products)
+
+    # 정렬
+    if sort == "name":
+        order_col = entity_class.name
+    elif sort == "created":
+        order_col = getattr(entity_class, id_field)  # ID가 생성 순서 반영
+    else:  # product_count (기본)
+        order_col = db.literal_column("product_count")
+
+    if order == "asc":
+        query = query.order_by(order_col.asc())
+    else:
+        query = query.order_by(order_col.desc())
+
+    # 전체 개수 (페이지네이션 전)
+    total_query = query.with_entities(db.func.count()).scalar_subquery()
+
+    # 페이지네이션
+    offset = (page - 1) * per_page
+    items = query.offset(offset).limit(per_page).all()
+
+    # 전체 개수 계산 (별도 쿼리)
+    total = query.count()
+    pages = (total + per_page - 1) // per_page if total > 0 else 0
+
+    result = []
+    for entity, count in items:
+        entity_dict = entity.to_dict()
+        entity_dict["product_count"] = count
+        result.append(entity_dict)
+
+    return {
+        list_key: result,
+        "total": total,
+        "page": page,
+        "per_page": per_page,
+        "pages": pages,
+        "has_next": page < pages,
+        "has_prev": page > 1,
+    }
+
+
+def _get_products_by_metadata(entity_class, entity_id_field, entity_id, slug=None):
+    """메타데이터 엔티티 기반 상품 조회 공통 로직"""
+    page = request.args.get("page", 1, type=int)
+    per_page = min(request.args.get("per_page", 20, type=int), 100)
+    sort = request.args.get("sort", "created_desc")
+
+    # 엔티티 조회
+    if slug:
+        entity = entity_class.query.filter_by(slug=slug).first_or_404()
+    else:
+        entity = entity_class.query.get_or_404(entity_id)
+
+    # 상품 쿼리
+    query = Product.query.filter(
+        getattr(Product, entity_id_field) == getattr(entity, entity_id_field),
+        Product.is_active == True,
+    )
+
+    # 정렬
+    if sort == "price_asc":
+        query = query.order_by(Product.price.asc())
+    elif sort == "price_desc":
+        query = query.order_by(Product.price.desc())
+    elif sort == "rating_desc":
+        query = query.order_by(Product.rating.desc().nullslast())
+    elif sort == "name_asc":
+        query = query.order_by(Product.name.asc())
+    else:
+        query = query.order_by(Product.created_at.desc())
+
+    pagination = query.paginate(page=page, per_page=per_page, error_out=False)
+
+    products = []
+    for product in pagination.items:
+        images = get_product_images(product.product_id)
+        products.append(
+            {
+                "product_id": product.product_id,
+                "uuid": product.uuid,
+                "code": product.code,
+                "name": product.name,
+                "description": product.description,
+                "category": product.category,
+                "price": float(product.price),
+                "original_price": (
+                    float(product.original_price) if product.original_price else None
+                ),
+                "discount_percentage": product.discount_percentage,
+                "brand": product.brand,
+                "rating": float(product.rating) if product.rating else None,
+                "n_reviews": product.n_reviews,
+                "rocket_delivery": product.rocket_delivery,
+                "product_img": images[0] if images else None,
+            }
+        )
+
+    return {
+        "entity": entity.to_dict(),
+        "items": products,
+        "page": pagination.page,
+        "per_page": pagination.per_page,
+        "total": pagination.total,
+        "pages": pagination.pages,
+        "has_next": pagination.has_next,
+        "has_prev": pagination.has_prev,
+    }
+
+
+# === 브랜드별 상품 ===
+
+
+@bp.get("/brands")
+def get_all_brands():
+    """
+    브랜드 목록 조회 (상품 수 포함)
+
+    Query params:
+        - search: 브랜드명 검색
+        - min_products: 최소 상품 수 (기본: 0)
+        - sort: 정렬 (product_count, name, created)
+        - order: 정렬 순서 (asc, desc)
+        - page, per_page: 페이지네이션
+    """
+    try:
+        result = _get_metadata_list(ProductBrand, "brand_id", "brand_id", "brands")
+        return jsonify(result), 200
+    except Exception as e:
+        return jsonify({"message": f"브랜드 목록 조회 실패: {str(e)}"}), 500
+
+
+@bp.get("/brand/<int:brand_id>")
+def get_products_by_brand_id(brand_id):
+    """브랜드 ID로 상품 목록 조회"""
+    try:
+        result = _get_products_by_metadata(ProductBrand, "brand_id", brand_id)
+        return jsonify(result), 200
+    except Exception as e:
+        return jsonify({"message": f"브랜드별 상품 조회 실패: {str(e)}"}), 500
+
+
+@bp.get("/brand/slug/<slug>")
+def get_products_by_brand_slug(slug):
+    """브랜드 슬러그로 상품 목록 조회"""
+    try:
+        result = _get_products_by_metadata(ProductBrand, "brand_id", None, slug=slug)
+        return jsonify(result), 200
+    except Exception as e:
+        return jsonify({"message": f"브랜드별 상품 조회 실패: {str(e)}"}), 500
+
+
+# === 판매자별 상품 ===
+
+
+@bp.get("/sellers")
+def get_all_sellers():
+    """
+    판매자 목록 조회 (상품 수 포함)
+
+    Query params:
+        - search: 판매자명 검색
+        - min_products: 최소 상품 수 (기본: 0)
+        - sort: 정렬 (product_count, name, created)
+        - order: 정렬 순서 (asc, desc)
+        - page, per_page: 페이지네이션
+    """
+    try:
+        result = _get_metadata_list(ProductSeller, "seller_id", "seller_id", "sellers")
+        return jsonify(result), 200
+    except Exception as e:
+        return jsonify({"message": f"판매자 목록 조회 실패: {str(e)}"}), 500
+
+
+@bp.get("/seller/<int:seller_id>")
+def get_products_by_seller_id(seller_id):
+    """판매자 ID로 상품 목록 조회"""
+    try:
+        result = _get_products_by_metadata(ProductSeller, "seller_id", seller_id)
+        return jsonify(result), 200
+    except Exception as e:
+        return jsonify({"message": f"판매자별 상품 조회 실패: {str(e)}"}), 500
+
+
+@bp.get("/seller/slug/<slug>")
+def get_products_by_seller_slug(slug):
+    """판매자 슬러그로 상품 목록 조회"""
+    try:
+        result = _get_products_by_metadata(ProductSeller, "seller_id", None, slug=slug)
+        return jsonify(result), 200
+    except Exception as e:
+        return jsonify({"message": f"판매자별 상품 조회 실패: {str(e)}"}), 500
+
+
+# === 몰별 상품 ===
+
+
+@bp.get("/malls")
+def get_all_malls():
+    """
+    몰 목록 조회 (상품 수 포함)
+
+    Query params:
+        - search: 몰 이름 검색
+        - min_products: 최소 상품 수 (기본: 0)
+        - sort: 정렬 (product_count, name, created)
+        - order: 정렬 순서 (asc, desc)
+        - page, per_page: 페이지네이션
+    """
+    try:
+        result = _get_metadata_list(ProductMall, "mall_id", "mall_id", "malls")
+        return jsonify(result), 200
+    except Exception as e:
+        return jsonify({"message": f"몰 목록 조회 실패: {str(e)}"}), 500
+
+
+@bp.get("/mall/<int:mall_id>")
+def get_products_by_mall_id(mall_id):
+    """몰 ID로 상품 목록 조회"""
+    try:
+        result = _get_products_by_metadata(ProductMall, "mall_id", mall_id)
+        return jsonify(result), 200
+    except Exception as e:
+        return jsonify({"message": f"몰별 상품 조회 실패: {str(e)}"}), 500
+
+
+@bp.get("/mall/slug/<slug>")
+def get_products_by_mall_slug(slug):
+    """몰 슬러그로 상품 목록 조회"""
+    try:
+        result = _get_products_by_metadata(ProductMall, "mall_id", None, slug=slug)
+        return jsonify(result), 200
+    except Exception as e:
+        return jsonify({"message": f"몰별 상품 조회 실패: {str(e)}"}), 500

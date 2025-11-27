@@ -3,13 +3,22 @@
 """
 
 from flask import Blueprint, jsonify, request
-from flask_jwt_extended import jwt_required, get_jwt_identity
+from flask_jwt_extended import jwt_required, get_jwt_identity, get_current_user
 from sqlalchemy.exc import IntegrityError
 
 from apps.notification.models import Notification, NotificationType
 from apps.config.server import db
-from apps.auth.models import User
+from apps.auth.models import User, AccountType
 from apps.user.models import Follow, Friend
+from apps.user.reward_utils import (
+    reward_follower_gained,
+    reward_follow_special_user,
+    get_user_reward_summary,
+    get_user_medal,
+    get_medal_by_points,
+    get_user_league_info,
+    MEDAL_TIERS,
+)
 
 bp = Blueprint("user", __name__)
 
@@ -121,6 +130,12 @@ def follow_user(user_id):
             db.session.add(follow)
             db.session.commit()
 
+            # 리워드 지급
+            # 팔로우 당한 사람에게 리워드
+            reward_follower_gained(user_id)
+            # 특별 유저 팔로우 시 팔로우한 사람에게도 리워드
+            reward_follow_special_user(current_user_id, target_user)
+
             # 상태 결정
             if they_follow_me:
                 status_message = "맞팔로잉"  # 서로 팔로우
@@ -150,7 +165,14 @@ def get_followers(user_id):
     # 사용자 존재 확인
     User.query.get_or_404(user_id)
 
-    followers = Follow.query.filter_by(to_user_id=user_id).all()
+    # 페이지네이션 파라미터
+    page = request.args.get("page", default=1, type=int)
+    per_page = request.args.get("per_page", default=20, type=int)
+
+    pagination = Follow.query.filter_by(to_user_id=user_id).paginate(
+        page=page, per_page=per_page, error_out=False
+    )
+    followers = pagination.items
 
     result = []
     for follow in followers:
@@ -165,7 +187,20 @@ def get_followers(user_id):
                 }
             )
 
-    return jsonify({"followers": result, "count": len(result)}), 200
+    return (
+        jsonify(
+            {
+                "items": result,
+                "total": pagination.total,
+                "pages": pagination.pages,
+                "page": page,
+                "per_page": per_page,
+                "has_next": pagination.has_next,
+                "has_prev": pagination.has_prev,
+            }
+        ),
+        200,
+    )
 
 
 @bp.get("/<int:user_id>/following")
@@ -174,7 +209,14 @@ def get_following(user_id):
     # 사용자 존재 확인
     User.query.get_or_404(user_id)
 
-    following = Follow.query.filter_by(from_user_id=user_id).all()
+    # 페이지네이션 파라미터
+    page = request.args.get("page", default=1, type=int)
+    per_page = request.args.get("per_page", default=20, type=int)
+
+    pagination = Follow.query.filter_by(from_user_id=user_id).paginate(
+        page=page, per_page=per_page, error_out=False
+    )
+    following = pagination.items
 
     result = []
     for follow in following:
@@ -189,7 +231,20 @@ def get_following(user_id):
                 }
             )
 
-    return jsonify({"following": result, "count": len(result)}), 200
+    return (
+        jsonify(
+            {
+                "items": result,
+                "total": pagination.total,
+                "pages": pagination.pages,
+                "page": page,
+                "per_page": per_page,
+                "has_next": pagination.has_next,
+                "has_prev": pagination.has_prev,
+            }
+        ),
+        200,
+    )
 
 
 @bp.post("/<int:user_id>/friend")
@@ -287,3 +342,249 @@ def get_my_friends():
             )
 
     return jsonify({"friends": result, "count": len(result)}), 200
+
+
+# =============================================================================
+# 포인트 관리 엔드포인트
+# =============================================================================
+
+
+@bp.get("/me/points")
+@jwt_required()
+def get_my_points():
+    """현재 사용자의 포인트 조회"""
+    current_user_id = int(get_jwt_identity())
+    user = User.query.get_or_404(current_user_id)
+
+    # 오늘 리워드 요약 포함
+    reward_summary = get_user_reward_summary(current_user_id)
+
+    return (
+        jsonify(
+            {
+                "user_id": user.user_id,
+                "points": user.points,
+                "today": reward_summary,
+            }
+        ),
+        200,
+    )
+
+
+@bp.get("/<int:user_id>/points")
+def get_user_points(user_id):
+    """특정 사용자의 포인트 조회"""
+    user = User.query.get_or_404(user_id)
+
+    return (
+        jsonify(
+            {
+                "user_id": user.user_id,
+                "points": user.points,
+            }
+        ),
+        200,
+    )
+
+
+# =============================================================================
+# 메달 조회 엔드포인트
+# =============================================================================
+
+
+@bp.get("/me/medal")
+@jwt_required()
+def get_my_medal():
+    """현재 사용자의 메달 정보 조회"""
+    current_user_id = int(get_jwt_identity())
+    user = User.query.get_or_404(current_user_id)
+
+    medal_info = get_user_medal(current_user_id)
+
+    return (
+        jsonify(
+            {
+                "user_id": user.user_id,
+                "points": user.points,
+                "medal": medal_info,
+            }
+        ),
+        200,
+    )
+
+
+@bp.get("/<int:user_id>/medal")
+def get_user_medal_info(user_id):
+    """특정 사용자의 메달 정보 조회"""
+    user = User.query.get_or_404(user_id)
+
+    medal_info = get_user_medal(user_id)
+
+    return (
+        jsonify(
+            {
+                "user_id": user.user_id,
+                "points": user.points,
+                "medal": medal_info,
+            }
+        ),
+        200,
+    )
+
+
+@bp.get("/medals")
+def get_all_medals():
+    """전체 메달 등급 정보 조회"""
+    return (
+        jsonify(
+            {
+                "medals": MEDAL_TIERS,
+                "count": len(MEDAL_TIERS),
+            }
+        ),
+        200,
+    )
+
+
+# =============================================================================
+# 리그 조회 엔드포인트 (미래 구현용)
+# =============================================================================
+
+
+@bp.get("/me/league")
+@jwt_required()
+def get_my_league():
+    """현재 사용자의 리그 정보 조회 (미래 구현)"""
+    current_user_id = int(get_jwt_identity())
+
+    league_info = get_user_league_info(current_user_id)
+
+    return jsonify(league_info), 200
+
+
+@bp.get("/<int:user_id>/league")
+def get_user_league(user_id):
+    """특정 사용자의 리그 정보 조회 (미래 구현)"""
+    User.query.get_or_404(user_id)
+
+    league_info = get_user_league_info(user_id)
+
+    return jsonify(league_info), 200
+
+
+# =============================================================================
+# 관리자 전용 엔드포인트 (개발용)
+# =============================================================================
+
+
+@bp.patch("/admin/<int:user_id>/points")
+@jwt_required()
+def admin_set_user_points(user_id):
+    """
+    [관리자 전용] 사용자 포인트 설정
+
+    Query params:
+        - points: 설정할 포인트 값 (필수)
+        - mode: 설정 모드 (set, add, subtract) - 기본: set
+
+    Examples:
+        PATCH /user/admin/1/points?points=1000          # 1000으로 설정
+        PATCH /user/admin/1/points?points=500&mode=add  # 500 추가
+        PATCH /user/admin/1/points?points=200&mode=subtract  # 200 차감
+    """
+    try:
+        current_user = get_current_user()
+
+        # 관리자 권한 확인
+        if not current_user or current_user.account_type != AccountType.ADMIN:
+            return jsonify({"message": "관리자 권한이 필요합니다"}), 403
+
+        # 대상 사용자 조회
+        target_user = User.query.get_or_404(user_id)
+
+        # 쿼리 파라미터
+        points = request.args.get("points", type=int)
+        mode = request.args.get("mode", "set")
+
+        if points is None:
+            return jsonify({"message": "points 파라미터가 필요합니다"}), 400
+
+        old_points = target_user.points
+
+        if mode == "add":
+            target_user.points += points
+        elif mode == "subtract":
+            target_user.points = max(0, target_user.points - points)  # 음수 방지
+        else:  # set (기본)
+            target_user.points = max(0, points)  # 음수 방지
+
+        db.session.commit()
+
+        return (
+            jsonify(
+                {
+                    "message": "포인트가 수정되었습니다",
+                    "user_id": target_user.user_id,
+                    "username": target_user.username,
+                    "old_points": old_points,
+                    "new_points": target_user.points,
+                    "mode": mode,
+                }
+            ),
+            200,
+        )
+
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"message": f"포인트 수정 실패: {str(e)}"}), 500
+
+
+@bp.get("/admin/points/leaderboard")
+@jwt_required()
+def admin_points_leaderboard():
+    """
+    [관리자 전용] 포인트 순위표
+
+    Query params:
+        - limit: 조회할 인원 수 (기본: 20, 최대: 100)
+    """
+    try:
+        current_user = get_current_user()
+
+        # 관리자 권한 확인
+        if not current_user or current_user.account_type != AccountType.ADMIN:
+            return jsonify({"message": "관리자 권한이 필요합니다"}), 403
+
+        limit = min(request.args.get("limit", 20, type=int), 100)
+
+        users = (
+            User.query.filter(User.points > 0)
+            .order_by(User.points.desc())
+            .limit(limit)
+            .all()
+        )
+
+        result = []
+        for rank, user in enumerate(users, 1):
+            result.append(
+                {
+                    "rank": rank,
+                    "user_id": user.user_id,
+                    "username": user.username,
+                    "nickname": user.nickname,
+                    "points": user.points,
+                }
+            )
+
+        return (
+            jsonify(
+                {
+                    "leaderboard": result,
+                    "count": len(result),
+                }
+            ),
+            200,
+        )
+
+    except Exception as e:
+        return jsonify({"message": f"순위표 조회 실패: {str(e)}"}), 500
