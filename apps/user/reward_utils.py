@@ -190,6 +190,8 @@ def grant_points(
     return True, points, f"{points} 포인트 지급 완료"
 
 
+
+
 # =============================================================================
 # 액션별 리워드 함수
 # =============================================================================
@@ -900,3 +902,46 @@ league_system = LeagueSystem()
 def get_user_league_info(user_id: int) -> Dict[str, Any]:
     """사용자 리그 정보 조회 (외부 호출용)"""
     return league_system.get_user_league(user_id)
+
+
+def revoke_points(
+    user_id: int, points: int, reason: str, commit: bool = True
+) -> Tuple[bool, int, str]:
+    """
+    사용자에게 포인트 회수
+
+    Args:
+        user_id: 대상 사용자 ID
+        points: 회수할 포인트
+        reason: 회수 사유 (로그용)
+        commit: DB 커밋 여부
+
+    Returns:
+        (성공 여부, 실제 회수 포인트, 메시지)
+    """
+    try:
+        if points <= 0:
+            return False, 0, "포인트는 양수여야 합니다"
+
+        config = get_config()
+        if not config.get("enabled", False):
+            return False, 0, "리워드 시스템 비활성화"
+
+        # 포인트 지급
+        user = User.query.get(user_id)
+        if not user:
+            return False, 0, "사용자를 찾을 수 없습니다"
+        
+        if user.point < points:
+            raise ValueError({"message":"보유중인 포인트가 부족합니다"})
+        
+        user.points -= points
+
+        if commit:
+            db.session.commit()
+
+        if config.get("debug_mode", False):
+            print(f"[Reward] {user.username}({user_id}): +{points}pt ({reason})")
+    except ValueError:
+        return False, points, "구매에 실패했습니다"
+    return True, points, f"{points} 포인트 반영 완료"
