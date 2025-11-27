@@ -30,9 +30,17 @@ class Post(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.now)
     updated_at = db.Column(db.DateTime, default=datetime.now, onupdate=datetime.now)
 
+    # Place 연동 (선택적)
+    place_id = db.Column(
+        db.Integer, db.ForeignKey("place.place_id", ondelete="SET NULL"), nullable=True
+    )
+
     # Relationships
     category = db.relationship("Category", backref="posts", lazy=True)
     author = db.relationship("User", backref="posts", lazy=True, foreign_keys=[user_id])
+    place = db.relationship(
+        "Place", backref="linked_posts", lazy=True, foreign_keys=[place_id]
+    )
 
     def add_view_counts(self):
         """Increment view count"""
