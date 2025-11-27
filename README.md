@@ -7,7 +7,7 @@ Flask 기반의 백엔드 프로젝트로, 소셜/로컬 탐색 서비스를 지
 ---
 
 ## 📁 폴더 구조
-
+```text
 apps/
  ├─ app.py              # Flask 앱 팩토리 및 blueprint 등록
  ├─ config/             # 환경 변수 로딩 및 공통 설정
@@ -37,7 +37,7 @@ scripts/                # OSRM 및 기타 테스트 스크립트
 osrm-test/              # OSRM 실험 기능 테스트
 test/, test_legacy/     # pytest 및 레거시 테스트
 기타 루트 파일: apply_item_type_migration.py, finish_mention_migration.py, .endpoint.env, setup_flask_env.ps1 등
-
+```
 ---
 
 ## 🔑 핵심 기능 요약
