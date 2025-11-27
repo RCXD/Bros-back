@@ -2,11 +2,11 @@ import json
 import requests
 from flask import Blueprint, jsonify, request, current_app
 from flask_jwt_extended import jwt_required
-from sqlalchemy import cast
+from sqlalchemy import cast, desc, asc
 from sqlalchemy.exc import SQLAlchemyError
 
 from apps.config.server import db
-from apps.place.models import Place, func
+from apps.place.models import Place, PlaceCategory, PlaceType, func
 from apps.place.utils import _build_bbox
 from apps.admin.views import admin_required
 
@@ -881,6 +881,988 @@ def search_places():
             {
                 "results": results,
                 "meta": {"page": page, "per_page": per_page, "total": total},
+            }
+        ),
+        200,
+    )
+
+
+# ============================================================
+# 반경 내 필터링 조회 API
+# ============================================================
+
+
+@bp.get("/nearby")
+@jwt_required(optional=True)
+def get_nearby_places():
+    """
+    기준 위치에서 반경 내 모든 정보 조회
+
+    Query Parameters:
+    - lat: 중심 위도 (필수)
+    - lon: 중심 경도 (필수)
+    - radius: 반경(m, 기본: 500, 최대: 50000)
+    - sentiment: 정보 성격 필터 (positive/negative/neutral, 콤마 구분 가능)
+    - post_filter: 게시글 연동 필터 (with_post/without_post/all, 기본: all)
+    - sort: 정렬 방식 (recommendation_first/latest_first, 기본: recommendation_first)
+    - type: 장소 타입 필터 (콤마 구분 가능, 예: pothole,restaurant)
+    - page: 페이지 번호 (기본: 1)
+    - per_page: 페이지당 개수 (기본: 20, 최대: 100)
+    """
+    # 필수 파라미터 검증
+    lat_raw = request.args.get("lat")
+    lon_raw = request.args.get("lon") or request.args.get("lng")
+
+    if not lat_raw or not lon_raw:
+        return jsonify({"message": "lat and lon are required"}), 400
+
+    lat, lat_err = _parse_float(lat_raw, "lat", -90, 90)
+    lon, lon_err = _parse_float(lon_raw, "lon", -180, 180)
+
+    if lat_err or lon_err:
+        return jsonify({"message": lat_err or lon_err}), 400
+
+    # 반경
+    radius_raw = request.args.get("radius", DEFAULT_POINT_RADIUS_METERS)
+    radius, radius_err = _parse_float(radius_raw, "radius", 1, MAX_POINT_RADIUS_METERS)
+    if radius_err:
+        return jsonify({"message": radius_err}), 400
+
+    # 정보 성격 필터 (positive/negative/neutral)
+    sentiment_raw = request.args.get("sentiment", "").strip()
+    sentiments = (
+        [s.strip().lower() for s in sentiment_raw.split(",") if s.strip()]
+        if sentiment_raw
+        else []
+    )
+
+    # 게시글 연동 필터
+    post_filter = request.args.get("post_filter", "all").strip().lower()
+    if post_filter not in ("with_post", "without_post", "all"):
+        post_filter = "all"
+
+    # 정렬 방식
+    sort = request.args.get("sort", "recommendation_first").strip().lower()
+    if sort not in ("recommendation_first", "latest_first"):
+        sort = "recommendation_first"
+
+    # 타입 필터
+    type_raw = request.args.get("type", "").strip()
+    type_names = (
+        [t.strip().lower() for t in type_raw.split(",") if t.strip()]
+        if type_raw
+        else []
+    )
+
+    # 페이지네이션
+    try:
+        page = max(1, int(request.args.get("page", 1)))
+    except (TypeError, ValueError):
+        page = 1
+
+    try:
+        per_page = max(
+            1, min(int(request.args.get("per_page", DEFAULT_PAGE_SIZE)), MAX_PAGE_SIZE)
+        )
+    except (TypeError, ValueError):
+        per_page = DEFAULT_PAGE_SIZE
+
+    # 쿼리 빌드
+    point_wkt = f"POINT({lon} {lat})"
+    point_geom = func.ST_GeomFromText(point_wkt, 4326)
+    distance_expr = func.ST_Distance_Sphere(Place.coordinate, point_geom)
+
+    query = Place.query.filter(Place.coordinate.isnot(None), distance_expr <= radius)
+
+    # 정보 성격 필터 적용
+    if sentiments:
+        category_ids = []
+        for sentiment in sentiments:
+            cat = PlaceCategory.query.filter_by(name=sentiment).first()
+            if cat:
+                category_ids.append(cat.category_id)
+        if category_ids:
+            query = query.filter(Place.category_id.in_(category_ids))
+
+    # 타입 필터 적용
+    if type_names:
+        type_ids = []
+        for type_name in type_names:
+            pt = PlaceType.query.filter_by(name=type_name).first()
+            if pt:
+                type_ids.append(pt.type_id)
+        if type_ids:
+            query = query.filter(Place.type_id.in_(type_ids))
+
+    # 게시글 연동 필터 적용
+    if post_filter == "with_post":
+        query = query.filter(Place.post_id.isnot(None))
+    elif post_filter == "without_post":
+        query = query.filter(Place.post_id.is_(None))
+
+    # 정렬 적용
+    if sort == "recommendation_first":
+        # 추천순 우선, 그 다음 최신순
+        query = query.order_by(desc(Place.recommendation_score), desc(Place.created_at))
+    else:  # latest_first
+        # 최신순 우선, 그 다음 추천순
+        query = query.order_by(desc(Place.created_at), desc(Place.recommendation_score))
+
+    # 전체 개수 및 페이지네이션
+    total = query.count()
+    places = query.offset((page - 1) * per_page).limit(per_page).all()
+
+    # 결과 직렬화 (거리 정보 포함)
+    results = []
+    for place in places:
+        place_dict = place.to_dict()
+        # 거리 계산
+        place_lat = place.lat
+        place_lon = place.lon
+        if place_lat and place_lon:
+            from apps.place.utils import haversine_m
+
+            dist = haversine_m(lat, lon, place_lat, place_lon)
+            place_dict["distance_m"] = round(dist, 1)
+        else:
+            place_dict["distance_m"] = None
+        results.append(place_dict)
+
+    return (
+        jsonify(
+            {
+                "results": results,
+                "meta": {
+                    "page": page,
+                    "per_page": per_page,
+                    "total": total,
+                    "center": {"lat": lat, "lon": lon},
+                    "radius": radius,
+                    "filters": {
+                        "sentiment": sentiments if sentiments else None,
+                        "post_filter": post_filter,
+                        "sort": sort,
+                        "types": type_names if type_names else None,
+                    },
+                },
+            }
+        ),
+        200,
+    )
+
+
+@bp.get("/categories")
+@jwt_required(optional=True)
+def get_place_categories():
+    """
+    Place 카테고리 목록 조회
+    """
+    categories = PlaceCategory.query.all()
+    return (
+        jsonify(
+            {
+                "categories": [
+                    {
+                        "category_id": cat.category_id,
+                        "name": cat.name,
+                        "description": cat.description,
+                        "place_count": cat.places.count(),
+                    }
+                    for cat in categories
+                ]
+            }
+        ),
+        200,
+    )
+
+
+@bp.get("/types")
+@jwt_required(optional=True)
+def get_place_types():
+    """
+    Place 타입 목록 조회
+
+    Query Parameters:
+    - category: 카테고리 이름으로 필터 (positive/negative/neutral)
+    """
+    category_name = request.args.get("category", "").strip().lower()
+
+    query = PlaceType.query
+
+    if category_name:
+        cat = PlaceCategory.query.filter_by(name=category_name).first()
+        if cat:
+            query = query.filter_by(category_id=cat.category_id)
+
+    types = query.all()
+
+    return (
+        jsonify(
+            {
+                "types": [
+                    {
+                        "type_id": pt.type_id,
+                        "name": pt.name,
+                        "display_name": pt.display_name,
+                        "icon": pt.icon,
+                        "category_id": pt.category_id,
+                        "category_name": pt.category.name if pt.category else None,
+                        "place_count": pt.places.count(),
+                    }
+                    for pt in types
+                ]
+            }
+        ),
+        200,
+    )
+
+
+@bp.get("/stats")
+@jwt_required(optional=True)
+def get_place_stats():
+    """
+    Place 통계 조회
+
+    Query Parameters:
+    - lat: 중심 위도 (선택, 반경 통계용)
+    - lon: 중심 경도 (선택, 반경 통계용)
+    - radius: 반경(m, 선택)
+    """
+    lat_raw = request.args.get("lat")
+    lon_raw = request.args.get("lon") or request.args.get("lng")
+    radius_raw = request.args.get("radius")
+
+    base_query = Place.query
+
+    # 반경 필터 적용
+    if lat_raw and lon_raw:
+        lat, lat_err = _parse_float(lat_raw, "lat", -90, 90)
+        lon, lon_err = _parse_float(lon_raw, "lon", -180, 180)
+
+        if not lat_err and not lon_err:
+            radius = float(radius_raw) if radius_raw else DEFAULT_POINT_RADIUS_METERS
+            radius = min(radius, MAX_POINT_RADIUS_METERS)
+
+            point_wkt = f"POINT({lon} {lat})"
+            point_geom = func.ST_GeomFromText(point_wkt, 4326)
+            distance_expr = func.ST_Distance_Sphere(Place.coordinate, point_geom)
+
+            base_query = base_query.filter(
+                Place.coordinate.isnot(None), distance_expr <= radius
+            )
+
+    # 전체 통계
+    total_places = base_query.count()
+
+    # 카테고리별 통계
+    category_stats = []
+    for cat in PlaceCategory.query.all():
+        count = base_query.filter(Place.category_id == cat.category_id).count()
+        category_stats.append(
+            {"category_id": cat.category_id, "name": cat.name, "count": count}
+        )
+
+    # 타입별 통계
+    type_stats = []
+    for pt in PlaceType.query.all():
+        count = base_query.filter(Place.type_id == pt.type_id).count()
+        if count > 0:
+            type_stats.append(
+                {
+                    "type_id": pt.type_id,
+                    "name": pt.name,
+                    "display_name": pt.display_name,
+                    "count": count,
+                }
+            )
+
+    # 게시글 연동 통계
+    with_post = base_query.filter(Place.post_id.isnot(None)).count()
+    without_post = base_query.filter(Place.post_id.is_(None)).count()
+
+    # 평균 추천도/위험도
+    avg_recommendation = (
+        db.session.query(func.avg(Place.recommendation_score))
+        .filter(Place.place_id.in_([p.place_id for p in base_query.all()]))
+        .scalar()
+    )
+
+    avg_danger = (
+        db.session.query(func.avg(Place.danger_level))
+        .filter(Place.place_id.in_([p.place_id for p in base_query.all()]))
+        .scalar()
+    )
+
+    return (
+        jsonify(
+            {
+                "stats": {
+                    "total": total_places,
+                    "by_category": category_stats,
+                    "by_type": type_stats,
+                    "post_linked": {
+                        "with_post": with_post,
+                        "without_post": without_post,
+                    },
+                    "averages": {
+                        "recommendation_score": (
+                            round(float(avg_recommendation), 2)
+                            if avg_recommendation
+                            else None
+                        ),
+                        "danger_level": (
+                            round(float(avg_danger), 2) if avg_danger else None
+                        ),
+                    },
+                }
+            }
+        ),
+        200,
+    )
+
+
+@bp.get("/dangerous")
+@jwt_required(optional=True)
+def get_dangerous_places():
+    """
+    위험 장소 조회 (danger_level이 높은 순)
+
+    Query Parameters:
+    - lat: 중심 위도 (선택)
+    - lon: 중심 경도 (선택)
+    - radius: 반경(m, 선택, 기본: 1000)
+    - min_danger: 최소 위험도 (기본: 5.0)
+    - page: 페이지 번호
+    - per_page: 페이지당 개수
+    """
+    lat_raw = request.args.get("lat")
+    lon_raw = request.args.get("lon") or request.args.get("lng")
+    radius_raw = request.args.get("radius", "1000")
+    min_danger_raw = request.args.get("min_danger", "5.0")
+
+    min_danger, _ = _parse_float(min_danger_raw, "min_danger", 0, 10)
+    if min_danger is None:
+        min_danger = 5.0
+
+    query = Place.query.filter(Place.danger_level >= min_danger)
+
+    # 반경 필터
+    if lat_raw and lon_raw:
+        lat, lat_err = _parse_float(lat_raw, "lat", -90, 90)
+        lon, lon_err = _parse_float(lon_raw, "lon", -180, 180)
+
+        if not lat_err and not lon_err:
+            radius = float(radius_raw) if radius_raw else 1000
+            radius = min(radius, MAX_POINT_RADIUS_METERS)
+
+            point_wkt = f"POINT({lon} {lat})"
+            point_geom = func.ST_GeomFromText(point_wkt, 4326)
+            distance_expr = func.ST_Distance_Sphere(Place.coordinate, point_geom)
+
+            query = query.filter(Place.coordinate.isnot(None), distance_expr <= radius)
+
+    # 위험도 높은 순 정렬
+    query = query.order_by(desc(Place.danger_level), desc(Place.created_at))
+
+    # 페이지네이션
+    try:
+        page = max(1, int(request.args.get("page", 1)))
+    except (TypeError, ValueError):
+        page = 1
+
+    try:
+        per_page = max(
+            1, min(int(request.args.get("per_page", DEFAULT_PAGE_SIZE)), MAX_PAGE_SIZE)
+        )
+    except (TypeError, ValueError):
+        per_page = DEFAULT_PAGE_SIZE
+
+    total = query.count()
+    places = query.offset((page - 1) * per_page).limit(per_page).all()
+
+    results = []
+    for place in places:
+        place_dict = place.to_dict()
+        if lat_raw and lon_raw and place.lat and place.lon:
+            from apps.place.utils import haversine_m
+
+            dist = haversine_m(float(lat_raw), float(lon_raw), place.lat, place.lon)
+            place_dict["distance_m"] = round(dist, 1)
+        results.append(place_dict)
+
+    return (
+        jsonify(
+            {
+                "results": results,
+                "meta": {
+                    "page": page,
+                    "per_page": per_page,
+                    "total": total,
+                    "min_danger": min_danger,
+                },
+            }
+        ),
+        200,
+    )
+
+
+@bp.get("/recommended")
+@jwt_required(optional=True)
+def get_recommended_places():
+    """
+    추천 장소 조회 (recommendation_score가 높은 순)
+
+    Query Parameters:
+    - lat: 중심 위도 (선택)
+    - lon: 중심 경도 (선택)
+    - radius: 반경(m, 선택, 기본: 1000)
+    - min_score: 최소 추천도 (기본: 4.0)
+    - page: 페이지 번호
+    - per_page: 페이지당 개수
+    """
+    lat_raw = request.args.get("lat")
+    lon_raw = request.args.get("lon") or request.args.get("lng")
+    radius_raw = request.args.get("radius", "1000")
+    min_score_raw = request.args.get("min_score", "4.0")
+
+    min_score, _ = _parse_float(min_score_raw, "min_score", 1, 5)
+    if min_score is None:
+        min_score = 4.0
+
+    query = Place.query.filter(Place.recommendation_score >= min_score)
+
+    # 반경 필터
+    if lat_raw and lon_raw:
+        lat, lat_err = _parse_float(lat_raw, "lat", -90, 90)
+        lon, lon_err = _parse_float(lon_raw, "lon", -180, 180)
+
+        if not lat_err and not lon_err:
+            radius = float(radius_raw) if radius_raw else 1000
+            radius = min(radius, MAX_POINT_RADIUS_METERS)
+
+            point_wkt = f"POINT({lon} {lat})"
+            point_geom = func.ST_GeomFromText(point_wkt, 4326)
+            distance_expr = func.ST_Distance_Sphere(Place.coordinate, point_geom)
+
+            query = query.filter(Place.coordinate.isnot(None), distance_expr <= radius)
+
+    # 추천도 높은 순 정렬
+    query = query.order_by(desc(Place.recommendation_score), desc(Place.created_at))
+
+    # 페이지네이션
+    try:
+        page = max(1, int(request.args.get("page", 1)))
+    except (TypeError, ValueError):
+        page = 1
+
+    try:
+        per_page = max(
+            1, min(int(request.args.get("per_page", DEFAULT_PAGE_SIZE)), MAX_PAGE_SIZE)
+        )
+    except (TypeError, ValueError):
+        per_page = DEFAULT_PAGE_SIZE
+
+    total = query.count()
+    places = query.offset((page - 1) * per_page).limit(per_page).all()
+
+    results = []
+    for place in places:
+        place_dict = place.to_dict()
+        if lat_raw and lon_raw and place.lat and place.lon:
+            from apps.place.utils import haversine_m
+
+            dist = haversine_m(float(lat_raw), float(lon_raw), place.lat, place.lon)
+            place_dict["distance_m"] = round(dist, 1)
+        results.append(place_dict)
+
+    return (
+        jsonify(
+            {
+                "results": results,
+                "meta": {
+                    "page": page,
+                    "per_page": per_page,
+                    "total": total,
+                    "min_score": min_score,
+                },
+            }
+        ),
+        200,
+    )
+
+
+# ============================================================
+# 외부 API 데이터 조회 및 동기화 API
+# ============================================================
+
+
+@bp.get("/<int:place_id>/external")
+@jwt_required(optional=True)
+def get_place_external_data(place_id):
+    """
+    특정 장소의 외부 API(Google, Kakao) 데이터 조회
+
+    Query Parameters:
+    - source: 데이터 소스 필터 (google/kakao/all, 기본: all)
+    """
+    place = Place.query.get(place_id)
+    if not place:
+        return jsonify({"message": "Place not found"}), 404
+
+    source = request.args.get("source", "all").strip().lower()
+
+    result = {
+        "place_id": place_id,
+        "name": place.name,
+        "verified": place.verified,
+        "data_source": place.data_source,
+    }
+
+    if source in ("google", "all"):
+        result["google"] = place._get_google_data()
+
+    if source in ("kakao", "all"):
+        result["kakao"] = place._get_kakao_data()
+
+    return jsonify(result), 200
+
+
+@bp.get("/with-google")
+@jwt_required(optional=True)
+def get_places_with_google_data():
+    """
+    Google 데이터가 있는 장소 목록 조회
+
+    Query Parameters:
+    - min_rating: 최소 Google 평점 (기본: 없음)
+    - min_reviews: 최소 리뷰 수 (기본: 없음)
+    - page: 페이지 번호
+    - per_page: 페이지당 개수
+    """
+    min_rating_raw = request.args.get("min_rating")
+    min_reviews_raw = request.args.get("min_reviews")
+
+    query = Place.query.filter(Place.google_place_id.isnot(None))
+
+    if min_rating_raw:
+        min_rating, _ = _parse_float(min_rating_raw, "min_rating", 1, 5)
+        if min_rating:
+            query = query.filter(Place.google_rating >= min_rating)
+
+    if min_reviews_raw:
+        try:
+            min_reviews = int(min_reviews_raw)
+            query = query.filter(Place.google_reviews_count >= min_reviews)
+        except (TypeError, ValueError):
+            pass
+
+    # Google 평점 높은 순 정렬
+    query = query.order_by(desc(Place.google_rating), desc(Place.google_reviews_count))
+
+    # 페이지네이션
+    try:
+        page = max(1, int(request.args.get("page", 1)))
+    except (TypeError, ValueError):
+        page = 1
+
+    try:
+        per_page = max(
+            1, min(int(request.args.get("per_page", DEFAULT_PAGE_SIZE)), MAX_PAGE_SIZE)
+        )
+    except (TypeError, ValueError):
+        per_page = DEFAULT_PAGE_SIZE
+
+    total = query.count()
+    places = query.offset((page - 1) * per_page).limit(per_page).all()
+
+    results = [place.to_dict(include_external=True) for place in places]
+
+    return (
+        jsonify(
+            {
+                "results": results,
+                "meta": {
+                    "page": page,
+                    "per_page": per_page,
+                    "total": total,
+                },
+            }
+        ),
+        200,
+    )
+
+
+@bp.get("/with-kakao")
+@jwt_required(optional=True)
+def get_places_with_kakao_data():
+    """
+    Kakao 데이터가 있는 장소 목록 조회
+
+    Query Parameters:
+    - category_group: 카카오 카테고리 그룹 코드 (FD6, CE7 등)
+    - page: 페이지 번호
+    - per_page: 페이지당 개수
+    """
+    category_group = request.args.get("category_group", "").strip().upper()
+
+    query = Place.query.filter(Place.kakao_place_id.isnot(None))
+
+    if category_group:
+        query = query.filter(Place.kakao_category_group_code == category_group)
+
+    # 최신 동기화 순 정렬
+    query = query.order_by(desc(Place.kakao_last_synced))
+
+    # 페이지네이션
+    try:
+        page = max(1, int(request.args.get("page", 1)))
+    except (TypeError, ValueError):
+        page = 1
+
+    try:
+        per_page = max(
+            1, min(int(request.args.get("per_page", DEFAULT_PAGE_SIZE)), MAX_PAGE_SIZE)
+        )
+    except (TypeError, ValueError):
+        per_page = DEFAULT_PAGE_SIZE
+
+    total = query.count()
+    places = query.offset((page - 1) * per_page).limit(per_page).all()
+
+    results = [place.to_dict(include_external=True) for place in places]
+
+    return (
+        jsonify(
+            {
+                "results": results,
+                "meta": {
+                    "page": page,
+                    "per_page": per_page,
+                    "total": total,
+                },
+            }
+        ),
+        200,
+    )
+
+
+@bp.get("/unsynced")
+@jwt_required(optional=True)
+def get_unsynced_places():
+    """
+    외부 API와 동기화되지 않은 장소 목록 조회
+
+    Query Parameters:
+    - source: 동기화 대상 (google/kakao/both, 기본: both)
+    - days: 마지막 동기화 후 경과 일수 (기본: 없음 = 동기화된 적 없음)
+    - page: 페이지 번호
+    - per_page: 페이지당 개수
+    """
+    from datetime import datetime, timedelta
+
+    source = request.args.get("source", "both").strip().lower()
+    days_raw = request.args.get("days")
+
+    query = Place.query
+
+    if days_raw:
+        try:
+            days = int(days_raw)
+            cutoff = datetime.now() - timedelta(days=days)
+
+            if source == "google":
+                query = query.filter(
+                    (Place.google_last_synced.is_(None))
+                    | (Place.google_last_synced < cutoff)
+                )
+            elif source == "kakao":
+                query = query.filter(
+                    (Place.kakao_last_synced.is_(None))
+                    | (Place.kakao_last_synced < cutoff)
+                )
+            else:  # both
+                query = query.filter(
+                    (Place.google_last_synced.is_(None))
+                    | (Place.google_last_synced < cutoff)
+                    | (Place.kakao_last_synced.is_(None))
+                    | (Place.kakao_last_synced < cutoff)
+                )
+        except (TypeError, ValueError):
+            pass
+    else:
+        # 동기화된 적 없는 장소
+        if source == "google":
+            query = query.filter(Place.google_place_id.is_(None))
+        elif source == "kakao":
+            query = query.filter(Place.kakao_place_id.is_(None))
+        else:  # both
+            query = query.filter(
+                Place.google_place_id.is_(None) | Place.kakao_place_id.is_(None)
+            )
+
+    # 생성일 오래된 순 (오래 된 것부터 동기화 필요)
+    query = query.order_by(asc(Place.created_at))
+
+    # 페이지네이션
+    try:
+        page = max(1, int(request.args.get("page", 1)))
+    except (TypeError, ValueError):
+        page = 1
+
+    try:
+        per_page = max(
+            1, min(int(request.args.get("per_page", DEFAULT_PAGE_SIZE)), MAX_PAGE_SIZE)
+        )
+    except (TypeError, ValueError):
+        per_page = DEFAULT_PAGE_SIZE
+
+    total = query.count()
+    places = query.offset((page - 1) * per_page).limit(per_page).all()
+
+    results = []
+    for place in places:
+        place_dict = place.to_dict()
+        place_dict["sync_status"] = {
+            "google_synced": place.google_place_id is not None,
+            "google_last_synced": (
+                place.google_last_synced.isoformat()
+                if place.google_last_synced
+                else None
+            ),
+            "kakao_synced": place.kakao_place_id is not None,
+            "kakao_last_synced": (
+                place.kakao_last_synced.isoformat() if place.kakao_last_synced else None
+            ),
+        }
+        results.append(place_dict)
+
+    return (
+        jsonify(
+            {
+                "results": results,
+                "meta": {
+                    "page": page,
+                    "per_page": per_page,
+                    "total": total,
+                    "source": source,
+                },
+            }
+        ),
+        200,
+    )
+
+
+@bp.put("/<int:place_id>/sync/google")
+@jwt_required()
+def sync_place_google(place_id):
+    """
+    특정 장소의 Google Places API 데이터 수동 업데이트
+
+    Request Body:
+    - google_data: Google Places API 응답 데이터
+    """
+    error = admin_required()
+    if error:
+        return error
+
+    place = Place.query.get(place_id)
+    if not place:
+        return jsonify({"message": "Place not found"}), 404
+
+    data = request.get_json() or {}
+    google_data = data.get("google_data")
+
+    if not google_data:
+        return jsonify({"message": "google_data is required"}), 400
+
+    try:
+        place.update_from_google(google_data)
+        db.session.commit()
+    except SQLAlchemyError as exc:
+        db.session.rollback()
+        return jsonify({"message": "Failed to sync", "error": str(exc)}), 400
+
+    return (
+        jsonify(
+            {
+                "message": "Google data synced",
+                "place": place.to_dict(include_external=True),
+            }
+        ),
+        200,
+    )
+
+
+@bp.put("/<int:place_id>/sync/kakao")
+@jwt_required()
+def sync_place_kakao(place_id):
+    """
+    특정 장소의 Kakao Local API 데이터 수동 업데이트
+
+    Request Body:
+    - kakao_data: Kakao Local API 응답 데이터
+    """
+    error = admin_required()
+    if error:
+        return error
+
+    place = Place.query.get(place_id)
+    if not place:
+        return jsonify({"message": "Place not found"}), 404
+
+    data = request.get_json() or {}
+    kakao_data = data.get("kakao_data")
+
+    if not kakao_data:
+        return jsonify({"message": "kakao_data is required"}), 400
+
+    try:
+        place.update_from_kakao(kakao_data)
+        db.session.commit()
+    except SQLAlchemyError as exc:
+        db.session.rollback()
+        return jsonify({"message": "Failed to sync", "error": str(exc)}), 400
+
+    return (
+        jsonify(
+            {
+                "message": "Kakao data synced",
+                "place": place.to_dict(include_external=True),
+            }
+        ),
+        200,
+    )
+
+
+@bp.put("/<int:place_id>/verify")
+@jwt_required()
+def verify_place(place_id):
+    """
+    장소 정보 검증 상태 변경
+
+    Request Body:
+    - verified: true/false
+    """
+    error = admin_required()
+    if error:
+        return error
+
+    place = Place.query.get(place_id)
+    if not place:
+        return jsonify({"message": "Place not found"}), 404
+
+    data = request.get_json() or {}
+    verified = data.get("verified")
+
+    if verified is None:
+        return jsonify({"message": "verified field is required"}), 400
+
+    try:
+        place.verified = bool(verified)
+        db.session.commit()
+    except SQLAlchemyError as exc:
+        db.session.rollback()
+        return jsonify({"message": "Failed to update", "error": str(exc)}), 400
+
+    return (
+        jsonify(
+            {
+                "message": "Verification status updated",
+                "place_id": place_id,
+                "verified": place.verified,
+            }
+        ),
+        200,
+    )
+
+
+@bp.get("/external-stats")
+@jwt_required(optional=True)
+def get_external_sync_stats():
+    """
+    외부 API 동기화 통계 조회
+    """
+    total_places = Place.query.count()
+
+    # Google 동기화 통계
+    google_synced = Place.query.filter(Place.google_place_id.isnot(None)).count()
+    google_with_rating = Place.query.filter(Place.google_rating.isnot(None)).count()
+    google_avg_rating = db.session.query(func.avg(Place.google_rating)).scalar()
+
+    # Kakao 동기화 통계
+    kakao_synced = Place.query.filter(Place.kakao_place_id.isnot(None)).count()
+
+    # Kakao 카테고리별 통계
+    kakao_category_stats = (
+        db.session.query(
+            Place.kakao_category_group_code,
+            Place.kakao_category_group_name,
+            func.count(Place.place_id),
+        )
+        .filter(Place.kakao_category_group_code.isnot(None))
+        .group_by(Place.kakao_category_group_code, Place.kakao_category_group_name)
+        .all()
+    )
+
+    # 검증 통계
+    verified_count = Place.query.filter(Place.verified == True).count()
+
+    # 데이터 소스 통계
+    source_stats = (
+        db.session.query(Place.data_source, func.count(Place.place_id))
+        .filter(Place.data_source.isnot(None))
+        .group_by(Place.data_source)
+        .all()
+    )
+
+    return (
+        jsonify(
+            {
+                "stats": {
+                    "total_places": total_places,
+                    "google": {
+                        "synced_count": google_synced,
+                        "sync_rate": (
+                            round(google_synced / total_places * 100, 1)
+                            if total_places > 0
+                            else 0
+                        ),
+                        "with_rating_count": google_with_rating,
+                        "average_rating": (
+                            round(float(google_avg_rating), 2)
+                            if google_avg_rating
+                            else None
+                        ),
+                    },
+                    "kakao": {
+                        "synced_count": kakao_synced,
+                        "sync_rate": (
+                            round(kakao_synced / total_places * 100, 1)
+                            if total_places > 0
+                            else 0
+                        ),
+                        "by_category": [
+                            {
+                                "code": code,
+                                "name": name,
+                                "count": count,
+                            }
+                            for code, name, count in kakao_category_stats
+                        ],
+                    },
+                    "verification": {
+                        "verified_count": verified_count,
+                        "verification_rate": (
+                            round(verified_count / total_places * 100, 1)
+                            if total_places > 0
+                            else 0
+                        ),
+                    },
+                    "data_source": [
+                        {"source": source, "count": count}
+                        for source, count in source_stats
+                    ],
+                }
             }
         ),
         200,
