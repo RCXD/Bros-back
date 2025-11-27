@@ -9,6 +9,7 @@ from flask import Blueprint, jsonify, request, current_app
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from sqlalchemy.exc import SQLAlchemyError, IntegrityError
 from functools import wraps
+from apps.user.reward_utils import revoke_points
 
 from apps.config.server import db
 from apps.cosmetic.models import (
@@ -437,8 +438,20 @@ def acquire_item():
         item_id = int(data.get("item_id"))
     except Exception:
         return jsonify({"error": "item_id required"}), 400
+    try:
+        item_price = int(data.get("item_price"))
+    except Exception:
+        return jsonify({"error": "item_price required"}), 400
     if not CosmeticItem.query.get(item_id):
         return jsonify({"error": "invalid_item"}), 404
+    try:
+        success, deducted, msg = revoke_points(
+            uid, item_price, "아이템 구매로 인한 포인트 차감", True
+        )
+    except ValueError as e:
+        return jsonify({"message": str(e)})
+    if not success:
+        return jsonify({"error": msg}), 400
     try:
         ui = UserItem(user_id=uid, item_id=item_id, acquired_at=datetime.now())
         db.session.add(ui)
@@ -470,12 +483,26 @@ def acquire_set():
     if not s:
         return jsonify({"error": "invalid_set"}), 404
     rel = CosmeticSetItem.query.filter_by(set_id=set_id).all()
-    item_ids = [r.item_id for r in rel]
     created, existing = [], []
     try:
-        for iid in item_ids:
+        for item in rel:
             try:
+                iid = item.item_id
+                price = item.price
                 ui = UserItem(user_id=uid, item_id=iid, acquired_at=datetime.now())
+            except AttributeError:
+                return jsonify({"error": "아이템 속성이 없습니다"}), 400
+            try:
+                try:
+                    success, deducted, msg = revoke_points(
+                        uid, price, "아이템 구매로 인한 포인트 차감", True
+                    )
+                except ValueError as e:
+                    return jsonify({"message": str(e)})
+                if not success:
+                    return jsonify({"error": msg}), 400
+            except ValueError as e:
+                return jsonify({"message": e.args})
                 db.session.add(ui)
                 db.session.flush()
                 created.append(iid)
