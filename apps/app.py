@@ -224,6 +224,9 @@ if __name__ == "__main__":
         "--prod", action="store_true", help="프로덕션 환경 사용 (.env.production)"
     )
     parser.add_argument("--debug", action="store_true", help="디버그 모드 강제 활성화")
+    parser.add_argument(
+        "--https", action="store_true", help="HTTPS 모드로 실행 (자체 서명 인증서)"
+    )
     args = parser.parse_args()
 
     # 환경 파일 선택 및 로드
@@ -261,10 +264,18 @@ if __name__ == "__main__":
         debug = True
         print(" * 디버그 모드가 커맨드 라인 옵션으로 활성화되었습니다.")
 
+    # HTTPS 설정
+    ssl_context = None
+    protocol = "http"
+    if args.https:
+        ssl_context = "adhoc"  # pyopenssl을 사용한 자체 서명 인증서
+        protocol = "https"
+        print(" * HTTPS 모드가 활성화되었습니다 (자체 서명 인증서)")
+
     # 서버 정보 출력
-    print(f" * 서버 호스팅: http://{host}:{port}")
+    print(f" * 서버 호스팅: {protocol}://{host}:{port}")
     print(f' * 디버그 모드: {"활성화" if debug else "비활성화"}')
     print(f" * 설정 프로필: {config_name}")
 
     # 서버 실행
-    app.run(host=host, port=port, debug=debug)
+    app.run(host=host, port=port, debug=debug, ssl_context=ssl_context)
