@@ -287,15 +287,17 @@ def create_post():
             )
 
         # 팔로워들에게 피드 생성 및 알림 발송
+        # 나를 팔로우하는 사용자 조회 (to_user_id가 나인 Follow의 from_user_id)
+        follower_ids = [
+            f.from_user_id
+            for f in Follow.query.filter_by(to_user_id=current_user.user_id).all()
+        ]
         followers = (
-            db.session.query(User)
-            .join(
-                db.alias(Follow, name="f"),
-                User.user_id == db.alias(Follow, name="f").c.from_user_id,
-            )
-            .filter(db.alias(Follow, name="f").c.to_user_id == current_user.user_id)
-            .all()
+            User.query.filter(User.user_id.in_(follower_ids)).all()
+            if follower_ids
+            else []
         )
+
         for follower in followers:
             # 피드 생성 (utils 함수 사용)
             from apps.feed.utils import create_new_post_feed
