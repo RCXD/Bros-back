@@ -289,7 +289,7 @@ def get_products():
                 "product_detail_img": (images[1:] if len(images) > 1 else []),
             }
             products.append(product_data)
-
+        
         return (
             jsonify(
                 {

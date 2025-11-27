@@ -87,13 +87,19 @@ class Place(db.Model):
         db.Index("idx_place_type", "type_id"),
         db.Index("idx_place_post", "post_id"),
     )
-
+    # 장소 아이디(저장용)
     place_id = db.Column(db.Integer, primary_key=True)
+    # 장소 이름(없을 시 주소 저장)
     name = db.Column(db.String(255), nullable=False)
+    # 대표 이름(ex)코엑스, 서울역, ...)
     alt_name = db.Column(db.String(255))
+    # 좌표(위도, 경도, 자동으로 입력)
     coordinate = db.Column(Geometry(geometry_type="POINT", srid=4326), nullable=False)
-    geom = db.Column(Geometry(geometry_type="POLYGON", srid=4326))
+    # 장소 공간(차지하는)
+    geom = db.Column(Geometry(srid=4326))
+    # 설명
     description = db.Column(db.Text)
+    # 원본 응답
     tags = db.Column(JSON)
 
     # 분류 정보
@@ -179,7 +185,7 @@ class Place(db.Model):
     def _point_from_latlon(lat, lon):
         if lat is None or lon is None:
             return None
-        return func.ST_GeomFromText(f"POINT({float(lon)} {float(lat)})", 4326)
+        return func.ST_GeomFromText(f"POINT({float(lat)} {float(lon)})", 4326)
 
     def set_lat_lon(self, lat, lon):
         if lat is None or lon is None:
