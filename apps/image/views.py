@@ -41,6 +41,18 @@ def api_info():
                 "description": "상품 이미지 조회",
             },
             {
+                "path": "/image/favicon",
+                "method": "GET",
+                "auth_required": False,
+                "description": "파비콘 이미지 조회",
+            },
+            {
+                "path": "/image/logo",
+                "method": "GET",
+                "auth_required": False,
+                "description": "로고 이미지 조회",
+            },
+            {
                 "path": "/image/api_info",
                 "method": "GET",
                 "auth_required": False,
@@ -78,6 +90,32 @@ def get_profile_image(uuid):
     if not os.path.exists(absolute_path):
         return jsonify({"message": f"파일 없음: {absolute_path}"}), 404
 
+    return send_from_directory(folder, filename)
+
+
+@bp.get("/favicon")
+def get_favicon():
+    """
+    파비콘 이미지 조회
+
+    Returns:
+        이미지 파일
+    """
+    folder = os.path.join(current_app.root_path, "static")
+    filename = "favicon.ico"
+    return send_from_directory(folder, filename)
+
+
+@bp.get("/logo")
+def get_logo_image():
+    """
+    로고 이미지 조회
+
+    Returns:
+        이미지 파일
+    """
+    folder = os.path.join(current_app.root_path, "static", "logo_images")
+    filename = "logoImage.png"
     return send_from_directory(folder, filename)
 
 
