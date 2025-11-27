@@ -12,6 +12,8 @@ try:
         ensure_categories,
         load_posts_from_json,
         create_username_to_userid_map,
+        build_places_cache,
+        resolve_place_id,
     )
 except ImportError:
     from apps.common.logger import get_logger
@@ -19,6 +21,8 @@ except ImportError:
         ensure_categories,
         load_posts_from_json,
         create_username_to_userid_map,
+        build_places_cache,
+        resolve_place_id,
     )
 
 
@@ -48,11 +52,17 @@ def test_generate_posts(fixture_app):
         categories = ensure_categories(category_names)
         log.debug(f"  {len(categories)}개 카테고리 준비 완료")
 
+        # Place 캐시 생성 (cat2, cat3에서 Place 연결을 위해)
+        name_cache, coord_cache = build_places_cache()
+        if name_cache:
+            log.debug(f"  {len(name_cache)}개 Place 캐시 로드 완료")
+
         # JSON 파일에서 게시글 데이터 로드
         json_dir = os.path.join(os.path.dirname(__file__), "..", "json")
         posts = []
         base_time = datetime.now() - timedelta(days=60)
         total_posts = 0
+        linked_posts = 0
 
         for cat_idx in range(4):
             post_list = load_posts_from_json(json_dir, cat_idx)
@@ -71,6 +81,18 @@ def test_generate_posts(fixture_app):
                 if not user_id:
                     user_id = random.choice(users).user_id
 
+                # Place 연결 (REVIEW, REPORT 카테고리에서만)
+                place_id = None
+                if cat_idx in [2, 3] and (name_cache or coord_cache):
+                    place_id = resolve_place_id(
+                        post_data,
+                        name_cache=name_cache,
+                        coord_cache=coord_cache,
+                        max_distance_m=300,  # 300m 이내의 Place만 연결
+                    )
+                    if place_id:
+                        linked_posts += 1
+
                 # Post 객체 생성
                 post = Post(
                     user_id=user_id,
@@ -78,6 +100,7 @@ def test_generate_posts(fixture_app):
                     content=post_data.get("content", ""),
                     view_counts=random.randint(0, 1000),
                     created_at=base_time + timedelta(days=random.randint(0, 60)),
+                    place_id=place_id,
                 )
                 posts.append(post)
 
@@ -92,5 +115,7 @@ def test_generate_posts(fixture_app):
             # 게시글이 생성되었는지 확인
             final_count = Post.query.count()
             log.success(f"  {total_posts}개 게시글 생성 완료 (DB 총: {final_count}개)")
+            if linked_posts > 0:
+                log.success(f"  {linked_posts}개 게시글이 Place와 연결됨")
         else:
             log.warning("  생성할 게시글이 없습니다")

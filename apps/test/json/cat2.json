@@ -7,7 +7,8 @@
             "category_id": 2,
             "review_score": 5,
             "danger_score": 0,
-            "locations": [37.5605, 127.1302]
+            "locations": [37.5534, 127.1289],
+            "place_name": "암사동 선사유적지"
         },
         {
             "username": "user7",
@@ -23,7 +24,8 @@
             "category_id": 2,
             "review_score": 5,
             "danger_score": 0,
-            "locations": [37.5373, 127.1544]
+            "locations": [37.5112, 127.1456],
+            "place_name": "일자산자연공원"
         },
         {
             "username": "user5",
@@ -31,7 +33,8 @@
             "category_id": 2,
             "review_score": 5,
             "danger_score": 0,
-            "locations": [37.5487, 127.1200]
+            "locations": [37.5423, 127.0989],
+            "place_name": "광나루한강공원"
         },
         {
             "username": "user9",
@@ -47,7 +50,8 @@
             "category_id": 2,
             "review_score": 5,
             "danger_score": 0,
-            "locations": [37.5385, 127.1611]
+            "locations": [37.5389, 127.1456],
+            "place_name": "길동생태공원"
         },
         {
             "username": "user4",
@@ -55,7 +59,8 @@
             "category_id": 2,
             "review_score": 4,
             "danger_score": 0,
-            "locations": [37.5388, 127.1245]
+            "locations": [37.5378, 127.1234],
+            "place_name": "현대백화점 천호점"
         },
         {
             "username": "user8",
@@ -71,7 +76,8 @@
             "category_id": 2,
             "review_score": 4,
             "danger_score": 0,
-            "locations": [37.5410, 127.1519]
+            "locations": [37.5112, 127.1456],
+            "place_name": "일자산자연공원"
         },
         {
             "username": "user10",
@@ -79,11 +85,12 @@
             "category_id": 2,
             "review_score": 4,
             "danger_score": 0,
-            "locations": [37.5452, 127.1180]
+            "locations": [37.5423, 127.0989],
+            "place_name": "광나루한강공원"
         },
         {
             "username": "user3",
-            "content": "명일동 카페거리 (가상) - (Mock Data) 조용하고 아기자기한 개인 카페들이 모여있는 가상의 힐링 스팟입니다. 디저트가 유명합니다.",
+            "content": "명일동 카페거리 - 조용하고 아기자기한 개인 카페들이 모여있는 힐링 스팟입니다. 디저트가 유명합니다.",
             "category_id": 2,
             "review_score": 4,
             "danger_score": 0,
@@ -95,7 +102,8 @@
             "category_id": 2,
             "review_score": 4,
             "danger_score": 0,
-            "locations": [37.5360, 127.1421]
+            "locations": [37.5345, 127.1423],
+            "place_name": "길동 먹자골목"
         },
         {
             "username": "user7",
@@ -103,7 +111,8 @@
             "category_id": 2,
             "review_score": 5,
             "danger_score": 0,
-            "locations": [37.5515, 127.1570]
+            "locations": [37.5356, 127.1423],
+            "place_name": "강동아트센터"
         },
         {
             "username": "user5",
@@ -115,7 +124,7 @@
         },
         {
             "username": "user9",
-            "content": "성내동 만화카페 '코믹존' (가상) - (Mock Data) 강풀 만화거리 근처에 위치한, 편안하게 만화를 즐길 수 있는 가상의 휴식처입니다. 24시간 운영됩니다.",
+            "content": "성내동 만화카페 '코믹존' - 강풀 만화거리 근처에 위치한, 편안하게 만화를 즐길 수 있는 휴식처입니다. 24시간 운영됩니다.",
             "category_id": 2,
             "review_score": 5,
             "danger_score": 0,
@@ -123,11 +132,12 @@
         },
         {
             "username": "user1",
-            "content": "암사동 역사공원 (가상) - (Mock Data) 선사유적지 옆에 새로 조성된 공원으로, 조형물과 쉼터가 잘 갖춰져 있습니다.",
+            "content": "암사동 역사공원 - 선사유적지 옆에 조성된 공원으로, 조형물과 쉼터가 잘 갖춰져 있습니다.",
             "category_id": 2,
             "review_score": 4,
             "danger_score": 0,
-            "locations": [37.5590, 127.1315]
+            "locations": [37.5534, 127.1289],
+            "place_name": "암사동 선사유적지"
         },
         {
             "username": "user4",
@@ -135,7 +145,8 @@
             "category_id": 2,
             "review_score": 5,
             "danger_score": 0,
-            "locations": [37.5560, 127.1705]
+            "locations": [37.5578, 127.1489],
+            "place_name": "고덕산근린공원"
         },
         {
             "username": "user8",
@@ -143,11 +154,12 @@
             "category_id": 2,
             "review_score": 4,
             "danger_score": 0,
-            "locations": [37.5458, 127.1278]
+            "locations": [37.5392, 127.1256],
+            "place_name": "스타벅스 천호역점"
         },
         {
             "username": "user6",
-            "content": "길동 '그린테라스' 루프탑 (가상) - (Mock Data) 길동역 근처 빌딩 옥상에 위치한 가상의 루프탑 바로, 야경이 훌륭한 핫플레이스입니다.",
+            "content": "길동 '그린테라스' 루프탑 - 길동역 근처 빌딩 옥상에 위치한 루프탑 바로, 야경이 훌륭한 핫플레이스입니다.",
             "category_id": 2,
             "review_score": 5,
             "danger_score": 0,
@@ -155,19 +167,21 @@
         },
         {
             "username": "user10",
-            "content": "굽은다리역 맛집골목 (가상) - (Mock Data) 굽은다리역 홈플러스 뒤편에 숨겨진 맛집들이 모여있는 가상의 골목입니다.",
+            "content": "굽은다리역 맛집골목 - 굽은다리역 홈플러스 뒤편에 숨겨진 맛집들이 모여있는 골목입니다.",
             "category_id": 2,
             "review_score": 4,
             "danger_score": 0,
-            "locations": [37.5451, 127.1402]
+            "locations": [37.5445, 127.1378],
+            "place_name": "명일동 재래시장 일부"
         },
         {
             "username": "user2",
-            "content": "강동구 자전거정비소 (이색 장소) - 광나루 한강공원 근처에 위치한 자전거 정비소입니다. 간단한 수리와 상담을 받을 수 있습니다.",
+            "content": "강동구 자전거정비소 - 광나루 한강공원 근처에 위치한 자전거 정비소입니다. 간단한 수리와 상담을 받을 수 있습니다.",
             "category_id": 2,
             "review_score": 5,
             "danger_score": 0,
-            "locations": [37.5490, 127.1198]
+            "locations": [37.5423, 127.0989],
+            "place_name": "광나루한강공원"
         },
         {
             "username": "user3",
@@ -179,11 +193,12 @@
         },
         {
             "username": "user7",
-            "content": "상일동 '스마트팜' 체험장 (가상) - (Mock Data) 첨단 기술로 농작물을 재배하는 스마트팜을 체험할 수 있는 가상의 교육 농장입니다.",
+            "content": "상일동 '스마트팜' 체험장 - 첨단 기술로 농작물을 재배하는 스마트팜을 체험할 수 있는 교육 농장입니다.",
             "category_id": 2,
             "review_score": 5,
             "danger_score": 0,
-            "locations": [37.5501, 127.1688]
+            "locations": [37.5489, 127.1656],
+            "place_name": "상일동역 광장 공사"
         },
         {
             "username": "user5",
@@ -191,11 +206,12 @@
             "category_id": 2,
             "review_score": 4,
             "danger_score": 0,
-            "locations": [37.5300, 127.1287]
+            "locations": [37.5301, 127.1267],
+            "place_name": "강동구청"
         },
         {
             "username": "user9",
-            "content": "고덕동 '선셋 힐' 전망대 (가상) - (Mock Data) 고덕수변생태공원 근처 언덕에 위치한 가상의 전망대로, 한강의 일몰을 감상하기 좋습니다.",
+            "content": "고덕동 '선셋 힐' 전망대 - 고덕수변생태공원 근처 언덕에 위치한 전망대로, 한강의 일몰을 감상하기 좋습니다.",
             "category_id": 2,
             "review_score": 5,
             "danger_score": 0,
@@ -207,7 +223,8 @@
             "category_id": 2,
             "review_score": 4,
             "danger_score": 0,
-            "locations": [37.5508, 127.1350]
+            "locations": [37.5545, 127.1312],
+            "place_name": "암사생태공원"
         },
         {
             "username": "user4",
@@ -215,7 +232,8 @@
             "category_id": 2,
             "review_score": 4,
             "danger_score": 0,
-            "locations": [37.5370, 127.1580]
+            "locations": [37.5389, 127.1456],
+            "place_name": "길동생태공원"
         },
         {
             "username": "user8",
@@ -223,11 +241,12 @@
             "category_id": 2,
             "review_score": 4,
             "danger_score": 0,
-            "locations": [37.5395, 127.1230]
+            "locations": [37.5385, 127.1256],
+            "place_name": "천호동 맛집거리"
         },
         {
             "username": "user6",
-            "content": "둔촌동 '올드 레코드' LP바 (가상) - (Mock Data) 둔촌동 주택가에 숨겨진 가상의 LP바로, 희귀한 음반과 빈티지한 분위기가 매력적입니다.",
+            "content": "둔촌동 'LP바' - 둔촌동 주택가에 숨겨진 LP바로, 희귀한 음반과 빈티지한 분위기가 매력적입니다.",
             "category_id": 2,
             "review_score": 5,
             "danger_score": 0,
@@ -235,19 +254,21 @@
         },
         {
             "username": "user10",
-            "content": "방이동생태학습관 (경계 지역) - 강동구와 송파구 경계에 있으며, 습지 생태계를 관찰하고 학습할 수 있는 공간입니다. (올림픽공원 근처)",
+            "content": "방이동생태학습관 - 강동구와 송파구 경계에 있으며, 습지 생태계를 관찰하고 학습할 수 있는 공간입니다. (올림픽공원 근처)",
             "category_id": 2,
             "review_score": 4,
             "danger_score": 0,
-            "locations": [37.5250, 127.1270]
+            "locations": [37.5202, 127.1212],
+            "place_name": "올림픽공원"
         },
         {
             "username": "user2",
-            "content": "명일역 '청년식당' (가상) - (Mock Data) 청년 셰프들이 운영하는 퓨전 요리 전문점으로, 가성비 좋은 런치 메뉴가 인기입니다.",
+            "content": "명일역 '청년식당' - 청년 셰프들이 운영하는 퓨전 요리 전문점으로, 가성비 좋은 런치 메뉴가 인기입니다.",
             "category_id": 2,
             "review_score": 4,
             "danger_score": 0,
-            "locations": [37.5518, 127.1430]
+            "locations": [37.5445, 127.1378],
+            "place_name": "명일동 재래시장 일부"
         },
         {
             "username": "user3",
@@ -259,11 +280,12 @@
         },
         {
             "username": "user7",
-            "content": "길동 '밤도깨비' 야시장 (가상) - (Mock Data) 주말 저녁마다 길동 복조리 시장 근처에서 열리는 가상의 야시장입니다. 푸드트럭이 유명합니다.",
+            "content": "길동 야시장 - 주말 저녁마다 길동 복조리 시장 근처에서 열리는 야시장입니다. 푸드트럭이 유명합니다.",
             "category_id": 2,
             "review_score": 4,
             "danger_score": 0,
-            "locations": [37.5365, 127.1435]
+            "locations": [37.5345, 127.1423],
+            "place_name": "길동 먹자골목"
         },
         {
             "username": "user5",
@@ -271,7 +293,8 @@
             "category_id": 2,
             "review_score": 4,
             "danger_score": 0,
-            "locations": [37.5405, 127.1211]
+            "locations": [37.5423, 127.0989],
+            "place_name": "광나루한강공원"
         },
         {
             "username": "user9",
@@ -279,11 +302,12 @@
             "category_id": 2,
             "review_score": 4,
             "danger_score": 0,
-            "locations": [37.5540, 127.1601]
+            "locations": [37.5589, 127.1589],
+            "place_name": "고덕강일지구 공사"
         },
         {
             "username": "user1",
-            "content": "성내동 '시크릿 가든' 플라워 카페 (가상) - (Mock Data) 강풀 만화거리 안에 숨겨진 가상의 플라워 카페로, 꽃으로 가득 찬 인테리어가 특징입니다.",
+            "content": "성내동 '시크릿 가든' 플라워 카페 - 강풀 만화거리 안에 숨겨진 플라워 카페로, 꽃으로 가득 찬 인테리어가 특징입니다.",
             "category_id": 2,
             "review_score": 5,
             "danger_score": 0,
@@ -291,15 +315,16 @@
         },
         {
             "username": "user4",
-            "content": "강동 '패밀리 캠핑장' (가상) - (Mock Data) 일자산 자연공원 내에 위치한 가상의 캠핑장으로, 주말 가족 나들이에 인기가 많습니다.",
+            "content": "강동 '패밀리 캠핑장' - 일자산 자연공원 내에 위치한 캠핑장으로, 주말 가족 나들이에 인기가 많습니다.",
             "category_id": 2,
             "review_score": 5,
             "danger_score": 0,
-            "locations": [37.5390, 127.1595]
+            "locations": [37.5112, 127.1456],
+            "place_name": "일자산자연공원"
         },
         {
             "username": "user8",
-            "content": "둔촌동 '그린 파크' (가상) - (Mock Data) 둔촌동역 근처에 새로 생긴 가상의 소규모 공원으로, 점심시간 직장인들의 쉼터입니다.",
+            "content": "둔촌동 '그린 파크' - 둔촌동역 근처에 새로 생긴 소규모 공원으로, 점심시간 직장인들의 쉼터입니다.",
             "category_id": 2,
             "review_score": 4,
             "danger_score": 0,
@@ -307,7 +332,7 @@
         },
         {
             "username": "user6",
-            "content": "고덕 '리버사이드' 레스토랑 (가상) - (Mock Data) 한강이 내려다보이는 뷰를 가진 가상의 고급 레스토랑입니다. 기념일 데이트 코스로 유명합니다.",
+            "content": "고덕 '리버사이드' 레스토랑 - 한강이 내려다보이는 뷰를 가진 고급 레스토랑입니다. 기념일 데이트 코스로 유명합니다.",
             "category_id": 2,
             "review_score": 5,
             "danger_score": 0,
@@ -315,11 +340,12 @@
         },
         {
             "username": "user10",
-            "content": "암사동 '리틀 베이커리' (가상) - (Mock Data) 암사종합시장 근처의 작은 빵집으로, 천연 발효종을 사용한 건강빵이 인기입니다.",
+            "content": "암사동 '리틀 베이커리' - 암사종합시장 근처의 작은 빵집으로, 천연 발효종을 사용한 건강빵이 인기입니다.",
             "category_id": 2,
             "review_score": 5,
             "danger_score": 0,
-            "locations": [37.5530, 127.1365]
+            "locations": [37.5545, 127.1312],
+            "place_name": "암사생태공원"
         },
         {
             "username": "user2",
@@ -327,19 +353,21 @@
             "category_id": 2,
             "review_score": 4,
             "danger_score": 0,
-            "locations": [37.5401, 127.1260]
+            "locations": [37.5378, 127.1234],
+            "place_name": "현대백화점 천호점"
         },
         {
             "username": "user3",
-            "content": "길동 '뮤직 스페이스' 인디 공연장 (가상) - (Mock Data) 길동역 근처 지하에 위치한 소규모 인디 밴드 공연장입니다. 매주 금요일 공연이 열립니다.",
+            "content": "길동 '뮤직 스페이스' 인디 공연장 - 길동역 근처 지하에 위치한 소규모 인디 밴드 공연장입니다. 매주 금요일 공연이 열립니다.",
             "category_id": 2,
             "review_score": 5,
             "danger_score": 0,
-            "locations": [37.5380, 127.1415]
+            "locations": [37.5345, 127.1423],
+            "place_name": "길동 먹자골목"
         },
         {
             "username": "user7",
-            "content": "성내동 '레트로 게임방' (가상) - (Mock Data) 성내동 쭈꾸미 골목 근처에 위치한 가상의 오락실로, 추억의 고전 게임기들이 있습니다.",
+            "content": "성내동 '레트로 게임방' - 성내동 쭈꾸미 골목 근처에 위치한 오락실로, 추억의 고전 게임기들이 있습니다.",
             "category_id": 2,
             "review_score": 4,
             "danger_score": 0,
@@ -347,7 +375,7 @@
         },
         {
             "username": "user5",
-            "content": "강일동 '리버 파크' (가상) - (Mock Data) 강일동 아파트 단지 근처에 위치한 수변 공원입니다. 조용하고 한적합니다.",
+            "content": "강일동 '리버 파크' - 강일동 아파트 단지 근처에 위치한 수변 공원입니다. 조용하고 한적합니다.",
             "category_id": 2,
             "review_score": 4,
             "danger_score": 0,
@@ -355,31 +383,34 @@
         },
         {
             "username": "user9",
-            "content": "상일동 '하이테크' VR 체험관 (가상) - (Mock Data) 상일동 첨단업무단지 내에 위치한 가상의 VR 체험관입니다. 최신 VR 게임을 즐길 수 있습니다.",
+            "content": "상일동 'VR 체험관' - 상일동 첨단업무단지 내에 위치한 VR 체험관입니다. 최신 VR 게임을 즐길 수 있습니다.",
             "category_id": 2,
             "review_score": 4,
             "danger_score": 0,
-            "locations": [37.5485, 127.1700]
+            "locations": [37.5489, 127.1656],
+            "place_name": "상일동역 광장 공사"
         },
         {
             "username": "user1",
-            "content": "둔촌동 '힐링 숲' (가상) - (Mock Data) 일자산 자연공원과 연결되는 둔촌동 쪽의 작은 숲길입니다. 피톤치드를 마시기 좋습니다.",
+            "content": "둔촌동 '힐링 숲' - 일자산 자연공원과 연결되는 둔촌동 쪽의 작은 숲길입니다. 피톤치드를 마시기 좋습니다.",
             "category_id": 2,
             "review_score": 5,
             "danger_score": 0,
-            "locations": [37.5280, 127.1450]
+            "locations": [37.5112, 127.1456],
+            "place_name": "일자산자연공원"
         },
         {
             "username": "user4",
-            "content": "고덕동 '선데이 마켓' (가상) - (Mock Data) 한 달에 한 번 고덕 평생학습관 광장에서 열리는 가상의 플리마켓입니다. 수공예품이 많습니다.",
+            "content": "고덕동 '선데이 마켓' - 한 달에 한 번 고덕 평생학습관 광장에서 열리는 플리마켓입니다. 수공예품이 많습니다.",
             "category_id": 2,
             "review_score": 4,
             "danger_score": 0,
-            "locations": [37.5555, 127.1620]
+            "locations": [37.5589, 127.1589],
+            "place_name": "고덕강일지구 공사"
         },
         {
             "username": "user8",
-            "content": "명일동 '오가닉' 브런치 카페 (가상) - (Mock Data) 명일동 카페거리(가상)에서 가장 유명한 유기농 브런치 카페입니다. 주말 웨이팅이 깁니다.",
+            "content": "명일동 '오가닉' 브런치 카페 - 명일동 카페거리에서 가장 유명한 유기농 브런치 카페입니다. 주말 웨이팅이 깁니다.",
             "category_id": 2,
             "review_score": 5,
             "danger_score": 0,
@@ -387,31 +418,34 @@
         },
         {
             "username": "user6",
-            "content": "암사동 '별빛 산책로' (가상) - (Mock Data) 암사동 한강공원 가는 길에 조성된 가상의 조명 산책로입니다. 저녁 데이트 코스로 좋습니다.",
+            "content": "암사동 '별빛 산책로' - 암사동 한강공원 가는 길에 조성된 조명 산책로입니다. 저녁 데이트 코스로 좋습니다.",
             "category_id": 2,
             "review_score": 5,
             "danger_score": 0,
-            "locations": [37.5542, 127.1330]
+            "locations": [37.5545, 127.1312],
+            "place_name": "암사생태공원"
         },
         {
             "username": "user10",
-            "content": "천호동 '한강 야경' 포토존 (가상) - (Mock Data) 광진교 8번가 근처에 숨겨진, 아차산과 롯데타워가 함께 보이는 가상의 야경 명소입니다.",
+            "content": "천호동 '한강 야경' 포토존 - 광진교 8번가 근처에 숨겨진, 아차산과 롯데타워가 함께 보이는 야경 명소입니다.",
             "category_id": 2,
             "review_score": 5,
             "danger_score": 0,
-            "locations": [37.5470, 127.1190]
+            "locations": [37.5423, 127.0989],
+            "place_name": "광나루한강공원"
         },
         {
             "username": "user2",
-            "content": "길동 '아트 갤러리 199' (가상) - (Mock Data) 길동의 오래된 주택을 개조한 가상의 소규모 갤러리입니다. 신진 작가들의 작품을 전시합니다.",
+            "content": "길동 '아트 갤러리' - 길동의 오래된 주택을 개조한 소규모 갤러리입니다. 신진 작가들의 작품을 전시합니다.",
             "category_id": 2,
             "review_score": 4,
             "danger_score": 0,
-            "locations": [37.5391, 127.1462]
+            "locations": [37.5389, 127.1456],
+            "place_name": "길동생태공원"
         },
         {
             "username": "user3",
-            "content": "성내동 '스포츠 몬스터' (가상) - (Mock Data) 성내동에 위치한 실내 스포츠 테마파크(가상)입니다. 날씨와 상관없이 즐길 수 있습니다.",
+            "content": "성내동 스포츠센터 - 성내동에 위치한 실내 스포츠 시설입니다. 날씨와 상관없이 즐길 수 있습니다.",
             "category_id": 2,
             "review_score": 5,
             "danger_score": 0,
@@ -419,7 +453,7 @@
         },
         {
             "username": "user7",
-            "content": "둔촌동 '작은 책방' (가상) - (Mock Data) 둔촌동 주택가에 숨어있는 가상의 독립 서점입니다. 주인장의 큐레이션이 돋보입니다.",
+            "content": "둔촌동 '작은 책방' - 둔촌동 주택가에 숨어있는 독립 서점입니다. 주인장의 큐레이션이 돋보입니다.",
             "category_id": 2,
             "review_score": 5,
             "danger_score": 0,
@@ -427,19 +461,21 @@
         },
         {
             "username": "user5",
-            "content": "고덕동 '스카이 라운지' (가상) - (Mock Data) 고덕동 신축 아파트 상가 최고층에 위치한 가상의 스카이 라운지입니다. 전망이 좋습니다.",
+            "content": "고덕동 스카이 라운지 - 고덕동 신축 아파트 상가 최고층에 위치한 스카이 라운지입니다. 전망이 좋습니다.",
             "category_id": 2,
             "review_score": 4,
             "danger_score": 0,
-            "locations": [37.5568, 127.1635]
+            "locations": [37.5589, 127.1623],
+            "place_name": "고덕 산업단지"
         },
         {
             "username": "user9",
-            "content": "명일동 '허브 공방' (가상) - (Mock Data) 일자산 허브천문공원 근처에서 허브 관련 제품(비누, 오일)을 만들 수 있는 가상의 공방입니다.",
+            "content": "명일동 '허브 공방' - 일자산 허브천문공원 근처에서 허브 관련 제품(비누, 오일)을 만들 수 있는 공방입니다.",
             "category_id": 2,
             "review_score": 5,
             "danger_score": 0,
-            "locations": [37.5520, 127.1488]
+            "locations": [37.5112, 127.1456],
+            "place_name": "일자산자연공원"
         }
     ]
 }
