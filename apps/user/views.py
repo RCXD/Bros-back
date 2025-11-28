@@ -247,14 +247,16 @@ def get_following(user_id):
     )
 
 
-@bp.post("/<int:user_id>/friend")
+
+# 친구 등록/삭제 토글 라우터 (친한친구 개념)
+@bp.patch("/<int:user_id>/friend")
 @jwt_required()
-def send_friend_request(user_id):
-    """친구 요청 보내기"""
+def toggle_friend(user_id):
+    """친구(친한친구) 등록/삭제 토글"""
     current_user_id = int(get_jwt_identity())
 
     if current_user_id == user_id:
-        return jsonify({"message": "자기 자신을 친구로 추가할 수 없습니다"}), 400
+        return jsonify({"message": "자기 자신을 친구로 추가할 수 없습니다", "is_friended": False}), 400
 
     # 대상 사용자 존재 확인
     User.query.get_or_404(user_id)
@@ -264,59 +266,27 @@ def send_friend_request(user_id):
         user_id=current_user_id, friend_user_id=user_id
     ).first()
 
-    if existing:
-        return jsonify({"message": "이미 친구입니다"}), 409
-
     try:
-        # 양방향 친구 관계 생성
-        friend1 = Friend(user_id=current_user_id, friend_user_id=user_id)
-        friend2 = Friend(user_id=user_id, friend_user_id=current_user_id)
-
-        db.session.add(friend1)
-        db.session.add(friend2)
-
-        # 알림 발생
-        notification = Notification(
-            type=NotificationType.FRIEND_REQUEST,
-            from_user_id=current_user_id,
-            to_user_id=user_id,
-        )
-
-        db.session.add(notification)
-        db.session.commit()
-
-        return jsonify({"message": "친구 추가 성공"}), 201
+        if existing:
+            # 친구 삭제
+            db.session.delete(existing)
+            db.session.commit()
+            return jsonify({
+                "message": "친구 삭제 성공",
+                "is_friended": False
+            }), 200
+        else:
+            # 친구 등록
+            friend = Friend(user_id=current_user_id, friend_user_id=user_id)
+            db.session.add(friend)
+            db.session.commit()
+            return jsonify({
+                "message": "친구 추가 성공",
+                "is_friended": True
+            }), 201
     except IntegrityError:
         db.session.rollback()
-        return jsonify({"message": "이미 친구입니다"}), 409
-
-
-@bp.delete("/<int:user_id>/friend")
-@jwt_required()
-def remove_friend(user_id):
-    """친구 관계 삭제"""
-    current_user_id = int(get_jwt_identity())
-
-    friend1 = Friend.query.filter_by(
-        user_id=current_user_id, friend_user_id=user_id
-    ).first()
-
-    friend2 = Friend.query.filter_by(
-        user_id=user_id, friend_user_id=current_user_id
-    ).first()
-
-    if not friend1:
-        return jsonify({"message": "친구 관계가 아닙니다"}), 404
-
-    # 양방향 친구 관계 삭제
-    if friend1:
-        db.session.delete(friend1)
-    if friend2:
-        db.session.delete(friend2)
-
-    db.session.commit()
-
-    return jsonify({"message": "친구 삭제 성공"}), 200
+        return jsonify({"message": "친구 처리 중 오류가 발생했습니다", "is_friended": False}), 500
 
 
 @bp.get("/me/friends")
