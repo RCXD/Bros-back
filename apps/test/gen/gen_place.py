@@ -38,11 +38,48 @@ except ImportError:
     )
 
 
+def _to_float(value):
+    try:
+        return float(value)
+    except (TypeError, ValueError):
+        return None
+
+
+def _maybe_build_hazard(HazardModel, place_item, existing_coords):
+    danger = _to_float(place_item.get("danger_level"))
+    lat = _to_float(place_item.get("lat"))
+    lon = _to_float(place_item.get("lon"))
+
+    if lat is None or lon is None or not danger or danger <= 0:
+        return None
+
+    coord_key = (round(lat, 7), round(lon, 7))
+    if coord_key in existing_coords:
+        return None
+
+    existing = HazardModel.query.filter_by(lat=lat, lon=lon).first()
+    if existing:
+        existing_coords.add(coord_key)
+        return None
+
+    weight_penalty = _to_float(place_item.get("weight_penalty")) or 0.0
+
+    existing_coords.add(coord_key)
+
+    return HazardModel(
+        lat=lat,
+        lon=lon,
+        danger_score=danger,
+        weight_penalty=weight_penalty,
+    )
+
+
 @pytest.mark.no_cleanup
 def test_generate_places(fixture_app):
     """place_data.json 파일에서 위치 데이터를 로드하여 데이터베이스에 생성"""
     from apps.config.server import db
     from apps.place.models import Place, PlaceCategory, PlaceType
+    from apps.hazard.models import Hazard
 
     log = get_logger()
 
@@ -66,6 +103,13 @@ def test_generate_places(fixture_app):
         types_data = place_data.get("types", [])
         type_map = ensure_place_types(db, PlaceType, types_data, category_map)
         log.debug(f"  {len(type_map)}개 타입 준비 완료")
+
+        hazard_created = 0
+        hazard_coords = {
+            (round(lat, 7), round(lon, 7))
+            for lat, lon in Hazard.query.with_entities(Hazard.lat, Hazard.lon).all()
+            if lat is not None and lon is not None
+        }
 
         # 포인트 데이터 생성
         points_data = place_data.get("points", {})
@@ -91,6 +135,11 @@ def test_generate_places(fixture_app):
                 )
                 db.session.add(place)
                 point_count += 1
+
+                hazard = _maybe_build_hazard(Hazard, place_item, hazard_coords)
+                if hazard:
+                    db.session.add(hazard)
+                    hazard_created += 1
 
         db.session.commit()
         log.debug(f"  {point_count}개 포인트 위치 생성")
@@ -120,6 +169,11 @@ def test_generate_places(fixture_app):
                 db.session.add(place)
                 polygon_count += 1
 
+                hazard = _maybe_build_hazard(Hazard, place_item, hazard_coords)
+                if hazard:
+                    db.session.add(hazard)
+                    hazard_created += 1
+
         db.session.commit()
         log.debug(f"  {polygon_count}개 폴리곤 위치 생성")
 
@@ -128,6 +182,14 @@ def test_generate_places(fixture_app):
         log.success(
             f"  총 {point_count + polygon_count}개 위치 생성 완료 (DB 총: {total_places}개)"
         )
+
+        total_hazards = Hazard.query.count()
+        if hazard_created:
+            log.success(
+                f"  총 {hazard_created}개 Hazard 생성 완료 (DB 총: {total_hazards}개)"
+            )
+        else:
+            log.debug(f"  Hazard 추가 없음 (DB 총: {total_hazards}개)")
 
 
 @pytest.mark.no_cleanup
@@ -168,7 +230,6 @@ if __name__ == "__main__":
 
     # 모든 관련 모델 import (의존성 해결을 위해)
     from apps.auth.models import User
-    from apps.post.models import Post, Category
     from apps.place.models import Place, PlaceCategory, PlaceType
     from sqlalchemy import func
 

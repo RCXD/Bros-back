@@ -2,17 +2,37 @@
 Route module - Navigation and routing
 """
 
+import json
 import math
 import os
 import time
 import requests
+import uuid
 from datetime import datetime, timedelta
-from flask import Blueprint, jsonify, request
+from flask import Blueprint, jsonify, request, current_app
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from sqlalchemy.exc import SQLAlchemyError
 from apps.config.server import db
+from apps.config.common import Config
+from apps.hazard.models import Hazard
+from apps.hazard.score_util import calculate_danger_score_from_detection
 from apps.route.hazard_pipeline import penalty_from_danger, schedule_osrm_customize
-from apps.route.models import Hazard, MyPath, TrafficHazard
+from apps.route.models import Route, TrafficHazard
+from apps.detector.detection_utils import get_ai_server_client
+from apps.roadview.models import RoadviewProvider, RoadviewStatus, init_models
+
+# Initialize roadview models (will be set up when app context is available)
+Roadview = None
+RoadviewCache = None
+RoadviewRequest = None
+RoadviewAPIUsage = None
+
+
+def init_roadview_models_for_route(db):
+    """Initialize roadview models with db instance"""
+    global Roadview, RoadviewCache, RoadviewRequest, RoadviewAPIUsage
+    Roadview, RoadviewCache, RoadviewRequest, RoadviewAPIUsage = init_models(db)
+
 
 bp = Blueprint("route", __name__)
 
@@ -22,54 +42,9 @@ def api_info():
     """
     경로 API 정보 제공 (개발용)
     """
-    info = {
-        "module": "route",
-        "base_path": "/route",
-        "description": "경로 탐색 및 위험 지역 관리",
-        "endpoints": [
-            {
-                "path": "/route",
-                "method": "POST",
-                "auth_required": False,
-                "description": "경로 탐색",
-                "json_body": {
-                    "start": "시작 좌표 [lat, lon]",
-                    "end": "종료 좌표 [lat, lon]",
-                    "vias": "경유지 좌표 배열 (선택)",
-                },
-            },
-            {
-                "path": "/route/hazard",
-                "method": "POST",
-                "auth_required": True,
-                "description": "위험 지역 등록",
-            },
-            {
-                "path": "/route/hazard",
-                "method": "GET",
-                "auth_required": False,
-                "description": "위험 지역 목록 조회",
-            },
-            {
-                "path": "/route/mypath",
-                "method": "POST",
-                "auth_required": True,
-                "description": "내 경로 저장",
-            },
-            {
-                "path": "/route/mypath",
-                "method": "GET",
-                "auth_required": True,
-                "description": "내 경로 목록 조회",
-            },
-            {
-                "path": "/route/api_info",
-                "method": "GET",
-                "auth_required": False,
-                "description": "API 정보 조회 (개발용)",
-            },
-        ],
-    }
+    info_path = os.path.join(os.path.dirname(__file__), "info.json")
+    with open(info_path, "r", encoding="utf-8") as f:
+        info = json.load(f)
     return jsonify(info), 200
 
 
@@ -406,8 +381,6 @@ def ingest_hazard():
 
     is_active = bool(data.get("is_active", True))
     osm_edge_id = _match_osm_edge(lat, lon)
-    if not osm_edge_id:
-        return jsonify({"error": "Unable to resolve hazard to an OSM edge"}), 503
     weight_penalty = penalty_from_danger(danger_score)
 
     try:
@@ -423,7 +396,12 @@ def ingest_hazard():
         db.session.add(hazard)
         db.session.commit()
         _register_hazard_in_cache(hazard)
-        customize_started = schedule_osrm_customize()
+
+        # Only trigger OSRM customize if we have a valid edge mapping
+        customize_started = False
+        if osm_edge_id:
+            customize_started = schedule_osrm_customize()
+
         return (
             jsonify(
                 {
@@ -431,6 +409,7 @@ def ingest_hazard():
                     "hazard": hazard.serialize(),
                     "pin": _hazard_to_pin(hazard),
                     "osrm_customizing": customize_started,
+                    "osm_edge_matched": bool(osm_edge_id),
                 }
             ),
             201,
@@ -583,7 +562,7 @@ def map_hazards_to_osm_edges():
     return jsonify({"message": "hazard edges mapped", **summary}), 200
 
 
-@bp.post("/route/safe")
+@bp.post("/safe")
 def safe_route():
     """Compute a hazard-aware route by querying OSRM, decoding geometry, mapping to edges, and applying penalties."""
     data = request.get_json(silent=True) or {}
@@ -721,30 +700,27 @@ def navigate():
 
 @bp.get("/paths")
 @jwt_required()
-def get_my_paths():
-    """Get current user's saved paths"""
+def get_saved_routes():
+    """현재 로그인한 사용자의 저장 경로 목록을 반환"""
+
     user_id = get_jwt_identity()
-    paths = (
-        MyPath.query.filter_by(user_id=user_id).order_by(MyPath.created_at.desc()).all()
+    routes = (
+        Route.query.filter_by(user_id=user_id).order_by(Route.created_at.desc()).all()
     )
-    return jsonify({"paths": [p.serialize() for p in paths]}), 200
+    payload = [route.serialize() for route in routes]
+    # paths 키는 기존 클라이언트 호환을 위해 유지한다.
+    return jsonify({"routes": payload, "paths": payload}), 200
 
 
 @bp.post("/paths")
 @jwt_required()
-def save_path():
-    """
-    Save a navigation path
-    JSON body:
-        - name: Required
-        - start_location: Required {lat, lon}
-        - end_location: Required {lat, lon}
-        - waypoints: Optional array of {lat, lon}
-    """
+def save_route():
+    """새 경로 저장 (이전 paths API 호환 유지)."""
+
     data = request.get_json() or {}
     user_id = get_jwt_identity()
 
-    name = data.get("name")
+    name = (data.get("name") or "").strip()
     start_point = _parse_point(data.get("start_location"))
     end_point = _parse_point(data.get("end_location"))
     waypoints_raw = data.get("waypoints") or []
@@ -766,47 +742,56 @@ def save_path():
     points = [start_point, *waypoints, end_point]
 
     try:
-        path = MyPath(user_id=user_id, path_name=name, points=points)
-        db.session.add(path)
+        route = Route(user_id=user_id, name=name, points=points)
+        db.session.add(route)
         db.session.commit()
-        return jsonify({"message": "Path saved", "path": path.serialize()}), 201
+        serialized = route.serialize()
+        return (
+            jsonify(
+                {"message": "Route saved", "route": serialized, "path": serialized}
+            ),
+            201,
+        )
     except SQLAlchemyError as e:
         db.session.rollback()
-        return jsonify({"error": f"Failed to save path: {str(e)}"}), 400
+        return jsonify({"error": f"Failed to save route: {str(e)}"}), 400
 
 
-@bp.get("/paths/<int:path_id>")
+@bp.get("/paths/<int:route_id>")
 @jwt_required()
-def get_path(path_id):
-    """Get specific saved path details"""
+def get_route(route_id):
+    """저장된 단일 경로 상세 조회"""
+
     user_id = get_jwt_identity()
-    path = MyPath.query.filter_by(path_id=path_id, user_id=user_id).first()
-    if not path:
-        return jsonify({"error": "Path not found"}), 404
-    return jsonify({"path": path.serialize()}), 200
+    route = Route.query.filter_by(route_id=route_id, user_id=user_id).first()
+    if not route:
+        return jsonify({"error": "Route not found"}), 404
+    serialized = route.serialize()
+    return jsonify({"route": serialized, "path": serialized}), 200
 
 
-@bp.put("/paths/<int:path_id>")
+@bp.put("/paths/<int:route_id>")
 @jwt_required()
-def update_path(path_id):
-    """Update a saved path"""
+def update_route(route_id):
+    """저장된 경로 수정"""
+
     user_id = get_jwt_identity()
-    path = MyPath.query.filter_by(path_id=path_id, user_id=user_id).first()
-    if not path:
-        return jsonify({"error": "Path not found"}), 404
+    route = Route.query.filter_by(route_id=route_id, user_id=user_id).first()
+    if not route:
+        return jsonify({"error": "Route not found"}), 404
 
     data = request.get_json() or {}
-    name = data.get("name", path.path_name)
+    name = (data.get("name") or route.name).strip()
 
     update_points = any(
         key in data for key in ["start_location", "end_location", "waypoints"]
     )
-    points = path.points
+    points = route.points
 
     if update_points:
-        start_point = _parse_point(data.get("start_location")) or path.points[0]
-        end_point = _parse_point(data.get("end_location")) or path.points[-1]
-        waypoint_data = data.get("waypoints", path.points[1:-1]) or []
+        start_point = _parse_point(data.get("start_location")) or route.points[0]
+        end_point = _parse_point(data.get("end_location")) or route.points[-1]
+        waypoint_data = data.get("waypoints", route.points[1:-1]) or []
 
         if not isinstance(waypoint_data, list):
             return jsonify({"error": "waypoints must be a list"}), 400
@@ -821,28 +806,934 @@ def update_path(path_id):
         points = [start_point, *waypoints, end_point]
 
     try:
-        path.path_name = name
-        path.points = points
+        route.name = name
+        route.points = points
         db.session.commit()
-        return jsonify({"message": "Path updated", "path": path.serialize()}), 200
+        serialized = route.serialize()
+        return (
+            jsonify(
+                {"message": "Route updated", "route": serialized, "path": serialized}
+            ),
+            200,
+        )
     except SQLAlchemyError as e:
         db.session.rollback()
-        return jsonify({"error": f"Failed to update path: {str(e)}"}), 400
+        return jsonify({"error": f"Failed to update route: {str(e)}"}), 400
 
 
-@bp.delete("/paths/<int:path_id>")
+@bp.delete("/paths/<int:route_id>")
 @jwt_required()
-def delete_path(path_id):
-    """Delete a saved path"""
+def delete_route(route_id):
+    """저장된 경로 삭제"""
+
     user_id = get_jwt_identity()
-    path = MyPath.query.filter_by(path_id=path_id, user_id=user_id).first()
-    if not path:
-        return jsonify({"error": "Path not found"}), 404
+    route = Route.query.filter_by(route_id=route_id, user_id=user_id).first()
+    if not route:
+        return jsonify({"error": "Route not found"}), 404
 
     try:
-        db.session.delete(path)
+        db.session.delete(route)
         db.session.commit()
-        return jsonify({"message": "Path deleted"}), 200
+        return jsonify({"message": "Route deleted"}), 200
     except SQLAlchemyError as e:
         db.session.rollback()
-        return jsonify({"error": f"Failed to delete path: {str(e)}"}), 400
+        return jsonify({"error": f"Failed to delete route: {str(e)}"}), 400
+
+
+# ============================================================================
+# Route Analysis Utilities
+# ============================================================================
+
+
+def _calculate_bearing(lat1, lon1, lat2, lon2):
+    """
+    Calculate bearing (heading) from point 1 to point 2 in degrees (0-360).
+
+    Args:
+        lat1, lon1: Starting point coordinates
+        lat2, lon2: Ending point coordinates
+
+    Returns:
+        Bearing in degrees (0-360, where 0 is North)
+    """
+    lat1_rad = math.radians(lat1)
+    lat2_rad = math.radians(lat2)
+    diff_lon = math.radians(lon2 - lon1)
+
+    x = math.sin(diff_lon) * math.cos(lat2_rad)
+    y = math.cos(lat1_rad) * math.sin(lat2_rad) - math.sin(lat1_rad) * math.cos(
+        lat2_rad
+    ) * math.cos(diff_lon)
+
+    initial_bearing = math.atan2(x, y)
+    initial_bearing = math.degrees(initial_bearing)
+    bearing = (initial_bearing + 360) % 360
+
+    return bearing
+
+
+def _haversine_distance(lat1, lon1, lat2, lon2):
+    """
+    Calculate the great circle distance between two points on earth in meters.
+
+    Args:
+        lat1, lon1: Starting point coordinates
+        lat2, lon2: Ending point coordinates
+
+    Returns:
+        Distance in meters
+    """
+    R = 6371000  # Earth radius in meters
+
+    lat1_rad = math.radians(lat1)
+    lat2_rad = math.radians(lat2)
+    dlat = math.radians(lat2 - lat1)
+    dlon = math.radians(lon2 - lon1)
+
+    a = (
+        math.sin(dlat / 2) ** 2
+        + math.cos(lat1_rad) * math.cos(lat2_rad) * math.sin(dlon / 2) ** 2
+    )
+    c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
+
+    return R * c
+
+
+def _interpolate_segment(start_lat, start_lon, end_lat, end_lon, interval_meters=50):
+    """
+    Generate intermediate points between start and end at regular intervals.
+
+    Args:
+        start_lat, start_lon: Starting point coordinates
+        end_lat, end_lon: Ending point coordinates
+        interval_meters: Distance between points in meters (default 50m)
+
+    Returns:
+        List of (lat, lon, heading) tuples
+    """
+    points = []
+
+    # Calculate total distance
+    total_distance = _haversine_distance(start_lat, start_lon, end_lat, end_lon)
+
+    # Calculate number of segments
+    if total_distance <= interval_meters:
+        # If segment is shorter than interval, just use start and end
+        heading = _calculate_bearing(start_lat, start_lon, end_lat, end_lon)
+        return [(start_lat, start_lon, heading), (end_lat, end_lon, heading)]
+
+    num_points = int(total_distance / interval_meters) + 1
+
+    # Generate points
+    for i in range(num_points):
+        ratio = i / (num_points - 1) if num_points > 1 else 0
+
+        # Linear interpolation (good enough for short distances)
+        lat = start_lat + (end_lat - start_lat) * ratio
+        lon = start_lon + (end_lon - start_lon) * ratio
+
+        # Calculate heading
+        heading = _calculate_bearing(start_lat, start_lon, end_lat, end_lon)
+
+        points.append((lat, lon, heading))
+
+    return points
+
+
+def _get_roadview_image(
+    lat,
+    lon,
+    heading,
+    tag="default",
+    image_age_years=10,
+    request_age_years=1,
+    force_refresh=False,
+):
+    """
+    Download roadview image from Google Street View API with caching.
+
+    Caching Strategy:
+    - Check if roadview exists in database for this location (rounded to ~10m precision)
+    - If cached and recent enough, reuse existing image file
+    - If cached but old (image > 10 years or last request > 1 year), refresh
+    - If not cached or force_refresh, fetch from API
+
+    Args:
+        lat: Latitude
+        lon: Longitude
+        heading: Direction in degrees (0-360)
+        tag: Tag for organizing images (default "default")
+        image_age_years: Max age of captured image before refresh (default 10 years)
+        request_age_years: Max age of last request before refresh (default 1 year)
+        force_refresh: Force API call even if cached (default False)
+
+    Returns:
+        dict: {
+            "success": bool,
+            "file_path": str,
+            "error": str,
+            "cached": bool,
+            "cache_age_days": int
+        }
+    """
+    api_key = Config.GOOGLE_MAPS_API_KEY
+    if not api_key:
+        return {"success": False, "error": "Google Maps API key not configured"}
+
+    # Create directory
+    save_dir = os.path.join("static", "roadviews", tag)
+    os.makedirs(save_dir, exist_ok=True)
+
+    # Generate filename
+    filename = f"roadview_{lat:.6f}_{lon:.6f}_{int(heading)}.jpg"
+    file_path = os.path.join(save_dir, filename)
+
+    # Round coordinates for cache lookup (~10m precision)
+    lat_rounded = round(lat, 4)
+    lon_rounded = round(lon, 4)
+    heading_rounded = int(heading)
+
+    # Check cache if not forcing refresh
+    if not force_refresh:
+        try:
+            cached_roadview = (
+                Roadview.query.filter(
+                    Roadview.latitude.between(
+                        lat_rounded - 0.0001, lat_rounded + 0.0001
+                    ),
+                    Roadview.longitude.between(
+                        lon_rounded - 0.0001, lon_rounded + 0.0001
+                    ),
+                    Roadview.heading.between(heading_rounded - 5, heading_rounded + 5),
+                    Roadview.provider == RoadviewProvider.GOOGLE_STREET_VIEW,
+                    Roadview.status == RoadviewStatus.AVAILABLE,
+                )
+                .order_by(Roadview.created_at.desc())
+                .first()
+            )
+
+            if cached_roadview:
+                # Check if cache needs refresh
+                needs_refresh = Roadview.needs_refresh(
+                    cached_roadview.image_date,
+                    cached_roadview.created_at,
+                    image_age_years=image_age_years,
+                    request_age_years=request_age_years,
+                )
+
+                if not needs_refresh:
+                    # Check if file still exists
+                    cached_file = None
+                    if cached_roadview.thumbnail_url:
+                        # Extract file path from URL (format: /static/roadviews/...)
+                        cached_file = cached_roadview.thumbnail_url.lstrip("/")
+
+                    if cached_file and os.path.exists(cached_file):
+                        # Use cached file
+                        cache_age = (datetime.now() - cached_roadview.created_at).days
+                        return {
+                            "success": True,
+                            "file_path": cached_file,
+                            "size": os.path.getsize(cached_file),
+                            "cached": True,
+                            "cache_age_days": cache_age,
+                            "roadview_id": cached_roadview.roadview_id,
+                        }
+        except Exception as cache_error:
+            # If cache check fails, continue to API call
+            pass
+
+    # Fetch from Google Street View API
+    # First, get metadata to check availability and image date
+    metadata_url = "https://maps.googleapis.com/maps/api/streetview/metadata"
+    metadata_params = {"location": f"{lat},{lon}", "key": api_key, "source": "outdoor"}
+
+    try:
+        metadata_response = requests.get(
+            metadata_url, params=metadata_params, timeout=10
+        )
+        metadata_response.raise_for_status()
+        metadata = metadata_response.json()
+
+        if metadata.get("status") != "OK":
+            # Save negative cache result
+            try:
+                roadview_record = Roadview(
+                    latitude=lat,
+                    longitude=lon,
+                    heading=heading,
+                    provider=RoadviewProvider.GOOGLE_STREET_VIEW,
+                    status=RoadviewStatus.NOT_AVAILABLE,
+                    error_message=f"Street View not available: {metadata.get('status')}",
+                )
+                db.session.add(roadview_record)
+                db.session.commit()
+            except:
+                db.session.rollback()
+
+            return {
+                "success": False,
+                "error": "No Street View available at this location",
+                "cached": False,
+            }
+
+        # Extract metadata
+        pano_id = metadata.get("pano_id")
+        image_date_str = metadata.get("date")  # Format: YYYY-MM
+        actual_location = metadata.get("location", {})
+
+        # Parse image date
+        image_date = None
+        if image_date_str:
+            try:
+                # Parse YYYY-MM format
+                image_date = datetime.strptime(
+                    image_date_str + "-01", "%Y-%m-%d"
+                ).date()
+            except:
+                pass
+
+        # Download image
+        image_url = "https://maps.googleapis.com/maps/api/streetview"
+        image_params = {
+            "size": "640x640",
+            "location": f"{lat},{lon}",
+            "heading": int(heading),
+            "pitch": 0,
+            "fov": 90,
+            "key": api_key,
+        }
+
+        image_response = requests.get(image_url, params=image_params, timeout=10)
+
+        if image_response.status_code == 200 and len(image_response.content) > 5000:
+            # Save image
+            with open(file_path, "wb") as f:
+                f.write(image_response.content)
+
+            # Save to database cache
+            try:
+                roadview_record = Roadview(
+                    latitude=actual_location.get("lat", lat),
+                    longitude=actual_location.get("lng", lon),
+                    heading=heading,
+                    pitch=0,
+                    fov=90,
+                    provider=RoadviewProvider.GOOGLE_STREET_VIEW,
+                    status=RoadviewStatus.AVAILABLE,
+                    pano_id=pano_id,
+                    image_date=image_date,
+                    thumbnail_url=f"/{file_path}",
+                    image_width=640,
+                    image_height=640,
+                    provider_data=metadata,
+                )
+                db.session.add(roadview_record)
+                db.session.commit()
+            except Exception as db_error:
+                db.session.rollback()
+                # Continue even if DB save fails
+
+            return {
+                "success": True,
+                "file_path": file_path,
+                "size": len(image_response.content),
+                "cached": False,
+                "image_date": image_date_str,
+                "pano_id": pano_id,
+            }
+        else:
+            return {
+                "success": False,
+                "error": f"Failed to download image: HTTP {image_response.status_code}",
+                "cached": False,
+            }
+
+    except Exception as e:
+        return {"success": False, "error": str(e), "cached": False}
+
+
+def _analyze_roadview_with_detector(image_path):
+    """
+    Send roadview image to detector service for analysis.
+
+    Args:
+        image_path: Path to the roadview image
+
+    Returns:
+        dict: {"success": bool, "result": dict, "result_image_path": str, "error": str}
+    """
+    import base64
+    import requests as http_requests
+
+    # AI 서버 URL
+    AI_SERVER_URL = os.getenv("AI_SERVER_OBJECT_URL", "http://192.168.1.79:8888")
+
+    try:
+        # Read image
+        with open(image_path, "rb") as f:
+            image_data = f.read()
+
+        # Get detector client
+        ai_client = get_ai_server_client("object")
+
+        # Perform detection
+        result = ai_client.detect_objects(image_data, confidence=0.5)
+
+        if "error" in result:
+            return {"success": False, "error": result["error"]}
+
+        # Save analyzed image if detector returns it
+        result_image_path = None
+
+        # Check for annotated_img in response (new format: path to fetch from /image endpoint)
+        annotated_img = result.get("annotated_img")
+        if annotated_img and isinstance(annotated_img, dict):
+            # annotated_img = {"image.jpg": "static/result/image.jpg"}
+            # Get the first value (there's only one image)
+            remote_path = list(annotated_img.values())[0] if annotated_img else None
+
+            if remote_path:
+                try:
+                    # Fetch annotated image from AI server
+                    img_response = http_requests.get(
+                        f"{AI_SERVER_URL}/image",
+                        params={"filename": remote_path},
+                        timeout=30,
+                    )
+
+                    if img_response.status_code == 200 and img_response.headers.get(
+                        "Content-Type", ""
+                    ).startswith("image"):
+                        # Generate analyzed image path
+                        dir_path = os.path.dirname(image_path)
+                        filename = os.path.basename(image_path)
+                        analyzed_filename = filename.replace("roadview_", "analyzed_")
+                        result_image_path = os.path.join(dir_path, analyzed_filename)
+
+                        # Save analyzed image
+                        with open(result_image_path, "wb") as f:
+                            f.write(img_response.content)
+                except Exception as img_fetch_error:
+                    # Log but don't fail the whole operation
+                    current_app.logger.warning(
+                        f"Failed to fetch annotated image: {img_fetch_error}"
+                    )
+
+        # Fallback: check for base64 encoded image (old format)
+        if not result_image_path:
+            annotated_image_b64 = result.get("annotated_image") or result.get(
+                "result_image"
+            )
+            if annotated_image_b64:
+                try:
+                    # Decode base64 image
+                    image_bytes = base64.b64decode(annotated_image_b64)
+
+                    # Generate analyzed image path
+                    dir_path = os.path.dirname(image_path)
+                    filename = os.path.basename(image_path)
+                    analyzed_filename = filename.replace("roadview_", "analyzed_")
+                    result_image_path = os.path.join(dir_path, analyzed_filename)
+
+                    # Save analyzed image
+                    with open(result_image_path, "wb") as f:
+                        f.write(image_bytes)
+                except Exception as img_save_error:
+                    # Log but don't fail the whole operation
+                    current_app.logger.warning(
+                        f"Failed to save base64 annotated image: {img_save_error}"
+                    )
+
+        # Convert AI server response format to standard detections format
+        # AI server returns: {"results": {"image.jpg": [{"box": [...], "confidence": float, "label": str}]}}
+        # We need: {"detections": [{"class": str, "confidence": float, "bbox": {...}}]}
+        detections = []
+        results_data = result.get("results", {})
+        if isinstance(results_data, dict):
+            for filename, objects in results_data.items():
+                if isinstance(objects, list):
+                    for obj in objects:
+                        box = obj.get("box", [])
+                        detection = {
+                            "class": obj.get("label", "unknown"),
+                            "confidence": obj.get("confidence", 0.5),
+                        }
+                        if len(box) >= 4:
+                            detection["bbox"] = {
+                                "x": box[0],
+                                "y": box[1],
+                                "width": box[2] - box[0],
+                                "height": box[3] - box[1],
+                            }
+                        detections.append(detection)
+
+        # Add detections to result for danger score calculation
+        result["detections"] = detections
+
+        return {
+            "success": True,
+            "result": result,
+            "result_image_path": f"/{result_image_path}" if result_image_path else None,
+        }
+
+    except Exception as e:
+        return {"success": False, "error": str(e)}
+
+
+@bp.post("/analyze")
+@jwt_required()
+def analyze_route():
+    """
+    Analyze route by generating roadview images and detecting objects.
+
+    Request JSON:
+        {
+            "points": [
+                {"lat": 37.5665, "lon": 126.9780},
+                {"lat": 37.5670, "lon": 126.9785},
+                ...
+            ],
+            "interval_meters": 50,  // Optional, default 50
+            "tag": "route_001"  // Optional, for organizing images
+        }
+
+    Response:
+        {
+            "route_id": "uuid",
+            "osrm_route": {...},
+            "analyzed_points": [
+                {
+                    "index": 0,
+                    "lat": 37.5665,
+                    "lon": 126.9780,
+                    "heading": 45.0,
+                    "roadview_image": "/static/roadviews/tag/file.jpg",
+                    "roadview_success": true,
+                    "detection_result": {...},
+                    "detection_image": "/static/roadviews/tag/result_file.jpg",
+                    "detection_success": true
+                },
+                ...
+            ],
+            "summary": {
+                "total_points": 10,
+                "successful_roadviews": 8,
+                "successful_detections": 7
+            }
+        }
+    """
+    data = request.get_json() or {}
+    user_id = get_jwt_identity()
+
+    # Parse input
+    points_raw = data.get("points", [])
+    if not points_raw or len(points_raw) < 2:
+        return jsonify({"error": "At least 2 points are required"}), 400
+
+    points = []
+    for pt in points_raw:
+        parsed = _parse_point(pt)
+        if not parsed:
+            return jsonify({"error": "Invalid point format"}), 400
+        points.append(parsed)
+
+    interval_meters = float(data.get("interval_meters", 50))
+    tag = data.get("tag") or str(uuid.uuid4())[:8]
+
+    # Step 1: Call OSRM to get route segments
+    osrm_base = os.getenv("OSRM_BASE_URL", "http://192.168.1.79:8890")
+    osrm_profile = data.get("profile", "driving")
+
+    coords_str = ";".join(f"{p['lon']},{p['lat']}" for p in points)
+    osrm_url = f"{osrm_base}/route/v1/{osrm_profile}/{coords_str}"
+    params = {"overview": "full", "geometries": "geojson", "steps": "true"}
+
+    try:
+        osrm_response = requests.get(osrm_url, params=params, timeout=10)
+        osrm_response.raise_for_status()
+        osrm_data = osrm_response.json()
+    except Exception as e:
+        return jsonify({"error": f"OSRM request failed: {str(e)}"}), 502
+
+    routes = osrm_data.get("routes", [])
+    if not routes:
+        return jsonify({"error": "No route found"}), 404
+
+    route_geometry = routes[0].get("geometry", {}).get("coordinates", [])
+    legs = routes[0].get("legs", [])
+
+    # Step 2: Generate intermediate points with headings
+    all_points = []
+
+    for leg in legs:
+        steps = leg.get("steps", [])
+        for step in steps:
+            maneuver = step.get("maneuver", {})
+            location = maneuver.get("location", [])
+
+            if len(location) == 2:
+                lon, lat = location
+
+                # Find next point to calculate heading
+                step_geom = step.get("geometry", {}).get("coordinates", [])
+                if len(step_geom) >= 2:
+                    next_lon, next_lat = step_geom[1]
+                    heading = _calculate_bearing(lat, lon, next_lat, next_lon)
+                else:
+                    heading = 0
+
+                all_points.append((lat, lon, heading))
+
+        # Add intermediate points between steps
+        if len(all_points) >= 2:
+            last_point = all_points[-2]
+            current_point = all_points[-1]
+
+            interpolated = _interpolate_segment(
+                last_point[0],
+                last_point[1],
+                current_point[0],
+                current_point[1],
+                interval_meters,
+            )
+
+            # Add interpolated points (skip first and last as they're already in all_points)
+            for pt in interpolated[1:-1]:
+                all_points.append(pt)
+
+    # Remove duplicates while preserving order
+    seen = set()
+    unique_points = []
+    for pt in all_points:
+        # Round to 6 decimal places for comparison (~0.1m precision)
+        key = (round(pt[0], 6), round(pt[1], 6))
+        if key not in seen:
+            seen.add(key)
+            unique_points.append(pt)
+
+    # Step 3: Download roadview images and analyze
+    analyzed_points = []
+    created_hazards = []
+    successful_roadviews = 0
+    successful_detections = 0
+
+    for idx, (lat, lon, heading) in enumerate(unique_points):
+        point_result = {
+            "index": idx,
+            "lat": lat,
+            "lon": lon,
+            "heading": heading,
+            "roadview_image": None,
+            "roadview_success": False,
+            "detection_result": None,
+            "detection_image": None,
+            "detection_success": False,
+            "danger_score": None,
+            "hazard_id": None,
+        }
+
+        # Get roadview image
+        roadview_result = _get_roadview_image(lat, lon, heading, tag)
+
+        if roadview_result.get("success"):
+            point_result["roadview_success"] = True
+            point_result["roadview_image"] = f"/{roadview_result['file_path']}"
+            successful_roadviews += 1
+
+            # Analyze with detector
+            detection_result = _analyze_roadview_with_detector(
+                roadview_result["file_path"]
+            )
+
+            if detection_result.get("success"):
+                point_result["detection_success"] = True
+                detection_data = detection_result.get("result")
+                point_result["detection_result"] = detection_data
+                point_result["detection_image"] = detection_result.get(
+                    "result_image_path"
+                )
+                successful_detections += 1
+
+                # Calculate danger score from detection results
+                danger_score, score_analysis = calculate_danger_score_from_detection(
+                    detection_data
+                )
+                point_result["danger_score"] = danger_score
+                point_result["score_analysis"] = score_analysis
+
+                # Create Hazard record if danger score is significant (>= 3.0)
+                if danger_score >= 3.0:
+                    try:
+                        # Get OSM edge ID for the location
+                        osm_edge_id = _match_osm_edge(
+                            lat, lon, base_url=osrm_base, profile=osrm_profile
+                        )
+
+                        # Calculate weight penalty
+                        weight_penalty = penalty_from_danger(danger_score)
+
+                        # Create Hazard record
+                        hazard = Hazard(
+                            lat=lat,
+                            lon=lon,
+                            danger_score=danger_score,
+                            is_active=True,
+                            edge_id=osm_edge_id,
+                            osm_edge_id=osm_edge_id,
+                            weight_penalty=weight_penalty,
+                        )
+                        db.session.add(hazard)
+                        db.session.flush()  # Get hazard_id without committing
+
+                        point_result["hazard_id"] = hazard.hazard_id
+                        created_hazards.append(hazard.serialize())
+
+                    except Exception as hazard_error:
+                        point_result["hazard_error"] = str(hazard_error)
+            else:
+                point_result["detection_error"] = detection_result.get("error")
+        else:
+            point_result["roadview_error"] = roadview_result.get("error")
+
+        analyzed_points.append(point_result)
+
+    # Commit all hazards at once
+    try:
+        if created_hazards:
+            db.session.commit()
+            # Refresh hazard cache and schedule OSRM customize
+            _hazard_cache(force=True)
+            schedule_osrm_customize()
+    except Exception as commit_error:
+        db.session.rollback()
+
+    # Step 4: Build response
+    response_data = {
+        "route_id": tag,
+        "tag": tag,  # 명시적 태그 (images 조회 시 사용)
+        "osrm_route": {
+            "distance": routes[0].get("distance"),
+            "duration": routes[0].get("duration"),
+            "legs_count": len(legs),
+        },
+        "analyzed_points": analyzed_points,
+        "hazards": created_hazards,
+        "summary": {
+            "total_points": len(unique_points),
+            "successful_roadviews": successful_roadviews,
+            "successful_detections": successful_detections,
+            "hazards_created": len(created_hazards),
+            "interval_meters": interval_meters,
+        },
+        "images": {
+            "tag": tag,
+            "list_url": f"/route/analyze/{tag}/images",
+            "base_path": f"/static/roadviews/{tag}",
+        },
+    }
+
+    return jsonify(response_data), 200
+
+
+@bp.get("/analyze/<tag>/images")
+def get_analysis_images(tag):
+    """
+    분석 결과 이미지 조회 - 분석 전/후 이미지 목록 반환
+
+    Args:
+        tag: 분석 시 사용된 태그 (route_id)
+
+    Response:
+        {
+            "tag": "route_001",
+            "images": [
+                {
+                    "index": 0,
+                    "lat": 37.5665,
+                    "lon": 126.9780,
+                    "heading": 45.0,
+                    "original": "/static/roadviews/route_001/roadview_37.566500_126.978000_45.jpg",
+                    "analyzed": "/static/roadviews/route_001/analyzed_37.566500_126.978000_45.jpg"
+                },
+                ...
+            ],
+            "summary": {
+                "total": 10,
+                "with_original": 10,
+                "with_analyzed": 8
+            }
+        }
+    """
+    import glob
+
+    # Validate tag format (prevent path traversal)
+    if not tag or ".." in tag or "/" in tag or "\\" in tag:
+        return jsonify({"error": "Invalid tag format"}), 400
+
+    # Find roadview images directory
+    roadview_dir = os.path.join("static", "roadviews", tag)
+
+    if not os.path.exists(roadview_dir):
+        return jsonify({"error": "Analysis not found", "tag": tag}), 404
+
+    # Collect images
+    images = []
+    original_pattern = os.path.join(roadview_dir, "roadview_*.jpg")
+    original_files = glob.glob(original_pattern)
+
+    with_original = 0
+    with_analyzed = 0
+
+    for idx, original_path in enumerate(sorted(original_files)):
+        filename = os.path.basename(original_path)
+        # Parse filename: roadview_37.566500_126.978000_45.jpg
+        parts = filename.replace("roadview_", "").replace(".jpg", "").split("_")
+
+        if len(parts) >= 3:
+            try:
+                lat = float(parts[0])
+                lon = float(parts[1])
+                heading = float(parts[2])
+            except (ValueError, IndexError):
+                lat, lon, heading = None, None, None
+        else:
+            lat, lon, heading = None, None, None
+
+        # Check for analyzed image
+        analyzed_filename = filename.replace("roadview_", "analyzed_")
+        analyzed_path = os.path.join(roadview_dir, analyzed_filename)
+
+        image_data = {
+            "index": idx,
+            "lat": lat,
+            "lon": lon,
+            "heading": heading,
+            "original": f"/{original_path.replace(os.sep, '/')}",
+            "analyzed": None,
+        }
+
+        with_original += 1
+
+        if os.path.exists(analyzed_path):
+            image_data["analyzed"] = f"/{analyzed_path.replace(os.sep, '/')}"
+            with_analyzed += 1
+
+        images.append(image_data)
+
+    return (
+        jsonify(
+            {
+                "tag": tag,
+                "images": images,
+                "summary": {
+                    "total": len(images),
+                    "with_original": with_original,
+                    "with_analyzed": with_analyzed,
+                },
+            }
+        ),
+        200,
+    )
+
+
+@bp.get("/analyze/<tag>/images/<int:index>")
+def get_analysis_image_detail(tag, index):
+    """
+    특정 분석 이미지 상세 조회
+
+    Args:
+        tag: 분석 시 사용된 태그 (route_id)
+        index: 이미지 인덱스
+
+    Response:
+        {
+            "tag": "route_001",
+            "index": 0,
+            "lat": 37.5665,
+            "lon": 126.9780,
+            "heading": 45.0,
+            "original": {
+                "url": "/static/roadviews/route_001/roadview_37.566500_126.978000_45.jpg",
+                "exists": true,
+                "size_bytes": 12345
+            },
+            "analyzed": {
+                "url": "/static/roadviews/route_001/analyzed_37.566500_126.978000_45.jpg",
+                "exists": false,
+                "size_bytes": null
+            }
+        }
+    """
+    import glob
+
+    # Validate tag format
+    if not tag or ".." in tag or "/" in tag or "\\" in tag:
+        return jsonify({"error": "Invalid tag format"}), 400
+
+    roadview_dir = os.path.join("static", "roadviews", tag)
+
+    if not os.path.exists(roadview_dir):
+        return jsonify({"error": "Analysis not found", "tag": tag}), 404
+
+    # Get sorted list of original files
+    original_pattern = os.path.join(roadview_dir, "roadview_*.jpg")
+    original_files = sorted(glob.glob(original_pattern))
+
+    if index < 0 or index >= len(original_files):
+        return (
+            jsonify(
+                {
+                    "error": "Image index out of range",
+                    "tag": tag,
+                    "index": index,
+                    "max_index": len(original_files) - 1,
+                }
+            ),
+            404,
+        )
+
+    original_path = original_files[index]
+    filename = os.path.basename(original_path)
+
+    # Parse coordinates from filename
+    parts = filename.replace("roadview_", "").replace(".jpg", "").split("_")
+    try:
+        lat = float(parts[0])
+        lon = float(parts[1])
+        heading = float(parts[2])
+    except (ValueError, IndexError):
+        lat, lon, heading = None, None, None
+
+    # Check analyzed image
+    analyzed_filename = filename.replace("roadview_", "analyzed_")
+    analyzed_path = os.path.join(roadview_dir, analyzed_filename)
+
+    original_info = {
+        "url": f"/{original_path.replace(os.sep, '/')}",
+        "exists": True,
+        "size_bytes": os.path.getsize(original_path),
+    }
+
+    analyzed_info = {
+        "url": f"/{analyzed_path.replace(os.sep, '/')}",
+        "exists": os.path.exists(analyzed_path),
+        "size_bytes": (
+            os.path.getsize(analyzed_path) if os.path.exists(analyzed_path) else None
+        ),
+    }
+
+    return (
+        jsonify(
+            {
+                "tag": tag,
+                "index": index,
+                "lat": lat,
+                "lon": lon,
+                "heading": heading,
+                "original": original_info,
+                "analyzed": analyzed_info,
+            }
+        ),
+        200,
+    )

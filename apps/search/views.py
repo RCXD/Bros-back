@@ -230,7 +230,7 @@ def search_posts():
                     "profile_img": author.profile_img if author else None,
                 },
                 "content": post.content,
-                "category": post.category.category_name if post.category else None,
+                "category": post.category,
                 "view_counts": post.view_counts,
                 "like_count": like_count,
                 "isLiked": is_liked,
@@ -290,7 +290,7 @@ def search_my_posts():
             {
                 "post_id": post.post_id,
                 "content": post.content,
-                "category": post.category.category_name if post.category else None,
+                "category": post.category,
                 "like_count": like_count,
                 "isLiked": is_liked,
                 "created_at": post.created_at.isoformat(),

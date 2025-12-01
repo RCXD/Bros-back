@@ -1,0 +1,471 @@
+{
+  "module": "route",
+  "base_path": "/route",
+  "description": "경로 탐색, 위험 구간 관리 및 내 경로 저장",
+  "endpoints": [
+    {
+      "path": "/route/safe",
+      "method": "POST",
+      "auth_required": false,
+      "description": "위험 구간 회피 경로 탐색 (OSRM 연동)",
+      "request_body": {
+        "start": "시작 좌표 {lat, lon}",
+        "end": "종료 좌표 {lat, lon}",
+        "vias": "경유지 좌표 배열 (선택)",
+        "osrm_base_url": "OSRM 서버 URL (선택)",
+        "profile": "라우팅 프로필 (선택, 기본: driving)",
+        "mode": "모드 (선택, 기본: safe)"
+      },
+      "response": {
+        "route": "경로 정보 (거리, 시간, 위험 패널티 등)",
+        "hazard_overlay": "경로상 위험 구간 목록"
+      }
+    },
+    {
+      "path": "/route/navigate",
+      "method": "POST",
+      "auth_required": false,
+      "description": "일반 경로 탐색 (OSRM 연동 예정)",
+      "request_body": {
+        "start": "시작 좌표",
+        "end": "종료 좌표",
+        "profile": "라우팅 프로필 (기본: driving)"
+      }
+    },
+    {
+      "path": "/route/hazards",
+      "method": "POST",
+      "auth_required": false,
+      "description": "위험 구간 등록",
+      "rate_limit": "60초당 20회",
+      "request_body": {
+        "lat": "위도 (필수)",
+        "lon": "경도 (필수)",
+        "danger_score": "위험도 점수 0-10 (기본: 0)",
+        "is_active": "활성 여부 (기본: true)"
+      }
+    },
+    {
+      "path": "/route/hazards",
+      "method": "GET",
+      "auth_required": false,
+      "description": "위험 구간 목록 조회",
+      "query_params": {
+        "min_score": "최소 위험도 필터 (기본: 0)",
+        "page": "페이지 번호 (기본: 1)",
+        "per_page": "페이지당 개수 (기본: 50, 최대: 200)"
+      }
+    },
+    {
+      "path": "/route/hazards/<hazard_id>",
+      "method": "PUT",
+      "auth_required": false,
+      "description": "위험 구간 수정",
+      "request_body": {
+        "danger_score": "위험도 점수 0-10",
+        "is_active": "활성 여부"
+      }
+    },
+    {
+      "path": "/route/hazards/<hazard_id>",
+      "method": "DELETE",
+      "auth_required": false,
+      "description": "위험 구간 비활성화 (소프트 삭제)"
+    },
+    {
+      "path": "/route/hazard/active",
+      "method": "GET",
+      "auth_required": false,
+      "description": "활성 위험 구간 목록 조회 (최대 500개)"
+    },
+    {
+      "path": "/route/hazard/refresh",
+      "method": "POST",
+      "auth_required": false,
+      "description": "위험 구간 캐시 강제 새로고침"
+    },
+    {
+      "path": "/route/hazard/map-osm-edges",
+      "method": "POST",
+      "auth_required": false,
+      "description": "위험 구간을 OSM 엣지에 매핑 (백필)",
+      "request_body": {
+        "limit": "처리할 최대 개수 (기본: 1000)",
+        "osrm_base_url": "OSRM 서버 URL (선택)",
+        "profile": "라우팅 프로필 (선택)"
+      }
+    },
+    {
+      "path": "/route/paths",
+      "method": "GET",
+      "auth_required": true,
+      "description": "내 저장 경로 목록 조회"
+    },
+    {
+      "path": "/route/paths",
+      "method": "POST",
+      "auth_required": true,
+      "description": "경로 저장",
+      "request_body": {
+        "name": "경로 이름 (필수)",
+        "start_location": "시작 좌표 {lat, lon} (필수)",
+        "end_location": "종료 좌표 {lat, lon} (필수)",
+        "waypoints": "경유지 배열 (선택)"
+      }
+    },
+    {
+      "path": "/route/paths/<route_id>",
+      "method": "GET",
+      "auth_required": true,
+      "description": "저장된 경로 상세 조회"
+    },
+    {
+      "path": "/route/paths/<route_id>",
+      "method": "PUT",
+      "auth_required": true,
+      "description": "저장된 경로 수정"
+    },
+    {
+      "path": "/route/paths/<route_id>",
+      "method": "DELETE",
+      "auth_required": true,
+      "description": "저장된 경로 삭제"
+    },
+    {
+      "path": "/route/analyze",
+      "method": "POST",
+      "auth_required": true,
+      "description": "경로 분석 - OSRM 라우팅, 로드뷰 이미지 다운로드, AI 객체 감지, 위험도 계산",
+      "request_body": {
+        "points": {
+          "type": "array of objects",
+          "required": true,
+          "description": "경로 좌표 배열 (최소 2개)",
+          "example": [
+            {"lat": 37.5665, "lon": 126.9780},
+            {"lat": 37.5670, "lon": 126.9785}
+          ],
+          "item_schema": {
+            "lat": {"type": "float", "required": true, "range": "-90 ~ 90"},
+            "lon": {"type": "float", "required": true, "range": "-180 ~ 180"}
+          }
+        },
+        "interval_meters": {
+          "type": "float",
+          "required": false,
+          "default": 50,
+          "description": "중간 지점 생성 간격 (미터)",
+          "example": 50
+        },
+        "tag": {
+          "type": "string",
+          "required": false,
+          "description": "이미지 저장 태그 (기본: UUID 8자리)",
+          "example": "route_001"
+        },
+        "profile": {
+          "type": "string",
+          "required": false,
+          "default": "driving",
+          "description": "OSRM 라우팅 프로필",
+          "example": "driving"
+        }
+      },
+      "response": {
+        "route_id": {
+          "type": "string",
+          "description": "경로 고유 ID (tag 값)",
+          "example": "a7b3c4d5"
+        },
+        "osrm_route": {
+          "type": "object",
+          "description": "OSRM에서 계산된 경로 메타정보",
+          "schema": {
+            "distance": {"type": "float", "description": "총 거리 (미터)", "example": 1234.5},
+            "duration": {"type": "float", "description": "예상 소요 시간 (초)", "example": 180.2},
+            "legs_count": {"type": "int", "description": "경로 구간 수", "example": 2}
+          }
+        },
+        "analyzed_points": {
+          "type": "array of objects",
+          "description": "분석된 지점 배열 (로드뷰, 감지 결과, 위험도 포함)",
+          "item_schema": {
+            "index": {"type": "int", "description": "지점 순번", "example": 0},
+            "lat": {"type": "float", "description": "위도", "example": 37.5665},
+            "lon": {"type": "float", "description": "경도", "example": 126.9780},
+            "heading": {"type": "float", "description": "진행 방향 (도, 0-360)", "example": 45.3},
+            "roadview_image": {"type": "string", "description": "로드뷰 이미지 경로", "example": "/static/roadviews/route_001/roadview_37.566500_126.978000_45.jpg", "nullable": true},
+            "roadview_success": {"type": "boolean", "description": "로드뷰 다운로드 성공 여부", "example": true},
+            "roadview_error": {"type": "string", "description": "로드뷰 실패 시 에러 메시지", "nullable": true},
+            "detection_result": {
+              "type": "object",
+              "description": "AI 객체 감지 결과",
+              "nullable": true,
+              "schema": {
+                "detections": {
+                  "type": "array",
+                  "description": "감지된 객체 목록",
+                  "example": [
+                    {
+                      "class": "person",
+                      "confidence": 0.92,
+                      "bbox": [100, 200, 150, 300],
+                      "position": "center"
+                    }
+                  ]
+                }
+              }
+            },
+            "detection_image": {"type": "string", "description": "감지 결과 이미지 경로 (AI 서버가 annotated_image 반환 시에만 생성, 현재 null)", "nullable": true, "example": "/static/roadviews/route_001/analyzed_37.566500_126.978000_45.jpg"},
+            "detection_success": {"type": "boolean", "description": "객체 감지 성공 여부", "example": true},
+            "detection_error": {"type": "string", "description": "감지 실패 시 에러 메시지", "nullable": true},
+            "danger_score": {"type": "float", "description": "계산된 위험도 점수 (0-10)", "example": 5.2, "nullable": true},
+            "score_analysis": {
+              "type": "object",
+              "description": "위험도 점수 산출 근거",
+              "nullable": true,
+              "schema": {
+                "base_scores": {"type": "object", "description": "객체별 기본 점수"},
+                "position_factors": {"type": "object", "description": "위치 가중치"},
+                "final_contributions": {"type": "object", "description": "최종 기여도"}
+              }
+            },
+            "hazard_id": {"type": "int", "description": "생성된 Hazard 레코드 ID (danger_score >= 3.0)", "example": 123, "nullable": true},
+            "hazard_error": {"type": "string", "description": "Hazard 생성 실패 시 에러 메시지", "nullable": true}
+          }
+        },
+        "hazards": {
+          "type": "array of objects",
+          "description": "생성된 위험 구간 배열 (danger_score >= 3.0인 지점만)",
+          "item_schema": {
+            "hazard_id": {"type": "int", "example": 123},
+            "lat": {"type": "float", "example": 37.5665},
+            "lon": {"type": "float", "example": 126.9780},
+            "danger_score": {"type": "float", "example": 5.2},
+            "weight_penalty": {"type": "float", "example": 52.0},
+            "is_active": {"type": "boolean", "example": true},
+            "osm_edge_id": {"type": "string", "example": "osm:12345-67890", "nullable": true},
+            "created_at": {"type": "string", "format": "ISO 8601", "example": "2025-11-28T14:30:00"}
+          }
+        },
+        "summary": {
+          "type": "object",
+          "description": "분석 요약 통계",
+          "schema": {
+            "total_points": {"type": "int", "description": "분석된 총 지점 수", "example": 25},
+            "successful_roadviews": {"type": "int", "description": "로드뷰 성공 지점 수", "example": 23},
+            "successful_detections": {"type": "int", "description": "객체 감지 성공 지점 수", "example": 20},
+            "hazards_created": {"type": "int", "description": "생성된 Hazard 레코드 수", "example": 3},
+            "interval_meters": {"type": "float", "description": "적용된 간격 (미터)", "example": 50.0}
+          }
+        },
+        "tag": {
+          "type": "string",
+          "description": "이미지 조회용 태그 (route_id와 동일, 클라이언트에서 이미지 조회 시 사용)",
+          "example": "a7b3c4d5"
+        },
+        "images": {
+          "type": "object",
+          "description": "분석 이미지 조회 정보",
+          "schema": {
+            "tag": {"type": "string", "description": "이미지 조회용 태그", "example": "a7b3c4d5"},
+            "list_url": {"type": "string", "description": "이미지 목록 조회 URL", "example": "/route/analyze/a7b3c4d5/images"},
+            "base_path": {"type": "string", "description": "이미지 저장 기본 경로", "example": "/static/roadviews/a7b3c4d5"}
+          }
+        }
+      },
+      "features": {
+        "osrm_routing": "OSRM 서버를 통한 경로 계산 및 구간 분할",
+        "point_interpolation": "설정된 간격으로 중간 지점 자동 생성",
+        "heading_calculation": "각 지점의 진행 방향(헤딩) 자동 계산",
+        "roadview_caching": "로드뷰 이미지 캐싱 (이미지 10년, 요청 1년 기준)",
+        "ai_detection": "감지기 서비스를 통한 객체 감지",
+        "danger_scoring": "NHTSA/Vision Zero/CVPR 기반 위험도 계산 (0-10점)",
+        "hazard_creation": "위험도 3.0 이상 시 Hazard 레코드 자동 생성",
+        "osrm_integration": "생성된 위험 구간을 OSRM 라우팅에 자동 반영"
+      },
+      "caching": {
+        "strategy": "위치 기반 캐싱 (좌표 ~10m 정밀도, 헤딩 ±5°)",
+        "refresh_triggers": [
+          "이미지 촬영 시점 > 10년 전",
+          "마지막 요청 > 1년 전",
+          "force_refresh 플래그"
+        ],
+        "cost_savings": "반복 경로 분석 시 API 호출 50-90% 감소"
+      },
+      "danger_score_algorithm": {
+        "base_weights": {
+          "person": 0.95,
+          "bicycle": 0.90,
+          "motorcycle": 0.90,
+          "debris": 0.90,
+          "accident": 1.0,
+          "car": 0.70,
+          "truck": 0.75,
+          "bus": 0.75,
+          "construction": 0.80,
+          "traffic_sign": 0.30,
+          "pole": 0.40
+        },
+        "position_factor": "중앙 1.5배, 가장자리 0.5배 (이미지 내 위치)",
+        "size_factor": "크기 기반 0.7-1.3배 (근접도/위험도)",
+        "confidence_factor": "감지 신뢰도 기반 0.5-1.0배",
+        "multi_object": "비선형 결합 (누적 위험도 반영)",
+        "threshold": "3.0 이상 시 Hazard 레코드 생성"
+      },
+      "dependencies": {
+        "osrm_server": "http://192.168.1.79:8890 (경로 계산)",
+        "google_street_view": "Google Maps Street View Static API (로드뷰)",
+        "detector_service": "http://192.168.1.79:8888 (객체 감지)"
+      }
+    },
+    {
+      "path": "/route/analyze/<tag>/images",
+      "method": "GET",
+      "auth_required": false,
+      "description": "분석 결과 이미지 목록 조회 - 분석 전/후 이미지 URL 반환",
+      "path_params": {
+        "tag": {
+          "type": "string",
+          "required": true,
+          "description": "분석 시 사용된 태그 (route_id)",
+          "example": "route_001"
+        }
+      },
+      "response": {
+        "tag": {"type": "string", "description": "요청된 태그", "example": "route_001"},
+        "images": {
+          "type": "array of objects",
+          "description": "이미지 목록",
+          "item_schema": {
+            "index": {"type": "int", "description": "이미지 순번", "example": 0},
+            "lat": {"type": "float", "description": "위도", "example": 37.5665, "nullable": true},
+            "lon": {"type": "float", "description": "경도", "example": 126.9780, "nullable": true},
+            "heading": {"type": "float", "description": "진행 방향 (도)", "example": 45.0, "nullable": true},
+            "original": {"type": "string", "description": "분석 전 원본 로드뷰 이미지 URL", "example": "/static/roadviews/route_001/roadview_37.566500_126.978000_45.jpg"},
+            "analyzed": {"type": "string", "description": "분석 후 어노테이션 이미지 URL", "example": "/static/roadviews/route_001/analyzed_37.566500_126.978000_45.jpg", "nullable": true}
+          }
+        },
+        "summary": {
+          "type": "object",
+          "schema": {
+            "total": {"type": "int", "description": "전체 이미지 수", "example": 10},
+            "with_original": {"type": "int", "description": "원본 이미지 수", "example": 10},
+            "with_analyzed": {"type": "int", "description": "분석 이미지 수", "example": 8}
+          }
+        }
+      }
+    },
+    {
+      "path": "/route/analyze/<tag>/images/<index>",
+      "method": "GET",
+      "auth_required": false,
+      "description": "특정 분석 이미지 상세 조회",
+      "path_params": {
+        "tag": {
+          "type": "string",
+          "required": true,
+          "description": "분석 시 사용된 태그 (route_id)"
+        },
+        "index": {
+          "type": "int",
+          "required": true,
+          "description": "이미지 인덱스 (0부터 시작)"
+        }
+      },
+      "response": {
+        "tag": {"type": "string", "description": "요청된 태그"},
+        "index": {"type": "int", "description": "이미지 인덱스"},
+        "lat": {"type": "float", "description": "위도", "nullable": true},
+        "lon": {"type": "float", "description": "경도", "nullable": true},
+        "heading": {"type": "float", "description": "진행 방향 (도)", "nullable": true},
+        "original": {
+          "type": "object",
+          "schema": {
+            "url": {"type": "string", "description": "원본 이미지 URL"},
+            "exists": {"type": "boolean", "description": "파일 존재 여부"},
+            "size_bytes": {"type": "int", "description": "파일 크기 (바이트)"}
+          }
+        },
+        "analyzed": {
+          "type": "object",
+          "schema": {
+            "url": {"type": "string", "description": "분석 이미지 URL"},
+            "exists": {"type": "boolean", "description": "파일 존재 여부"},
+            "size_bytes": {"type": "int", "description": "파일 크기 (바이트)", "nullable": true}
+          }
+        }
+      }
+    },
+    {
+      "path": "/route/api_info",
+      "method": "GET",
+      "auth_required": false,
+      "description": "API 정보 조회 (개발용)"
+    }
+  ],
+  "models": {
+    "Hazard": {
+      "description": "위험 구간 정보",
+      "fields": {
+        "hazard_id": "고유 ID (PK)",
+        "lat": "위도",
+        "lon": "경도",
+        "danger_score": "위험도 점수 (0-10)",
+        "weight_penalty": "OSRM 가중치 패널티",
+        "is_active": "활성 여부",
+        "edge_id": "엣지 ID",
+        "osm_edge_id": "OSM 엣지 ID",
+        "hazard_type": "위험 유형",
+        "description": "설명"
+      }
+    },
+    "TrafficHazard": {
+      "description": "실시간 교통 위험 정보 (5분 TTL)",
+      "fields": {
+        "traffic_hazard_id": "고유 ID (PK)",
+        "osm_edge_id": "OSM 엣지 ID",
+        "penalty": "패널티 가중치",
+        "updated_at": "갱신 시각"
+      }
+    },
+    "Route": {
+      "description": "사용자 저장 경로",
+      "fields": {
+        "route_id": "고유 ID (PK)",
+        "user_id": "사용자 ID (FK)",
+        "name": "경로 이름",
+        "points": "경로 좌표 배열 (JSON)",
+        "place_id": "연결된 Place ID (선택)"
+      }
+    }
+  },
+  "hazard_pipeline": {
+    "description": "위험 구간 정보를 OSRM에 반영하는 파이프라인",
+    "functions": {
+      "penalty_from_danger(score)": "위험도(0-10)를 OSRM 패널티로 변환",
+      "export_hazard_penalties_csv()": "DB → CSV 내보내기",
+      "render_osrm_hazard_profile()": "Lua 프로필 생성",
+      "schedule_osrm_customize()": "OSRM 커스터마이즈 예약"
+    },
+    "artifacts": {
+      "hazard_penalties.csv": "엣지별 패널티 목록",
+      "hazard_penalties.lua": "OSRM Lua 프로필 모듈"
+    },
+    "env_vars": {
+      "OSRM_DATA_DIR": "OSRM 데이터 디렉토리 (기본: ./osrm)",
+      "OSRM_BASE_URL": "OSRM 서버 URL (기본: http://localhost:5000)",
+      "OSRM_PROFILE": "라우팅 프로필 (기본: driving)",
+      "OSRM_THREADS": "OSRM 스레드 수 (기본: 8)",
+      "OSRM_CUSTOMIZE_DEBOUNCE": "커스터마이즈 디바운스 시간(초, 기본: 2.0)"
+    }
+  },
+  "caching": {
+    "hazard_cache_ttl": "30초",
+    "traffic_hazard_ttl": "5분"
+  },
+  "rate_limiting": {
+    "window": "60초",
+    "max_requests": "20회 (hazard 등록)"
+  }
+}

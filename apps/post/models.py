@@ -7,16 +7,33 @@ from datetime import datetime
 from apps.config.server import db
 
 
-class Category(db.Model):
-    """Post categories"""
+class CategoryType:
+    """Centralized category definitions replacing the categories table."""
 
-    __tablename__ = "categories"
+    STORY = "STORY"
+    ROUTE = "ROUTE"
+    REVIEW = "REVIEW"
+    REPORT = "REPORT"
 
-    category_id = db.Column(db.Integer, primary_key=True)
-    category_name = db.Column(db.String(50), unique=True, nullable=False)
+    ALL = {STORY, ROUTE, REVIEW, REPORT}
 
-    def __repr__(self):
-        return f"<Category {self.category_name}>"
+    # ID to name mapping (for backward compatibility with numeric IDs)
+    ID_MAP = {
+        "1": STORY,
+        "2": ROUTE,
+        "3": REVIEW,
+        "4": REPORT,
+    }
+
+    @classmethod
+    def has(cls, value: str) -> bool:
+        """Return True when value matches any supported category."""
+        return value in cls.ALL
+
+    @classmethod
+    def from_id(cls, category_id: str) -> str | None:
+        """Convert category ID to category name. Returns None if invalid."""
+        return cls.ID_MAP.get(str(category_id))
 
 
 class Post(db.Model):
@@ -24,11 +41,15 @@ class Post(db.Model):
 
     post_id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey("users.user_id", ondelete="CASCADE"))
-    category_id = db.Column(db.Integer, db.ForeignKey("categories.category_id"))
+    category = db.Column(db.String(20), nullable=False)
     content = db.Column(db.Text, nullable=False)
     view_counts = db.Column(db.Integer, default=0)
     created_at = db.Column(db.DateTime, default=datetime.now)
     updated_at = db.Column(db.DateTime, default=datetime.now, onupdate=datetime.now)
+    location_name = db.Column(db.String(255), nullable=True)
+    thumbnail_id = db.Column(
+        db.Integer, db.ForeignKey("images.image_id", ondelete="SET NULL"), nullable=True
+    )
 
     # Place 연동 (선택적)
     place_id = db.Column(
@@ -36,10 +57,12 @@ class Post(db.Model):
     )
 
     # Relationships
-    category = db.relationship("Category", backref="posts", lazy=True)
     author = db.relationship("User", backref="posts", lazy=True, foreign_keys=[user_id])
     place = db.relationship(
         "Place", backref="linked_posts", lazy=True, foreign_keys=[place_id]
+    )
+    thumbnail = db.relationship(
+        "Image", foreign_keys=[thumbnail_id], uselist=False, post_update=True
     )
 
     def add_view_counts(self):

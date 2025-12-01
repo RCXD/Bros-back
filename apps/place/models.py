@@ -6,8 +6,6 @@ from geoalchemy2 import Geometry
 from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm import reconstructor
 import struct
-from sqlalchemy import func
-from geoalchemy2 import Geometry
 from geoalchemy2.elements import WKTElement
 from sqlalchemy.types import JSON
 
@@ -85,7 +83,7 @@ class Place(db.Model):
         db.Index("idx_place_geom_spatial", "geom", mysql_prefix="SPATIAL"),
         db.Index("idx_place_category", "category_id"),
         db.Index("idx_place_type", "type_id"),
-        db.Index("idx_place_post", "post_id"),
+        db.Index("idx_place_route", "route_id"),
     )
 
     place_id = db.Column(db.Integer, primary_key=True)
@@ -100,8 +98,13 @@ class Place(db.Model):
     category_id = db.Column(db.Integer, db.ForeignKey("place_category.category_id"))
     type_id = db.Column(db.Integer, db.ForeignKey("place_type.type_id"))
 
-    # 게시글 연동
-    post_id = db.Column(db.Integer, db.ForeignKey("posts.post_id"), nullable=True)
+    # Route 연동 (Optional, 1:1)
+    route_id = db.Column(
+        db.Integer,
+        db.ForeignKey("routes.route_id", ondelete="SET NULL"),
+        nullable=True,
+        unique=True,
+    )
 
     # 추천도/위험도
     recommendation_score = db.Column(db.Numeric(2, 1), default=3.0)  # 1.0~5.0
@@ -149,12 +152,8 @@ class Place(db.Model):
     # Relationships
     category = db.relationship("PlaceCategory", back_populates="places")
     place_type = db.relationship("PlaceType", back_populates="places")
-    # Place → Post 참조 (Place가 특정 Post에서 생성된 경우)
-    source_post = db.relationship(
-        "Post",
-        backref="created_places",  # Post.created_places로 접근
-        foreign_keys=[post_id],
-    )
+    # Route 참조 (경로형 Place)
+    route = db.relationship("Route", back_populates="place", uselist=False)
 
     def __init__(self, **kwargs):
         lat = kwargs.pop("lat", None)
@@ -254,7 +253,7 @@ class Place(db.Model):
             "type_display_name": (
                 self.place_type.display_name if self.place_type else None
             ),
-            "post_id": self.post_id,
+            "route_id": self.route_id,
             "recommendation_score": (
                 float(self.recommendation_score) if self.recommendation_score else None
             ),

@@ -78,7 +78,7 @@ def get_all_user_tokens_from_db(
         num_regular_users = User.query.filter_by(account_type=AccountType.USER).count()
         num_admins = User.query.filter_by(account_type=AccountType.ADMIN).count()
 
-        print(f"\n📊 데이터베이스 사용자 현황:")
+        print(f"\n[DB] 데이터베이스 사용자 현황:")
         print(f"  일반 사용자: {num_regular_users}명")
         print(f"  관리자: {num_admins}명")
         print(f"  총: {total_users}명")
@@ -86,11 +86,11 @@ def get_all_user_tokens_from_db(
         # 예상 수와 비교하여 경고
         if expected_users is not None and num_regular_users != expected_users:
             print(
-                f"  ⚠️  경고: 예상 일반 사용자({expected_users}명)와 실제({num_regular_users}명)가 다릅니다!"
+                f"  [!] 경고: 예상 일반 사용자({expected_users}명)와 실제({num_regular_users}명)가 다릅니다!"
             )
         if expected_admins is not None and num_admins != expected_admins:
             print(
-                f"  ⚠️  경고: 예상 관리자({expected_admins}명)와 실제({num_admins}명)가 다릅니다!"
+                f"  [!] 경고: 예상 관리자({expected_admins}명)와 실제({num_admins}명)가 다릅니다!"
             )
 
         # 모든 사용자 가져오기
@@ -98,15 +98,15 @@ def get_all_user_tokens_from_db(
 
     tokens = {}
 
-    print(f"\n🔐 {total_users}명의 사용자 토큰 획득 중...")
+    print(f"\n[Auth] {total_users}명의 사용자 토큰 획득 중...")
 
     for user in all_users:
         token = get_user_token(base_url, user.username)
 
         if token:
             tokens[user.email] = token
-            user_type = "👑" if user.account_type == AccountType.ADMIN else "👤"
-            print(f"  ✓ {user_type} {user.username} ({user.email})")
+            user_type = "[A]" if user.account_type == AccountType.ADMIN else "[U]"
+            print(f"  OK {user_type} {user.username} ({user.email})")
         else:
             print(f"  ✗ {user.username} (실패)")
 
@@ -128,7 +128,7 @@ def get_all_user_tokens(base_url, num_users=10):
     """
     tokens = {}
 
-    print(f"\n🔐 {num_users}명의 사용자 토큰 획득 중...")
+    print(f"\n[Auth] {num_users}명의 사용자 토큰 획득 중...")
 
     for i in range(1, num_users + 1):
         username = f"user{i}"
@@ -138,7 +138,7 @@ def get_all_user_tokens(base_url, num_users=10):
         if token:
             # email을 key로 사용 (User 모델의 email 필드와 매칭하기 위해)
             tokens[email] = token
-            print(f"  ✓ {username} ({email})")
+            print(f"  OK {username} ({email})")
         else:
             print(f"  ✗ {username} (실패)")
 

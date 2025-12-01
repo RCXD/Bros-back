@@ -1,4 +1,5 @@
 import json
+import os
 import requests
 from flask import Blueprint, jsonify, request, current_app
 from flask_jwt_extended import jwt_required
@@ -18,49 +19,9 @@ def api_info():
     """
     장소 API 정보 제공 (개발용)
     """
-    info = {
-        "module": "place",
-        "base_path": "/place",
-        "description": "장소 검색 및 관리",
-        "endpoints": [
-            {
-                "path": "/place/search",
-                "method": "GET",
-                "auth_required": False,
-                "description": "장소 검색",
-                "query_params": {
-                    "q": "검색어 (필수)",
-                    "lat": "중심 위도 (선택)",
-                    "lon": "중심 경도 (선택)",
-                    "radius": "반경(m, 기본: 500)",
-                },
-            },
-            {
-                "path": "/place/<place_id>",
-                "method": "GET",
-                "auth_required": False,
-                "description": "특정 장소 정보 조회",
-            },
-            {
-                "path": "/place",
-                "method": "POST",
-                "auth_required": True,
-                "description": "장소 등록",
-            },
-            {
-                "path": "/place/nearby",
-                "method": "GET",
-                "auth_required": False,
-                "description": "주변 장소 조회",
-            },
-            {
-                "path": "/place/api_info",
-                "method": "GET",
-                "auth_required": False,
-                "description": "API 정보 조회 (개발용)",
-            },
-        ],
-    }
+    info_path = os.path.join(os.path.dirname(__file__), "info.json")
+    with open(info_path, "r", encoding="utf-8") as f:
+        info = json.load(f)
     return jsonify(info), 200
 
 
@@ -90,13 +51,13 @@ def _store_place_area(place, geom_obj, lat=None, lon=None):
     if geom_type in {"polygon", "multipolygon"}:
         stored_geom = _build_bbox(None, None, geom_obj) if has_geom_column else None
         if has_geom_column:
-            place.geom = _build_bbox(lat_val, lon_val)
+            place.geom = _build_bbox(lon_val, lat_val)
         if has_edges_column:
             place.edges = None
         return
 
     if has_geom_column:
-        geom_value = _build_bbox(lat_val, lon_val, geom_obj)
+        geom_value = _build_bbox(lon_val, lat_val, geom_obj)
         if geom_value is not None:
             place.geom = geom_value
             if has_edges_column:
@@ -807,7 +768,7 @@ def _serialize_transient_place(payload):
         "label": payload.get("alt_name") or payload.get("name"),
         "lat": payload.get("lat"),
         "lng": payload.get("lon"),
-        "type": _derive_pin_type(payload.get("name"), tags),
+        "type": _derive_pin_type(tags or {}, None),
         "tags": tags or {},
         "source": "nominatim",
         "createdAt": None,
@@ -890,6 +851,88 @@ def search_places():
 # ============================================================
 # 반경 내 필터링 조회 API
 # ============================================================
+
+
+# 호환성
+@bp.get("/reverse")
+def reverse_geocode():
+    """
+    Reverse geocoding (Always save to DB except duplicates)
+    GET /place/reverse?lat=37.57&lon=126.98
+    """
+    lat_raw = request.args.get("lat")
+    lon_raw = request.args.get("lon") or request.args.get("lng")
+
+    if lat_raw is None or lon_raw is None:
+        return jsonify({"message": "lat and lon are required"}), 400
+
+    lat, lat_err = _parse_float(lat_raw, "lat", -90, 90)
+    lon, lon_err = _parse_float(lon_raw, "lon", -180, 180)
+    if lat_err or lon_err:
+        return jsonify({"message": lat_err or lon_err}), 400
+
+    params = {
+        "format": "jsonv2",
+        "lat": lat,
+        "lon": lon,
+        "addressdetails": 1,
+        "namedetails": 1,
+        "extratags": 1,
+        "polygon_geojson": 1,
+    }
+
+    try:
+        resp = requests.get(
+            NOMINATIM_REVERSE_URL,
+            params=params,
+            headers=NOMINATIM_HEADERS,
+            timeout=5,
+        )
+        resp.raise_for_status()
+        raw_data = resp.json()
+    except requests.RequestException as exc:
+        current_app.logger.error("Reverse nominatim failed", exc_info=exc)
+        return jsonify({"message": "Reverse geocoding failed"}), 500
+
+    payload, raw_origin, geom_obj = _normalize_reverse_response(
+        raw_data, fallback_lat=lat, fallback_lon=lon
+    )
+
+    if payload is None:
+        return jsonify({"message": "Invalid reverse data"}), 500
+
+    name = payload.get("name") or payload.get("alt_name") or payload.get("description")
+    if not name:
+        return jsonify({"message": "No valid name in reverse result"}), 500
+
+    duplicate = _find_existing_place(name, payload["lat"], payload["lon"])
+    if duplicate:
+        return jsonify({"place": place_to_pin(duplicate), "source": "existing"}), 200
+
+    try:
+        place = Place(
+            name=payload.get("name"),
+            alt_name=payload.get("alt_name"),
+            description=payload.get("description"),
+            tags=payload.get("tags"),
+        )
+
+        place.set_lat_lon(payload["lat"], payload["lon"])
+
+        _store_place_area(place, geom_obj, payload["lat"], payload["lon"])
+        print(place)
+        db.session.add(place)
+        db.session.commit()
+
+        return jsonify({"place": place_to_pin(place), "source": "stored"}), 201
+
+    except SQLAlchemyError as exc:
+        db.session.rollback()
+        current_app.logger.error("Failed to save reverse place", exc_info=exc)
+
+        tmp = _serialize_transient_place(payload)
+        tmp["source"] = "reverse-db-error"
+        return jsonify({"place": tmp}), 200
 
 
 @bp.get("/nearby")
@@ -996,9 +1039,9 @@ def get_nearby_places():
 
     # 게시글 연동 필터 적용
     if post_filter == "with_post":
-        query = query.filter(Place.post_id.isnot(None))
+        query = query.filter(Place.linked_posts.any())
     elif post_filter == "without_post":
-        query = query.filter(Place.post_id.is_(None))
+        query = query.filter(~Place.linked_posts.any())
 
     # 정렬 적용
     if sort == "recommendation_first":
@@ -1177,8 +1220,8 @@ def get_place_stats():
             )
 
     # 게시글 연동 통계
-    with_post = base_query.filter(Place.post_id.isnot(None)).count()
-    without_post = base_query.filter(Place.post_id.is_(None)).count()
+    with_post = base_query.filter(Place.linked_posts.any()).count()
+    without_post = base_query.filter(~Place.linked_posts.any()).count()
 
     # 평균 추천도/위험도
     avg_recommendation = (

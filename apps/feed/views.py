@@ -10,7 +10,7 @@ from sqlalchemy import func
 import json
 
 from apps.config.server import db
-from apps.post.models import Post, PostLike, Category
+from apps.post.models import CategoryType, Post, PostLike
 from apps.image.models import Image
 from apps.user.models import Follow
 from apps.auth.models import User
@@ -38,7 +38,7 @@ def _serialize_post(post, preview_length=None):
             else None
         ),
         "content": content,
-        "category": post.category.category_name if post.category else None,
+        "category": post.category,
         "view_counts": post.view_counts,
         "like_count": like_count,
         "images": [
@@ -157,7 +157,7 @@ def get_feed():
                     else None
                 ),
                 "content": post.content,
-                "category": post.category.category_name if post.category else None,
+                "category": post.category,
                 "view_counts": post.view_counts,
                 "like_count": like_count,
                 "images": [
@@ -233,7 +233,7 @@ def get_trending():
                     else None
                 ),
                 "content": post.content[:200],  # 미리보기
-                "category": post.category.category_name if post.category else None,
+                "category": post.category,
                 "view_counts": post.view_counts,
                 "like_count": like_count,
                 "images": [
@@ -287,19 +287,23 @@ def get_recommendations():
     following_ids.add(current_user_id)
 
     category_rows = (
-        db.session.query(Post.category_id)
+        db.session.query(Post.category)
         .join(PostLike, Post.post_id == PostLike.post_id)
-        .filter(PostLike.user_id == current_user_id, Post.category_id.isnot(None))
+        .filter(PostLike.user_id == current_user_id, Post.category.isnot(None))
         .distinct()
         .limit(4)
         .all()
     )
-    category_ids = [row[0] for row in category_rows if row[0] is not None]
+    preferred_categories = [
+        row[0]
+        for row in category_rows
+        if row[0] is not None and CategoryType.has(row[0])
+    ]
 
     recommendation_query = Post.query.filter(~Post.user_id.in_(list(following_ids)))
-    if category_ids:
+    if preferred_categories:
         recommendation_query = recommendation_query.filter(
-            Post.category_id.in_(category_ids)
+            Post.category.in_(preferred_categories)
         )
 
     pagination = recommendation_query.order_by(
@@ -386,9 +390,10 @@ def get_explore():
     query = Post.query
 
     if category:
-        cat = Category.query.filter_by(category_name=category).first()
-        if cat:
-            query = query.filter_by(category_id=cat.category_id)
+        normalized_category = category.strip().upper()
+        if not CategoryType.has(normalized_category):
+            return jsonify({"message": "유효하지 않은 카테고리입니다"}), 400
+        query = query.filter_by(category=normalized_category)
 
     # 최신순 정렬
     pagination = query.order_by(Post.created_at.desc()).paginate(
@@ -410,7 +415,7 @@ def get_explore():
                     else None
                 ),
                 "content": post.content[:200],
-                "category": post.category.category_name if post.category else None,
+                "category": post.category,
                 "view_counts": post.view_counts,
                 "like_count": like_count,
                 "images": [

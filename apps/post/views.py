@@ -2,7 +2,7 @@
 게시글 모듈 - 게시글 CRUD 및 상호작용
 """
 
-from flask import Blueprint, jsonify, request, send_from_directory, session
+from flask import Blueprint, jsonify, request, send_from_directory, session, current_app
 from flask_jwt_extended import jwt_required, get_jwt_identity, get_current_user
 from sqlalchemy.exc import IntegrityError
 
@@ -10,8 +10,19 @@ from apps.mention.models import Mention, MentionItemType
 from apps.config.server import db
 from apps.notification.models import Notification
 from apps.notification.utils import create_mention_notification
-from apps.post.models import Post, Category, PostLike
+from apps.post.models import CategoryType, Post, PostLike
+from apps.post.validation_rule import (
+    CategoryValidationError,
+    parse_optional_positive_int,
+    validate_category_payload,
+)
+from apps.post.thumbnail_util import (
+    generate_post_thumbnail,
+    remove_post_thumbnail,
+    ThumbnailGenerationError,
+)
 from apps.image.models import Image
+from apps.place.models import Place
 from apps.auth.models import User
 from apps.common.image_handlers import compress_image, save_to_disk, IMAGE_EXTENSIONS
 from apps.user.models import Follow
@@ -24,6 +35,66 @@ from apps.user.reward_utils import (
 bp = Blueprint("post", __name__)
 VIEWED_POSTS_SESSION_KEY = "viewed_posts"  # 세션에 저장할 조회된 게시물 ID 목록 키
 MAX_VIEWED_RECORDS = 200  # 세션당 최대 조회 기록 수
+
+
+def _detect_hazard_payload(form):
+    """Pick the first non-empty hazard-related form field if provided."""
+
+    for key in ("hazard_id", "hazard", "hazard_type"):
+        raw_value = form.get(key)
+        if raw_value is None:
+            continue
+        text = (
+            raw_value.strip() if isinstance(raw_value, str) else str(raw_value).strip()
+        )
+        if text and text.lower() != "null":
+            return text
+    return None
+
+
+def _serialize_place_summary(place):
+    if not place:
+        return None
+    return {
+        "place_id": place.place_id,
+        "name": place.name,
+        "route_id": getattr(place, "route_id", None),
+        "category_id": place.category_id,
+        "type_id": place.type_id,
+    }
+
+
+def _route_points_from_place(place):
+    if not place:
+        return []
+    route = getattr(place, "route", None)
+    points = getattr(route, "points", None)
+    return points or []
+
+
+def _route_points_for_post(post):
+    if not post:
+        return []
+    return _route_points_from_place(getattr(post, "place", None))
+
+
+def _serialize_image(image):
+    if not image:
+        return None
+    return {
+        "image_id": image.image_id,
+        "uuid": getattr(image, "uuid", None),
+        "directory": image.directory,
+        "original_image_name": image.original_image_name,
+        "ext": image.ext,
+    }
+
+
+def _active_post_images(post_id):
+    return Image.query.filter(
+        Image.post_id == post_id,
+        Image.image_type.is_(None),
+    ).all()
 
 
 def _register_post_view(post_id):  # 세션에 게시물 조회 기록 등록
@@ -53,7 +124,7 @@ def api_info():
                 "description": "게시물 생성",
                 "form_data": {
                     "content": "게시물 내용 (필수)",
-                    "category_id": "카테고리 ID (필수)",
+                    "category": "카테고리 (필수, CategoryType 값)",
                     "images": "이미지 파일들 (선택, 다중 가능)",
                 },
             },
@@ -122,6 +193,7 @@ from flask import g
 
 @bp.get("")
 def get_posts():
+    owner_id = request.args.get("owner_id", None, type=int)
     page = request.args.get("page", 1, type=int)
     per_page = request.args.get("per_page", 20, type=int)
     category = request.args.get("category")
@@ -130,10 +202,12 @@ def get_posts():
     query = Post.query
 
     if category:
-        cat = Category.query.filter_by(category_name=category).first()
-        if cat:
-            query = query.filter_by(category_id=cat.category_id)
-
+        normalized_category = category.strip().upper()
+        if not CategoryType.has(normalized_category):
+            return jsonify({"message": "유효하지 않은 카테고리입니다"}), 400
+        query = query.filter_by(category=normalized_category)
+    if owner_id:
+        query = query.filter_by(user_id=owner_id)
     if order_by == "popular":
         query = query.order_by(Post.view_counts.desc())
     else:
@@ -158,7 +232,7 @@ def get_posts():
                 is not None
             )
 
-        images = Image.query.filter_by(post_id=post.post_id).all()
+        images = _active_post_images(post.post_id)
         posts.append(
             {
                 "post_id": post.post_id,
@@ -168,20 +242,14 @@ def get_posts():
                     "profile_img": user.profile_img if user else None,
                 },
                 "content": post.content,
-                "category": post.category.category_name if post.category else None,
+                "category": post.category,
                 "view_counts": post.view_counts,
                 "like_count": like_count,
                 "isLiked": is_liked,
-                "images": [
-                    {
-                        "image_id": img.image_id,
-                        "uuid": img.uuid,
-                        "directory": img.directory,
-                        "original_image_name": img.original_image_name,
-                        "ext": img.ext,
-                    }
-                    for img in images
-                ],
+                "images": [_serialize_image(img) for img in images],
+                "thumbnail": _serialize_image(post.thumbnail),
+                "place": _serialize_place_summary(post.place),
+                "location_name": post.location_name,
                 "created_at": post.created_at.isoformat(),
                 "updated_at": post.updated_at.isoformat(),
             }
@@ -210,7 +278,7 @@ def create_post():
     새 게시글 작성
     Form data:
         - content: 필수
-        - category_id: 필수
+        - category: 필수 (CategoryType 값)
         - images: 선택 (다중 파일)
         - mentions: 선택 (멘션된 사용자 ID 목록, 쉼표로 구분)
     """
@@ -223,7 +291,9 @@ def create_post():
     try:
         current_user = get_current_user()
         content = request.form.get("content")
-        category_id = request.form.get("category_id", type=int)
+        # category 또는 category_id 모두 지원 (하위 호환성)
+        raw_category = request.form.get("category") or request.form.get("category_id")
+        category_input = (raw_category or "").strip()
 
         if not content:
             return jsonify({"message": "내용은 필수입니다"}), 400
@@ -232,18 +302,60 @@ def create_post():
                 jsonify({"message": "게시글 내용은 2000자 이하로 입력해야 합니다."}),
                 400,
             )
-        if not category_id:
+        if not category_input:
             return jsonify({"message": "카테고리는 필수입니다"}), 400
 
-        # 카테고리 존재 확인
-        category = Category.query.get(category_id)
-        if not category:
-            return jsonify({"message": "유효하지 않은 카테고리입니다"}), 400
+        # 숫자 ID인 경우 이름으로 변환, 아니면 그대로 사용
+        if category_input.isdigit():
+            category_name = CategoryType.from_id(category_input)
+            if not category_name:
+                return jsonify({"message": "유효하지 않은 카테고리 ID입니다"}), 400
+        else:
+            category_name = category_input.upper()
+            if not CategoryType.has(category_name):
+                return jsonify({"message": "유효하지 않은 카테고리입니다"}), 400
+
+        location_name_value = request.form.get("location_name")
+        hazard_payload = _detect_hazard_payload(request.form)
+
+        try:
+            place_id = parse_optional_positive_int(
+                request.form.get("place_id"), "place_id"
+            )
+            validation = validate_category_payload(
+                category_name,
+                place_id=place_id,
+                hazard_payload=hazard_payload,
+            )
+        except CategoryValidationError as validation_error:
+            return jsonify({"message": str(validation_error)}), 400
+
+        linked_place = None
+        if validation.place_id is not None:
+            linked_place = db.session.get(Place, validation.place_id)
+            if not linked_place:
+                return jsonify({"message": "지정한 place_id를 찾을 수 없습니다."}), 404
+            if category_name == CategoryType.ROUTE and not _route_points_from_place(
+                linked_place
+            ):
+                return (
+                    jsonify(
+                        {
+                            "message": "ROUTE 카테고리는 경로가 연결된 장소만 사용할 수 있습니다."
+                        }
+                    ),
+                    400,
+                )
 
         # 게시글 생성
         post = Post(
-            user_id=current_user.user_id, category_id=category_id, content=content
+            user_id=current_user.user_id,
+            category=category_name,
+            content=content,
+            place_id=validation.place_id,
         )
+        if location_name_value is not None:
+            post.location_name = location_name_value or None
 
         db.session.add(post)
         db.session.flush()  # post_id 확보
@@ -316,6 +428,7 @@ def create_post():
             )
 
         # Mention 생성 및 알림 발송
+        mentioned_user_ids = []
         mentioned_ids = request.form.get("mentions")
         if mentioned_ids:
             try:
@@ -343,9 +456,48 @@ def create_post():
                 current_user.user_id, mentioned_user_id, mention
             )
 
+        thumbnail_info = None
+        route_points = (
+            _route_points_from_place(linked_place)
+            if linked_place
+            else _route_points_for_post(post)
+        )
+        current_app.logger.info(
+            "썸네일 생성 시도: post_id=%s, place_id=%s, route_points=%s",
+            post.post_id,
+            post.place_id,
+            route_points,
+        )
+        if route_points:
+            try:
+                thumbnail_image = generate_post_thumbnail(
+                    post,
+                    points=route_points,
+                    provider="openstreet",
+                    location_name=post.location_name,
+                )
+                thumbnail_info = _serialize_image(thumbnail_image)
+                current_app.logger.info(
+                    "썸네일 생성 성공 (post_id=%s, image_id=%s)",
+                    post.post_id,
+                    thumbnail_image.image_id,
+                )
+            except ThumbnailGenerationError as thumb_err:
+                current_app.logger.warning(
+                    "썸네일 생성 실패 (post_id=%s): %s",
+                    post.post_id,
+                    thumb_err,
+                )
+
         db.session.commit()
 
-        return jsonify({"message": "게시글이 작성되었습니다"}), 201
+        response_payload = {"message": "게시글이 작성되었습니다"}
+        if uploaded_images:
+            response_payload["uploaded_images"] = uploaded_images
+        if thumbnail_info is not None:
+            response_payload["thumbnail"] = thumbnail_info
+
+        return jsonify(response_payload), 201
 
     except Exception as e:
         db.session.rollback()
@@ -364,7 +516,7 @@ def get_post(post_id):
         db.session.commit()
 
         # 조회수 임계값 달성 시 리워드 지급
-        category_name = post.category.category_name if post.category else "default"
+        category_name = post.category or "default"
         reward_view_threshold(
             post_id=post.post_id,
             post_author_id=post.user_id,
@@ -398,10 +550,16 @@ def get_post(post_id):
                     else None
                 ),
                 "content": post.content,
-                "category": post.category.category_name if post.category else None,
+                "category": post.category,
                 "view_counts": post.view_counts,
                 "like_count": like_count,
                 "isLiked": is_liked,
+                "images": [
+                    _serialize_image(img) for img in _active_post_images(post.post_id)
+                ],
+                "thumbnail": _serialize_image(post.thumbnail),
+                "place": _serialize_place_summary(post.place),
+                "location_name": post.location_name,
                 "created_at": post.created_at.isoformat(),
                 "updated_at": post.updated_at.isoformat(),
             }
@@ -427,6 +585,18 @@ def update_post(post_id):
         current_user = get_current_user()
         post = Post.query.get_or_404(post_id)
 
+        location_name_value = request.form.get("location_name")
+        remove_thumbnail_flag = (
+            request.form.get("remove_thumbnail") or ""
+        ).lower() in (
+            "1",
+            "true",
+            "yes",
+        )
+        should_refresh_thumbnail = False
+        thumbnail_info = None
+        thumbnail_removed = False
+
         # 소유권 확인
         if post.user_id != current_user.user_id:
             return jsonify({"message": "권한이 없습니다"}), 403
@@ -444,6 +614,12 @@ def update_post(post_id):
             post.content = content
 
         deleted_images = []
+        if location_name_value is not None:
+            post.location_name = location_name_value or None
+            should_refresh_thumbnail = True
+
+        if remove_thumbnail_flag and remove_post_thumbnail(post):
+            thumbnail_removed = True
         # 이미지 삭제 처리
         delete_image_ids = request.form.get("delete_image_ids")
         if delete_image_ids:
@@ -462,6 +638,8 @@ def update_post(post_id):
                     image_id=img_id, post_id=post.post_id
                 ).first()
                 if image:
+                    if image.image_type == "thumbnail":
+                        continue
                     # 삭제 전 정보 저장
                     deleted_images.append(
                         {
@@ -527,6 +705,24 @@ def update_post(post_id):
                 }
             )
 
+        route_points = _route_points_for_post(post)
+        if should_refresh_thumbnail and route_points:
+            try:
+                new_thumb = generate_post_thumbnail(
+                    post,
+                    points=route_points,
+                    provider="openstreet",
+                    location_name=post.location_name,
+                )
+                thumbnail_info = _serialize_image(new_thumb)
+                thumbnail_removed = False
+            except ThumbnailGenerationError as thumb_err:
+                current_app.logger.warning(
+                    "썸네일 재생성 실패 (post_id=%s): %s",
+                    post.post_id,
+                    thumb_err,
+                )
+
         db.session.commit()
 
         response = {"message": "게시글이 수정되었습니다"}
@@ -534,6 +730,10 @@ def update_post(post_id):
             response["deleted_images"] = deleted_images
         if uploaded_images:
             response["uploaded_images"] = uploaded_images
+        if thumbnail_removed:
+            response["thumbnail"] = None
+        elif thumbnail_info is not None:
+            response["thumbnail"] = thumbnail_info
 
         return jsonify(response), 200
 
@@ -610,7 +810,7 @@ def like_post(post_id):
 
         # 리워드 지급 (자기 게시글 좋아요 제외)
         if post.user_id != current_user_id:
-            category_name = post.category.category_name if post.category else "default"
+            category_name = post.category or "default"
             # 게시글 작성자에게 리워드
             reward_post_like_received(post.user_id, category=category_name)
             # 좋아요 누른 사람에게도 리워드
@@ -683,25 +883,19 @@ def get_my_posts():
             is not None
         )
 
-        images = Image.query.filter_by(post_id=post.post_id).all()
+        images = _active_post_images(post.post_id)
         posts.append(
             {
                 "post_id": post.post_id,
                 "content": post.content,
-                "category": post.category.category_name if post.category else None,
+                "category": post.category,
                 "view_counts": post.view_counts,
                 "like_count": like_count,
                 "isLiked": is_liked,
-                "images": [
-                    {
-                        "image_id": img.image_id,
-                        "uuid": img.uuid,
-                        "directory": img.directory,
-                        "original_image_name": img.original_image_name,
-                        "ext": img.ext,
-                    }
-                    for img in images
-                ],
+                "images": [_serialize_image(img) for img in images],
+                "thumbnail": _serialize_image(post.thumbnail),
+                "place": _serialize_place_summary(post.place),
+                "location_name": post.location_name,
                 "created_at": post.created_at.isoformat(),
                 "updated_at": post.updated_at.isoformat(),
             }

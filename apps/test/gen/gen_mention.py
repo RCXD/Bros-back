@@ -29,8 +29,12 @@ def load_mention_data(json_path):
 def create_mention_db(app, mention_data, username_to_userid, post_map, reply_map):
     """DB 직접 접근으로 멘션 생성 (LOCAL)"""
     from apps.config.server import db
-    from apps.mention.models import Mention
-    from apps.notification.models import Notification, NotificationType
+    from apps.mention.models import Mention, MentionItemType
+    from apps.notification.models import (
+        Notification,
+        NotificationType,
+        NotificationItemType,
+    )
 
     log = get_logger()
     mentions = []
@@ -50,8 +54,8 @@ def create_mention_db(app, mention_data, username_to_userid, post_map, reply_map
             continue
 
         # 대상 찾기
-        post_id = None
-        reply_id = None
+        item_id = None
+        mention_item_type = None
 
         if target_type == "post":
             target_username = item.get("target_username")
@@ -59,16 +63,18 @@ def create_mention_db(app, mention_data, username_to_userid, post_map, reply_map
             if target_user_id and target_user_id in post_map:
                 posts = post_map[target_user_id]
                 if posts:
-                    post_id = random.choice(posts)
+                    item_id = random.choice(posts)
+                    mention_item_type = MentionItemType.POST
         elif target_type == "reply":
             parent_username = item.get("parent_post_username")
             parent_user_id = username_to_userid.get(parent_username)
             if parent_user_id and parent_user_id in reply_map:
                 replies = reply_map[parent_user_id]
                 if replies:
-                    reply_id = random.choice(replies)
+                    item_id = random.choice(replies)
+                    mention_item_type = MentionItemType.REPLY
 
-        if not post_id and not reply_id:
+        if not item_id or not mention_item_type:
             log.debug(f"  대상 없음: {target_type} for {mentioner_username}, 건너뜀")
             continue
 
@@ -76,8 +82,8 @@ def create_mention_db(app, mention_data, username_to_userid, post_map, reply_map
         existing = Mention.query.filter_by(
             mentioner_id=mentioner_id,
             mentioned_user_id=mentioned_id,
-            post_id=post_id,
-            reply_id=reply_id,
+            item_type=mention_item_type,
+            item_id=item_id,
         ).first()
 
         if existing:
@@ -90,8 +96,8 @@ def create_mention_db(app, mention_data, username_to_userid, post_map, reply_map
         mention = Mention(
             mentioner_id=mentioner_id,
             mentioned_user_id=mentioned_id,
-            post_id=post_id,
-            reply_id=reply_id,
+            item_type=mention_item_type,
+            item_id=item_id,
             created_at=datetime.now() - timedelta(days=random.randint(0, 30)),
             is_checked=random.choice([True, False]),
         )
@@ -109,12 +115,11 @@ def create_mention_db(app, mention_data, username_to_userid, post_map, reply_map
                 type=NotificationType.MENTION,
                 from_user_id=mention.mentioner_id,
                 to_user_id=mention.mentioned_user_id,
-                post_id=mention.post_id,
-                reply_id=mention.reply_id,
-                mention_id=mention.mention_id,
+                item_type=NotificationItemType.MENTION,
+                item_id=mention.mention_id,
                 created_at=mention.created_at,
                 is_checked=mention.is_checked,
-                message="생성된 멘션 알림입니다.",  # 기본 메시지
+                message="회원님을 멘션했습니다.",
             )
             notifications.append(notification)
 
@@ -184,7 +189,7 @@ def test_generate_mentions(fixture_app):
         reply_map = {}
         for reply in replies:
             # 댓글이 속한 게시글의 작성자로 매핑
-            post = Post.query.get(reply.post_id)
+            post = db.session.get(Post, reply.post_id)
             if post:
                 if post.user_id not in reply_map:
                     reply_map[post.user_id] = []

@@ -1,0 +1,293 @@
+{
+  "module": "place",
+  "base_path": "/place",
+  "description": "장소 검색, 조회, 관리 및 외부 API 연동",
+  "endpoints": [
+    {
+      "path": "/place",
+      "method": "GET",
+      "auth_required": false,
+      "description": "장소 목록 조회",
+      "query_params": {
+        "page": "페이지 번호 (기본: 1)",
+        "per_page": "페이지당 개수 (기본: 20, 최대: 100)",
+        "name": "이름 검색어 (선택)",
+        "tag": "태그 필터 (선택)"
+      }
+    },
+    {
+      "path": "/place",
+      "method": "POST",
+      "auth_required": true,
+      "admin_only": true,
+      "description": "장소 등록",
+      "request_body": {
+        "name": "장소명 (필수)",
+        "lat": "위도 (필수)",
+        "lon": "경도 (필수)",
+        "alt_name": "대체 이름 (선택)",
+        "description": "설명 (선택)",
+        "tags": "태그 JSON (선택)",
+        "geom": "GeoJSON 형태 (선택)"
+      }
+    },
+    {
+      "path": "/place/<place_id>",
+      "method": "GET",
+      "auth_required": false,
+      "description": "특정 장소 정보 조회"
+    },
+    {
+      "path": "/place/<place_id>",
+      "method": "PUT",
+      "auth_required": true,
+      "admin_only": true,
+      "description": "장소 정보 수정"
+    },
+    {
+      "path": "/place/<place_id>",
+      "method": "DELETE",
+      "auth_required": true,
+      "admin_only": true,
+      "description": "장소 삭제"
+    },
+    {
+      "path": "/place/search",
+      "method": "GET",
+      "auth_required": false,
+      "description": "장소 검색 (Nominatim 연동)",
+      "query_params": {
+        "q": "검색어",
+        "tag": "태그 필터 (선택)",
+        "lat": "중심 위도 (선택)",
+        "lon": "중심 경도 (선택)",
+        "radius": "반경(m, 기본: 500, 최대: 50000)",
+        "page": "페이지 번호 (기본: 1)",
+        "per_page": "페이지당 개수 (기본: 20)"
+      }
+    },
+    {
+      "path": "/place/nearby",
+      "method": "GET",
+      "auth_required": false,
+      "description": "주변 장소 조회 (반경 내 필터링)",
+      "query_params": {
+        "lat": "중심 위도 (필수)",
+        "lon": "중심 경도 (필수)",
+        "radius": "반경(m, 기본: 500, 최대: 50000)",
+        "sentiment": "정보 성격 필터 (positive/negative/neutral, 콤마 구분)",
+        "post_filter": "게시글 연동 필터 (with_post/without_post/all)",
+        "sort": "정렬 (recommendation_first/latest_first)",
+        "type": "장소 타입 필터 (콤마 구분)",
+        "page": "페이지 번호",
+        "per_page": "페이지당 개수"
+      }
+    },
+    {
+      "path": "/place/dangerous",
+      "method": "GET",
+      "auth_required": false,
+      "description": "위험 장소 조회 (danger_level 높은 순)",
+      "query_params": {
+        "lat": "중심 위도 (선택)",
+        "lon": "중심 경도 (선택)",
+        "radius": "반경(m, 기본: 1000)",
+        "min_danger": "최소 위험도 (기본: 5.0)",
+        "page": "페이지 번호",
+        "per_page": "페이지당 개수"
+      }
+    },
+    {
+      "path": "/place/recommended",
+      "method": "GET",
+      "auth_required": false,
+      "description": "추천 장소 조회 (recommendation_score 높은 순)",
+      "query_params": {
+        "lat": "중심 위도 (선택)",
+        "lon": "중심 경도 (선택)",
+        "radius": "반경(m, 기본: 1000)",
+        "min_score": "최소 추천도 (기본: 4.0)",
+        "page": "페이지 번호",
+        "per_page": "페이지당 개수"
+      }
+    },
+    {
+      "path": "/place/categories",
+      "method": "GET",
+      "auth_required": false,
+      "description": "Place 카테고리 목록 조회"
+    },
+    {
+      "path": "/place/types",
+      "method": "GET",
+      "auth_required": false,
+      "description": "Place 타입 목록 조회",
+      "query_params": {
+        "category": "카테고리 이름 필터 (positive/negative/neutral)"
+      }
+    },
+    {
+      "path": "/place/stats",
+      "method": "GET",
+      "auth_required": false,
+      "description": "Place 통계 조회",
+      "query_params": {
+        "lat": "중심 위도 (선택, 반경 통계용)",
+        "lon": "중심 경도 (선택)",
+        "radius": "반경(m, 선택)"
+      }
+    },
+    {
+      "path": "/place/<place_id>/external",
+      "method": "GET",
+      "auth_required": false,
+      "description": "특정 장소의 외부 API 데이터 조회",
+      "query_params": {
+        "source": "데이터 소스 (google/kakao/all, 기본: all)"
+      }
+    },
+    {
+      "path": "/place/with-google",
+      "method": "GET",
+      "auth_required": false,
+      "description": "Google 데이터가 있는 장소 목록",
+      "query_params": {
+        "min_rating": "최소 Google 평점",
+        "min_reviews": "최소 리뷰 수",
+        "page": "페이지 번호",
+        "per_page": "페이지당 개수"
+      }
+    },
+    {
+      "path": "/place/with-kakao",
+      "method": "GET",
+      "auth_required": false,
+      "description": "Kakao 데이터가 있는 장소 목록",
+      "query_params": {
+        "category_group": "카카오 카테고리 그룹 코드 (FD6, CE7 등)",
+        "page": "페이지 번호",
+        "per_page": "페이지당 개수"
+      }
+    },
+    {
+      "path": "/place/unsynced",
+      "method": "GET",
+      "auth_required": false,
+      "description": "외부 API 미동기화 장소 목록",
+      "query_params": {
+        "source": "동기화 대상 (google/kakao/both)",
+        "days": "마지막 동기화 후 경과 일수",
+        "page": "페이지 번호",
+        "per_page": "페이지당 개수"
+      }
+    },
+    {
+      "path": "/place/<place_id>/sync/google",
+      "method": "PUT",
+      "auth_required": true,
+      "admin_only": true,
+      "description": "Google Places API 데이터 수동 업데이트",
+      "request_body": {
+        "google_data": "Google Places API 응답 데이터"
+      }
+    },
+    {
+      "path": "/place/<place_id>/sync/kakao",
+      "method": "PUT",
+      "auth_required": true,
+      "admin_only": true,
+      "description": "Kakao Local API 데이터 수동 업데이트",
+      "request_body": {
+        "kakao_data": "Kakao Local API 응답 데이터"
+      }
+    },
+    {
+      "path": "/place/<place_id>/verify",
+      "method": "PUT",
+      "auth_required": true,
+      "admin_only": true,
+      "description": "장소 정보 검증 상태 변경",
+      "request_body": {
+        "verified": "true/false"
+      }
+    },
+    {
+      "path": "/place/external-stats",
+      "method": "GET",
+      "auth_required": false,
+      "description": "외부 API 동기화 통계 조회"
+    },
+    {
+      "path": "/place/api_info",
+      "method": "GET",
+      "auth_required": false,
+      "description": "API 정보 조회 (개발용)"
+    }
+  ],
+  "models": {
+    "Place": {
+      "description": "장소 정보 모델",
+      "fields": {
+        "place_id": "고유 ID (PK)",
+        "name": "장소명",
+        "alt_name": "대체 이름",
+        "description": "설명",
+        "coordinate": "좌표 (POINT, SRID 4326)",
+        "tags": "태그 (JSON)",
+        "category_id": "카테고리 ID (FK)",
+        "type_id": "타입 ID (FK)",
+        "post_id": "연동 게시글 ID (FK)",
+        "recommendation_score": "추천도 (1.0-5.0)",
+        "danger_level": "위험도 (1.0-10.0)",
+        "verified": "검증 여부",
+        "data_source": "데이터 출처",
+        "google_place_id": "Google Place ID",
+        "google_rating": "Google 평점",
+        "google_reviews_count": "Google 리뷰 수",
+        "google_last_synced": "Google 마지막 동기화",
+        "kakao_place_id": "Kakao Place ID",
+        "kakao_category_group_code": "카카오 카테고리 그룹 코드",
+        "kakao_category_group_name": "카카오 카테고리 그룹명",
+        "kakao_last_synced": "Kakao 마지막 동기화"
+      }
+    },
+    "PlaceCategory": {
+      "description": "장소 카테고리 (positive/negative/neutral)",
+      "fields": {
+        "category_id": "고유 ID (PK)",
+        "name": "카테고리명",
+        "description": "설명"
+      }
+    },
+    "PlaceType": {
+      "description": "장소 타입",
+      "fields": {
+        "type_id": "고유 ID (PK)",
+        "name": "타입명",
+        "display_name": "표시명",
+        "icon": "아이콘",
+        "category_id": "카테고리 ID (FK)"
+      }
+    }
+  },
+  "kakao_category_groups": {
+    "MT1": "대형마트",
+    "CS2": "편의점",
+    "PS3": "어린이집, 유치원",
+    "SC4": "학교",
+    "AC5": "학원",
+    "PK6": "주차장",
+    "OL7": "주유소, 충전소",
+    "SW8": "지하철역",
+    "BK9": "은행",
+    "CT1": "문화시설",
+    "AG2": "중개업소",
+    "PO3": "공공기관",
+    "AT4": "관광명소",
+    "AD5": "숙박",
+    "FD6": "음식점",
+    "CE7": "카페",
+    "HP8": "병원",
+    "PM9": "약국"
+  }
+}

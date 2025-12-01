@@ -8,7 +8,7 @@ from sqlalchemy.exc import IntegrityError
 
 from apps.config.server import db
 from apps.favorite.models import Favorite, FavoriteType
-from apps.post.models import Post, PostLike, Category
+from apps.post.models import CategoryType, Post, PostLike
 from apps.image.models import Image
 from apps.product.models import Product
 from apps.place.models import Place
@@ -188,7 +188,7 @@ def get_favorites_by_type(item_type):
             post = Post.query.get(fav.item_id)
             if post and post.category:
                 # Post의 실제 카테고리와 요청한 타입이 일치하는지 확인
-                if post.category.category_name.upper() != favorite_type.name.upper():
+                if post.category.upper() != favorite_type.name.upper():
                     continue
 
                 like_count = PostLike.query.filter_by(post_id=post.post_id).count()
@@ -204,7 +204,7 @@ def get_favorites_by_type(item_type):
                     {
                         "post_id": post.post_id,
                         "content": post.content,
-                        "category": post.category.category_name,
+                        "category": post.category,
                         "view_counts": post.view_counts,
                         "like_count": like_count,
                         "isLiked": is_liked,
@@ -260,6 +260,9 @@ def toggle_favorite(item_type, item_id):
         actual_favorite_type = FavoriteType.PRODUCT
     elif favorite_type == FavoriteType.PLACE:
         item = Place.query.get(item_id)
+        if not item:
+            return jsonify({"message": "장소를 찾을 수 없습니다"}), 404
+        actual_favorite_type = FavoriteType.PLACE
     else:
         # Post인 경우 실제 카테고리 확인
         item = Post.query.get(item_id)
@@ -270,17 +273,13 @@ def toggle_favorite(item_type, item_id):
             return jsonify({"message": "게시글 카테고리가 없습니다"}), 400
 
         # Post의 실제 카테고리로 FavoriteType 결정
-        try:
-            actual_favorite_type = FavoriteType[item.category.category_name.upper()]
-        except KeyError:
+        category_key = item.category.upper()
+        if not CategoryType.has(category_key):
             return (
-                jsonify(
-                    {
-                        "message": f"유효하지 않은 카테고리: {item.category.category_name}"
-                    }
-                ),
+                jsonify({"message": f"유효하지 않은 카테고리: {item.category}"}),
                 400,
             )
+        actual_favorite_type = FavoriteType[category_key]
 
     # 이미 즐겨찾기 했는지 확인 (실제 타입으로)
     existing = Favorite.query.filter_by(

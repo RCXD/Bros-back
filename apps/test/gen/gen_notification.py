@@ -31,7 +31,11 @@ def create_notification_db(
 ):
     """DB 직접 접근으로 알림 생성 (LOCAL)"""
     from apps.config.server import db
-    from apps.notification.models import Notification, NotificationType
+    from apps.notification.models import (
+        Notification,
+        NotificationType,
+        NotificationItemType,
+    )
     from apps.user.models import Follow
     from apps.post.models import PostLike
     from apps.reply.models import Reply, ReplyLike
@@ -52,8 +56,8 @@ def create_notification_db(
             continue
 
         # 알림 타입별 처리
-        post_id = None
-        reply_id = None
+        item_type = None
+        item_id = None
 
         try:
             notification_type = NotificationType[notif_type]
@@ -74,6 +78,12 @@ def create_notification_db(
                     created_at=datetime.now() - timedelta(days=random.randint(0, 30)),
                 )
                 db.session.add(follow)
+                db.session.flush()
+                item_type = NotificationItemType.FOLLOW
+                item_id = follow.follow_id
+            else:
+                item_type = NotificationItemType.FOLLOW
+                item_id = existing_follow.follow_id
 
         # POST_LIKE: 게시글 좋아요 생성
         elif notification_type == NotificationType.POST_LIKE:
@@ -84,6 +94,8 @@ def create_notification_db(
                 posts = post_map[target_user_id]
                 if posts:
                     post_id = random.choice(posts)
+                    item_type = NotificationItemType.POST
+                    item_id = post_id
 
                     existing_like = PostLike.query.filter_by(
                         user_id=from_user_id, post_id=post_id
@@ -93,8 +105,6 @@ def create_notification_db(
                         post_like = PostLike(
                             user_id=from_user_id,
                             post_id=post_id,
-                            created_at=datetime.now()
-                            - timedelta(days=random.randint(0, 30)),
                         )
                         db.session.add(post_like)
 
@@ -119,7 +129,8 @@ def create_notification_db(
                     )
                     db.session.add(reply)
                     db.session.flush()  # reply_id 생성
-                    reply_id = reply.reply_id
+                    item_type = NotificationItemType.REPLY
+                    item_id = reply.reply_id
 
         # REPLY_TO_REPLY: 대댓글 생성
         elif notification_type == NotificationType.REPLY_TO_REPLY:
@@ -151,7 +162,8 @@ def create_notification_db(
                         )
                         db.session.add(reply)
                         db.session.flush()
-                        reply_id = reply.reply_id
+                        item_type = NotificationItemType.REPLY
+                        item_id = reply.reply_id
 
         # REPLY_LIKE: 댓글 좋아요 생성
         elif notification_type == NotificationType.REPLY_LIKE:
@@ -172,31 +184,30 @@ def create_notification_db(
                     ).all()
                     if replies:
                         reply = random.choice(replies)
-                        reply_id = reply.reply_id
+                        item_type = NotificationItemType.REPLY
+                        item_id = reply.reply_id
 
                         existing_like = ReplyLike.query.filter_by(
-                            user_id=from_user_id, reply_id=reply_id
+                            user_id=from_user_id, reply_id=reply.reply_id
                         ).first()
 
                         if not existing_like:
                             reply_like = ReplyLike(
                                 user_id=from_user_id,
-                                reply_id=reply_id,
-                                created_at=datetime.now()
-                                - timedelta(days=random.randint(0, 30)),
+                                reply_id=reply.reply_id,
                             )
                             db.session.add(reply_like)
 
-        # 알림 생성
+        # 알림 생성 (item_type과 item_id가 있는 경우만)
         notification = Notification(
             type=notification_type,
             from_user_id=from_user_id,
             to_user_id=to_user_id,
-            post_id=post_id,
-            reply_id=reply_id,
+            item_type=item_type,
+            item_id=item_id,
             created_at=datetime.now() - timedelta(days=random.randint(0, 30)),
             is_checked=random.choice([True, False]),
-            message="생성된 알림입니다.",  # 기본 메시지
+            message=f"{notification_type.value} 알림입니다.",
         )
         notifications.append(notification)
 

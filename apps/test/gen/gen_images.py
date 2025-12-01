@@ -318,43 +318,77 @@ def _generate_profile_images_via_api(app, dummy_profile_dir):
         if api_result:
             response_message = api_result.get("message", "")
 
+            # 모든 응답 로깅 (디버깅용)
+            log.debug(f"  API 응답 ({user.nickname}): {api_result}")
+
             # V1 API 응답: "프로필이 성공적으로 업데이트되었습니다"
             # Legacy API 응답: "회원 정보가 수정되었습니다."
             if "업데이트" in response_message or "수정" in response_message:
                 total_success += 1
                 uploaded_users.append(user)
-                log.debug(f"  ✓ {user.nickname}")
+                # 업로드 직후 DB 상태 확인 (API가 별도 프로세스이므로 명시적으로 재조회)
+                db.session.expire(user)
+                db.session.refresh(user)
+                actual_uuid = user.profile_img if user.profile_img else "없음"
+                log.debug(f"  ✓ {user.nickname} (DB uuid: {actual_uuid})")
 
                 # 100개마다 검증
                 if (idx + 1) % 100 == 0:
                     log.debug(f"\n  🔍 중간 검증 ({idx + 1}번째)...")
-                    verified = uploader.verify_profile_image(user.user_id)
-                    if verified:
-                        log.debug(
-                            f"    ✅ 프로필 이미지 조회 성공: user_id={user.user_id}"
-                        )
+                    # DB에서 최신 profile_img UUID 조회 (API가 별도 프로세스이므로 expire 필수)
+                    db.session.expire(user)
+                    db.session.refresh(user)
+                    if user.profile_img:
+                        verified = uploader.verify_profile_image(user.profile_img)
+                        if verified:
+                            log.debug(
+                                f"    ✅ 프로필 이미지 조회 성공: uuid={user.profile_img}"
+                            )
+                        else:
+                            log.warning(
+                                f"    ❌ 프로필 이미지 조회 실패: uuid={user.profile_img}"
+                            )
                     else:
-                        log.warning(
-                            f"    ❌ 프로필 이미지 조회 실패: user_id={user.user_id}"
-                        )
+                        log.warning(f"    ❌ 프로필 이미지 UUID 없음: {user.nickname}")
             else:
                 total_failed += 1
-                log.debug(f"  ✗ {user.nickname}: 예상치 못한 응답 - {response_message}")
+                log.warning(
+                    f"  ✗ {user.nickname}: 예상치 못한 응답 - {response_message}"
+                )
+                log.warning(f"     전체 응답: {api_result}")
         else:
             total_failed += 1
-            log.debug(f"  ✗ {user.nickname}: API 응답 없음")
+            log.warning(f"  ✗ {user.nickname}: API 응답 없음")
 
     # 최종 일괄 검증
     log.debug("\n  🔍 최종 일괄 검증 중...")
     verified_count = 0
     failed_verify_count = 0
 
+    # DB에서 최신 profile_img UUID 조회 (API가 별도 프로세스이므로 세션 완전 클리어)
+    db.session.expire_all()  # 모든 객체의 캐시 무효화
+    db.session.commit()  # 현재 트랜잭션 커밋 (필요 시)
+
     for user in uploaded_users:
-        if uploader.verify_profile_image(user.user_id):
-            verified_count += 1
+        # 최신 상태 조회 (캐시 무효화 후 조회하므로 DB의 최신 값 반영)
+        fresh_user = db.session.get(User, user.user_id)
+        if fresh_user and fresh_user.profile_img:
+            # 기본 이미지는 실패로 간주
+            if fresh_user.profile_img == "static/default_profile.jpg":
+                failed_verify_count += 1
+                log.warning(
+                    f"    ❌ 검증 실패: {fresh_user.nickname} (기본 이미지 유지됨)"
+                )
+            elif uploader.verify_profile_image(fresh_user.profile_img):
+                verified_count += 1
+            else:
+                failed_verify_count += 1
+                log.warning(
+                    f"    ❌ 검증 실패: {fresh_user.nickname} (uuid={fresh_user.profile_img})"
+                )
         else:
             failed_verify_count += 1
-            log.warning(f"    ❌ 검증 실패: {user.nickname} (user_id={user.user_id})")
+            log.warning(f"    ❌ 프로필 이미지 UUID 없음: {user.nickname}")
 
     log.debug(f"    검증 성공: {verified_count}/{len(uploaded_users)}개")
     if failed_verify_count > 0:
@@ -451,12 +485,15 @@ def _generate_images_direct(app, dummy_image_dir, image_storage_dir):
     """테스트 환경: 직접 파일 저장"""
     log = get_logger()
 
-    from apps.post.models import Category, Post
+    from apps.post.models import Post
 
     image_storage_dir.mkdir(parents=True, exist_ok=True)
 
     log.info("기존 게시글 이미지 레코드 정리 중...")
-    Image.query.filter(Image.post_id != None).delete()
+    Image.query.filter(
+        Image.post_id != None,
+        Image.image_type.is_(None),
+    ).delete(synchronize_session=False)
     db.session.commit()
     log.info("기존 게시글 이미지 레코드 삭제 완료")
 
@@ -475,12 +512,10 @@ def _generate_images_direct(app, dummy_image_dir, image_storage_dir):
 
     posts_by_category = {}
     for post in posts:
-        category = Category.query.get(post.category_id)
-        if category:
-            cat_name = category.category_name
-            if cat_name not in posts_by_category:
-                posts_by_category[cat_name] = []
-            posts_by_category[cat_name].append(post)
+        cat_name = getattr(post, "category", None)
+        if not cat_name:
+            continue
+        posts_by_category.setdefault(cat_name, []).append(post)
 
     log.info("카테고리별 게시글 수:")
     for cat_name, post_list in posts_by_category.items():
@@ -581,7 +616,7 @@ def _generate_images_via_api(app, dummy_image_dir):
     """프로덕션 환경: API를 통한 이미지 업로드"""
     log = get_logger()
 
-    from apps.post.models import Category, Post
+    from apps.post.models import Post
 
     base_url = app.config.get("API_BACKEND_URL", "http://192.168.1.86:8002")
 
@@ -600,12 +635,10 @@ def _generate_images_via_api(app, dummy_image_dir):
 
     posts_by_category = {}
     for post in posts:
-        category = Category.query.get(post.category_id)
-        if category:
-            cat_name = category.category_name
-            if cat_name not in posts_by_category:
-                posts_by_category[cat_name] = []
-            posts_by_category[cat_name].append(post)
+        cat_name = getattr(post, "category", None)
+        if not cat_name:
+            continue
+        posts_by_category.setdefault(cat_name, []).append(post)
 
     log.info("카테고리별 게시글 수:")
     for cat_name, post_list in posts_by_category.items():
@@ -654,7 +687,7 @@ def _generate_images_via_api(app, dummy_image_dir):
             num_images = min(num_images, len(available_images))
             selected_images = random.sample(available_images, num_images)
 
-            user = User.query.get(post.user_id)
+            user = db.session.get(User, post.user_id)
             if not user:
                 log.debug(
                     f"Post {post.post_id}의 작성자를 찾을 수 없습니다. 건너뜁니다."
@@ -750,7 +783,13 @@ def _generate_images_via_api(app, dummy_image_dir):
     log.info("데이터베이스 검증 중...")
     db.session.expire_all()
     total_images_in_db = Image.query.filter(Image.post_id.isnot(None)).count()
-    posts_with_images = db.session.query(Post).join(Image).distinct().count()
+    # Specify foreign_keys to avoid ambiguity between post_id and thumbnail_id
+    posts_with_images = (
+        db.session.query(Post)
+        .join(Image, Image.post_id == Post.post_id)
+        .distinct()
+        .count()
+    )
 
     log.info("=" * 60)
     log.info("이미지 업로드 완료 (API)")

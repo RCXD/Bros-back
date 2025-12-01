@@ -440,27 +440,29 @@ class ImageAPIUploader:
             bool: 이미지 조회 성공 여부
         """
         try:
-            # POST_IMAGE 엔드포인트 사용
-            endpoint = self.api.format_url(self.api.POST_IMAGE, uuid=image_uuid)
+            # IMAGE_POST 엔드포인트 사용
+            endpoint = self.api.format_url(self.api.IMAGE_POST, uuid=image_uuid)
             url = f"{self.base_url}{endpoint}"
             response = requests.get(url, timeout=10)
             return response.status_code == 200
         except Exception:
             return False
 
-    def verify_profile_image(self, user_id):
+    def verify_profile_image(self, profile_img_uuid):
         """
         프로필 이미지가 서버에 존재하는지 확인
 
         Args:
-            user_id: 사용자 ID
+            profile_img_uuid: 프로필 이미지 UUID (user.profile_img 값)
 
         Returns:
             bool: 이미지 조회 성공 여부
         """
         try:
-            # AUTH_IMAGE_USER 엔드포인트 사용
-            endpoint = self.api.format_url(self.api.AUTH_IMAGE_USER, user_id=user_id)
+            # IMAGE_PROFILE 엔드포인트 사용 (UUID 기반)
+            endpoint = self.api.format_url(
+                self.api.IMAGE_PROFILE, uuid=profile_img_uuid
+            )
             url = f"{self.base_url}{endpoint}"
             response = requests.get(url, timeout=10)
             return response.status_code == 200

@@ -94,6 +94,7 @@ class Config:
     )
     AI_ROAD_BOUNDARY_URL = os.getenv("AI_ROAD_BOUNDARY_URL", "http://192.168.1.79:8889")
     OPENSTREET_URL = os.getenv("OPENSTREET_URL", "http://192.168.1.79:8890")
+    OPENSTREET_STATIC_ENDPOINT = os.getenv("OPENSTREET_STATIC_ENDPOINT", "")
 
     # Roadview API Keys
     GOOGLE_MAPS_API_KEY = os.getenv("GOOGLE_MAPS_API_KEY", "")
@@ -103,10 +104,10 @@ class Config:
 
     # File Upload
     MAX_CONTENT_LENGTH = get_int("MAX_CONTENT_LENGTH_MB", 16) * 1024 * 1024
-    UPLOAD_FOLDER = os.getenv("UPLOAD_FOLDER", "app/static")
+    UPLOAD_FOLDER = os.getenv("UPLOAD_FOLDER", str(basedir / "app" / "static"))
 
-    # Static files
-    STATIC_FOLDER = os.getenv("STATIC_FOLDER", "static")
+    # Static files (절대경로 사용 - 프로젝트 루트 기준)
+    STATIC_FOLDER = os.getenv("STATIC_FOLDER", str(basedir / "static"))
     STATIC_URL_PATH = os.getenv("STATIC_URL_PATH", "/static")
 
     CID = "TC0ONETIME"

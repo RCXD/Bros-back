@@ -72,7 +72,7 @@ def create_app(config_name="default"):
 def import_all_models():
     """모든 모델을 import하여 Flask-Migrate가 인식하도록 함"""
     from apps.auth.models import User, OauthType, AccountType
-    from apps.post.models import Post, PostLike, Category
+    from apps.post.models import Post, PostLike
     from apps.image.models import Image
     from apps.reply.models import Reply, ReplyLike
     from apps.user.models import Follow, Friend
@@ -84,6 +84,7 @@ def import_all_models():
     from apps.report.models import Report
     from apps.report.models import ReportType
     from apps.place.models import Place
+    from apps.hazard.models import Hazard
     from apps.search.models import SearchHistory, SearchCache
 
     # 필요한 다른 모델들도 여기에 추가
@@ -121,6 +122,11 @@ def register_blueprints(app):
     from apps.route.views import bp as route_bp
 
     app.register_blueprint(route_bp, url_prefix="/route")
+
+    # 위험도 모듈
+    from apps.hazard.views import bp as hazard_bp
+
+    app.register_blueprint(hazard_bp, url_prefix="/hazard")
 
     # 즐겨찾기 장소 모듈
     from apps.place.views import bp as place_bp
@@ -169,9 +175,13 @@ def register_blueprints(app):
 
     # 로드뷰 모듈
     from apps.roadview.views import bp as roadview_bp, init_roadview_models
+    from apps.route.views import init_roadview_models_for_route
 
     app.register_blueprint(roadview_bp, url_prefix="/roadview")
-    init_roadview_models(db)  # Initialize roadview models
+
+    # Initialize roadview models once and share with both modules
+    init_roadview_models(db)  # Initialize for roadview module
+    init_roadview_models_for_route(db)  # Share with route module
 
     # 감지기 모듈
     # from apps.detector.views import bp as detector_bp

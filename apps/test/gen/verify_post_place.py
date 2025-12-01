@@ -4,7 +4,7 @@ Post-Place 연결 검증 스크립트
 
 import pytest
 from apps.config.server import db
-from apps.post.models import Post, Category
+from apps.post.models import CategoryType, Post
 from apps.place.models import Place
 
 
@@ -27,19 +27,15 @@ def test_verify_post_place_linkage(fixture_app):
 
         # 카테고리별 통계
         print("\n카테고리별 Place 연결 현황:")
-        categories = Category.query.all()
-
-        for cat in categories:
-            cat_total = Post.query.filter_by(category_id=cat.category_id).count()
+        for category_name in sorted(CategoryType.ALL):
+            cat_total = Post.query.filter_by(category=category_name).count()
             cat_linked = Post.query.filter(
-                Post.category_id == cat.category_id, Post.place_id.isnot(None)
+                Post.category == category_name, Post.place_id.isnot(None)
             ).count()
 
             if cat_total > 0:
                 percent = (cat_linked / cat_total) * 100
-                print(
-                    f"  {cat.category_name}: {cat_linked}/{cat_total} ({percent:.1f}%)"
-                )
+                print(f"  {category_name}: {cat_linked}/{cat_total} ({percent:.1f}%)")
 
         # Place별 연결된 Post 수
         print("\n가장 많이 참조된 Place Top 10:")

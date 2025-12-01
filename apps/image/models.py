@@ -49,6 +49,7 @@ class Image(db.Model):
     post = db.relationship(
         "Post",
         backref=db.backref("images", lazy="joined", cascade="all, delete-orphan"),
+        foreign_keys=[post_id],
     )
     user = db.relationship(
         "User", backref=db.backref("uploaded_images", lazy="dynamic")

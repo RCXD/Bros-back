@@ -1,0 +1,218 @@
+﻿mysql+pymysql://user1:1234@192.168.1.79:3306/404found_test2
+============================= test session starts =============================
+platform win32 -- Python 3.11.9, pytest-8.4.2, pluggy-1.6.0 -- C:\Users\M\Bros-back-clone2\venv\Scripts\python.exe
+cachedir: .pytest_cache
+rootdir: C:\Users\M\Bros-back-clone2
+collecting ... collected 1 item
+
+apps/test/gen/gen_post.py::test_generate_posts 
+?꾨줈?뺤뀡 ?섍꼍 (API: V1, Verbosity: 1)
+  API: http://192.168.1.86:8002, DB: 404found_test2, Users: 50+5
+  [KEEP] ?곗씠???좎?: ??(?뚯뒪?????곗씠???좎?)
+
+
+[3/5] 寃뚯떆湲 ?앹꽦
+WARNING:   [!] ?몃꽕???앹꽦 ?ㅽ뙣 (post_id=21): 400 Client Error: Bad Request for url: http://192.168.1.79:8890/staticmap.php?size=600x400&format=png&center=126.930250,37.558500&zoom=14&path=color:0x0066ffff%7Cweight:4%7C126.937000,37.555000%7C126.923500,37.556800%7C126.926000,37.560000%7C126.925000,37.562000&markers=126.937000,37.555000,green%7C126.923500,37.556800,lightblue1%7C126.926000,37.560000,lightblue1%7C126.925000,37.562000,red
+WARNING:   [!] ?몃꽕???앹꽦 ?ㅽ뙣 (post_id=316): 400 Client Error: Bad Request for url: http://192.168.1.79:8890/staticmap.php?size=600x400&format=png&center=126.930250,37.558500&zoom=14&path=color:0x0066ffff%7Cweight:4%7C126.937000,37.555000%7C126.923500,37.556800%7C126.926000,37.560000%7C126.925000,37.562000&markers=126.937000,37.555000,green%7C126.923500,37.556800,lightblue1%7C126.926000,37.560000,lightblue1%7C126.925000,37.562000,red
+WARNING:   [!] ?몃꽕???앹꽦 ?ㅽ뙣 (post_id=408): 400 Client Error: Bad Request for url: http://192.168.1.79:8890/staticmap.php?size=600x400&format=png&center=126.930250,37.558500&zoom=14&path=color:0x0066ffff%7Cweight:4%7C126.937000,37.555000%7C126.923500,37.556800%7C126.926000,37.560000%7C126.925000,37.562000&markers=126.937000,37.555000,green%7C126.923500,37.556800,lightblue1%7C126.926000,37.560000,lightblue1%7C126.925000,37.562000,red
+WARNING:   [!] 異붽? 367媛??몃꽕???앹꽦 ?ㅽ뙣 (濡쒓렇 ?앸왂)
+FAILED
+[KEEP] KEEP_GENERATED_DATA=True: ?앹꽦???곗씠?곌? ?곗씠?곕쿋?댁뒪???좎??⑸땲??
+  [DIR] ?꾨줈???대?吏 ?좎?: apps/static/profile_images
+  [DIR] 寃뚯떆湲 ?대?吏 ?좎?: apps/static/post_images
+
+
+================================== FAILURES ===================================
+_____________________________ test_generate_posts _____________________________
+
+fixture_app = <Flask 'apps.app'>
+
+    @pytest.mark.no_cleanup
+    def test_generate_posts(fixture_app):
+        """cat*.json ?뚯씪?먯꽌 寃뚯떆湲 ?곗씠?곕? 濡쒕뱶?섏뿬 ?곗씠?곕쿋?댁뒪???앹꽦"""
+    
+        log = get_logger()
+    
+        with fixture_app.app_context():
+            log.info(f"\n[3/5] 寃뚯떆湲 ?앹꽦")
+    
+            # 湲곗〈 ?ъ슜??媛?몄삤湲?
+            users = User.query.filter_by(account_type=AccountType.USER).all()
+    
+            if not users:
+                log.warning("  ?ъ슜?먮? 李얠쓣 ???놁뒿?덈떎. gen_user.py瑜?癒쇱? ?ㅽ뻾?섏꽭??")
+                pytest.skip("寃뚯떆湲???앹꽦???ъ슜?먭? ?놁뒿?덈떎")
+    
+            log.debug(f"  {len(users)}紐낆쓽 ?ъ슜??諛쒓껄")
+    
+            # username -> user_id 留ㅽ븨 ?앹꽦
+            username_to_userid = create_username_to_userid_map(users)
+    
+            # 移댄뀒怨좊━ ?뺤씤/?앹꽦
+            category_names = [
+                CategoryType.STORY,
+                CategoryType.ROUTE,
+                CategoryType.REVIEW,
+                CategoryType.REPORT,
+            ]
+            categories = ensure_categories(category_names)
+            log.debug(f"  {len(categories)}媛?移댄뀒怨좊━ 以鍮??꾨즺")
+    
+            # Route Place ???罹먯떆 以鍮?
+            route_place_type = ensure_route_place_type()
+            route_cache: Dict[Tuple[int, str], Route] = {}
+            for existing_route in Route.query.all():
+                if not existing_route.points:
+                    continue
+                signature = _route_signature(existing_route.points)
+                if signature:
+                    route_cache[(existing_route.user_id, signature)] = existing_route
+    
+            # Place 罹먯떆 ?앹꽦 (cat2, cat3?먯꽌 Place ?곌껐???꾪빐)
+            name_cache, coord_cache = build_places_cache()
+            if name_cache:
+                log.debug(f"  {len(name_cache)}媛?Place 罹먯떆 濡쒕뱶 ?꾨즺")
+    
+            # JSON ?뚯씪?먯꽌 寃뚯떆湲 ?곗씠??濡쒕뱶
+            json_dir = os.path.join(os.path.dirname(__file__), "..", "json")
+            posts = []
+            base_time = datetime.now() - timedelta(days=60)
+            total_posts = 0
+            linked_posts = 0
+            skipped_route_posts = 0
+    
+            for cat_idx in range(4):
+                post_list = load_posts_from_json(json_dir, cat_idx)
+    
+                if not post_list:
+                    log.debug(f"  {category_names[cat_idx]}: JSON ?뚯씪 ?놁쓬, 嫄대꼫?")
+                    continue
+    
+                category_name = category_names[cat_idx]
+    
+                for post_data in post_list:
+                    # username??user_id濡?蹂??(?놁쑝硫??쒕뜡 ?좏깮)
+                    username = post_data.get("username", "")
+                    user_id = username_to_userid.get(username)
+    
+                    if not user_id:
+                        user_id = random.choice(users).user_id
+    
+                    place_id = None
+                    location_name = post_data.get("place_name")
+    
+                    if cat_idx == 1:  # ROUTE 移댄뀒怨좊━
+                        route_payload = _build_route_payload(post_data)
+                        route_points = extract_route_points(route_payload)
+                        if len(route_points) < 2:
+                            skipped_route_posts += 1
+                            continue
+    
+                        route_name = _route_name_from_post(
+                            post_data, fallback_index=total_posts + len(posts) + 1
+                        )
+                        place_id = _ensure_route_for_post(
+                            user_id=user_id,
+                            route_name=route_name,
+                            route_points=route_points,
+                            place_type=route_place_type,
+                            cache=route_cache,
+                        )
+                        if not place_id:
+                            skipped_route_posts += 1
+                            continue
+                        if not location_name:
+                            location_name = route_name
+                        linked_posts += 1
+    
+                    elif cat_idx in [2, 3] and (name_cache or coord_cache):
+                        place_id = resolve_place_id(
+                            post_data,
+                            name_cache=name_cache,
+                            coord_cache=coord_cache,
+                            max_distance_m=300,
+                        )
+                        if place_id:
+                            linked_posts += 1
+    
+                    # Post 媛앹껜 ?앹꽦
+                    post = Post(
+                        user_id=user_id,
+                        category=categories[cat_idx],
+                        content=post_data.get("content", ""),
+                        view_counts=random.randint(0, 1000),
+                        created_at=base_time + timedelta(days=random.randint(0, 60)),
+                        place_id=place_id,
+                    )
+                    if location_name:
+                        post.location_name = location_name
+                    posts.append(post)
+    
+                total_posts += len(post_list)
+                log.debug(f"  {category_name}: {len(post_list)}媛?寃뚯떆湲 濡쒕뱶")
+    
+            # ?곗씠?곕쿋?댁뒪?????
+            if posts:
+                db.session.add_all(posts)
+                db.session.commit()
+    
+                route_thumbnail_targets = (
+                    Post.query.join(Place, Post.place_id == Place.place_id)
+                    .filter(Place.route_id.isnot(None), Post.thumbnail_id.is_(None))
+                    .all()
+                )
+    
+                thumbnail_created = 0
+                thumbnail_failed = 0
+                for seeded_post in route_thumbnail_targets:
+                    points = _route_points_for_post(seeded_post)
+                    if not points:
+                        continue
+                    try:
+                        generate_post_thumbnail(
+                            seeded_post,
+                            points=points,
+                            provider="openstreet",
+                            location_name=seeded_post.location_name,
+                        )
+                        thumbnail_created += 1
+                    except ThumbnailGenerationError as thumb_err:
+                        thumbnail_failed += 1
+                        # Only log first 3 failures to avoid spam
+                        if thumbnail_failed <= 3:
+                            log.warning(
+                                f"  [!] ?몃꽕???앹꽦 ?ㅽ뙣 (post_id={seeded_post.post_id}): {thumb_err}"
+                            )
+    
+                if thumbnail_created:
+                    db.session.commit()
+                    log.debug(f"  ?꾩튂 ?몃꽕???앹꽦: {thumbnail_created}媛?)
+    
+                if thumbnail_failed > 3:
+                    log.warning(
+                        f"  [!] 異붽? {thumbnail_failed - 3}媛??몃꽕???앹꽦 ?ㅽ뙣 (濡쒓렇 ?앸왂)"
+                    )
+    
+                if thumbnail_failed > 0 and thumbnail_created == 0:
+>                   osm_url = app.config.get("OPENSTREET_URL", "not configured")
+                              ^^^
+E                   NameError: name 'app' is not defined
+
+apps\test\gen\gen_post.py:306: NameError
+------------------------------ Captured log call ------------------------------
+INFO     test_logger:logger.py:61 
+[3/5] 寃뚯떆湲 ?앹꽦
+DEBUG    test_logger:logger.py:63   50紐낆쓽 ?ъ슜??諛쒓껄
+DEBUG    test_logger:logger.py:63   4媛?移댄뀒怨좊━ 以鍮??꾨즺
+DEBUG    test_logger:logger.py:63   20媛?Place 罹먯떆 濡쒕뱶 ?꾨즺
+DEBUG    test_logger:logger.py:63   STORY: 20媛?寃뚯떆湲 濡쒕뱶
+DEBUG    test_logger:logger.py:63   ROUTE: 20媛?寃뚯떆湲 濡쒕뱶
+DEBUG    test_logger:logger.py:63   REVIEW: 55媛?寃뚯떆湲 濡쒕뱶
+DEBUG    test_logger:logger.py:63   REPORT: 200媛?寃뚯떆湲 濡쒕뱶
+WARNING  test_logger:logger.py:59   [!] ?몃꽕???앹꽦 ?ㅽ뙣 (post_id=21): 400 Client Error: Bad Request for url: http://192.168.1.79:8890/staticmap.php?size=600x400&format=png&center=126.930250,37.558500&zoom=14&path=color:0x0066ffff%7Cweight:4%7C126.937000,37.555000%7C126.923500,37.556800%7C126.926000,37.560000%7C126.925000,37.562000&markers=126.937000,37.555000,green%7C126.923500,37.556800,lightblue1%7C126.926000,37.560000,lightblue1%7C126.925000,37.562000,red
+WARNING  test_logger:logger.py:59   [!] ?몃꽕???앹꽦 ?ㅽ뙣 (post_id=316): 400 Client Error: Bad Request for url: http://192.168.1.79:8890/staticmap.php?size=600x400&format=png&center=126.930250,37.558500&zoom=14&path=color:0x0066ffff%7Cweight:4%7C126.937000,37.555000%7C126.923500,37.556800%7C126.926000,37.560000%7C126.925000,37.562000&markers=126.937000,37.555000,green%7C126.923500,37.556800,lightblue1%7C126.926000,37.560000,lightblue1%7C126.925000,37.562000,red
+WARNING  test_logger:logger.py:59   [!] ?몃꽕???앹꽦 ?ㅽ뙣 (post_id=408): 400 Client Error: Bad Request for url: http://192.168.1.79:8890/staticmap.php?size=600x400&format=png&center=126.930250,37.558500&zoom=14&path=color:0x0066ffff%7Cweight:4%7C126.937000,37.555000%7C126.923500,37.556800%7C126.926000,37.560000%7C126.925000,37.562000&markers=126.937000,37.555000,green%7C126.923500,37.556800,lightblue1%7C126.926000,37.560000,lightblue1%7C126.925000,37.562000,red
+WARNING  test_logger:logger.py:59   [!] 異붽? 367媛??몃꽕???앹꽦 ?ㅽ뙣 (濡쒓렇 ?앸왂)
+=========================== short test summary info ===========================
+FAILED apps/test/gen/gen_post.py::test_generate_posts - NameError: name 'app'...
+============================== 1 failed in 3.37s ==============================

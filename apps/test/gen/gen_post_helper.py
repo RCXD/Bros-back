@@ -5,34 +5,28 @@
 import os
 import json
 from math import radians, sin, cos, sqrt, atan2
-from apps.config.server import db
-from apps.post.models import Category
+from apps.post.models import CategoryType
 
 
 def ensure_categories(category_names=None):
-    """
-    카테고리가 존재하는지 확인하고 없으면 생성
+    """Validate requested categories against CategoryType and return index mapping."""
 
-    Args:
-        category_names: 카테고리 이름 리스트 (기본값: ["STORY", "ROUTE", "REVIEW", "REPORT"])
-
-    Returns:
-        dict: {index: category_id} 매핑
-    """
     if category_names is None:
-        category_names = ["STORY", "ROUTE", "REVIEW", "REPORT"]
+        category_names = [
+            CategoryType.STORY,
+            CategoryType.ROUTE,
+            CategoryType.REVIEW,
+            CategoryType.REPORT,
+        ]
 
     categories = {}
 
-    for idx, name in enumerate(category_names):
-        category = Category.query.filter_by(category_name=name).first()
-        if not category:
-            category = Category(category_name=name)
-            db.session.add(category)
-            db.session.flush()  # ID를 얻기 위해 flush
-        categories[idx] = category.category_id
+    for idx, raw_name in enumerate(category_names):
+        normalized = (raw_name or "").strip().upper()
+        if not CategoryType.has(normalized):
+            raise ValueError(f"지원하지 않는 카테고리: {raw_name}")
+        categories[idx] = normalized
 
-    db.session.commit()
     return categories
 
 
@@ -107,7 +101,7 @@ def generate_cat3_json(output_dir="json"):
         reports.append(
             {
                 "content": content,
-                "category_id": 3,
+                "category": CategoryType.REPORT,
                 "review_score": 0,
                 "danger_score": danger,
                 "locations": location,
@@ -744,7 +738,7 @@ def generate_cat3_json(output_dir="json"):
         add_report(content, loc, danger, "CONSTRUCTION")
 
     # Create final JSON structure
-    cat3_data = {"category_id": 3, "posts": reports}
+    cat3_data = {"category": CategoryType.REPORT, "posts": reports}
 
     # 출력 디렉토리 생성
     os.makedirs(output_dir, exist_ok=True)

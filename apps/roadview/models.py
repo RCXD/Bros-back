@@ -24,8 +24,17 @@ class RoadviewStatus(enum.Enum):
     ERROR = "error"
 
 
+# Cache for initialized models
+_initialized_models = None
+
+
 def init_models(db):
-    """Initialize roadview models with db instance"""
+    """Initialize roadview models with db instance (singleton pattern)"""
+    global _initialized_models
+
+    # Return cached models if already initialized
+    if _initialized_models is not None:
+        return _initialized_models
 
     class Roadview(db.Model):
         """
@@ -106,6 +115,61 @@ def init_models(db):
                 "created_at": self.created_at.isoformat() if self.created_at else None,
                 "expires_at": self.expires_at.isoformat() if self.expires_at else None,
             }
+
+        @staticmethod
+        def needs_refresh(
+            image_date, last_requested_at, image_age_years=10, request_age_years=1
+        ):
+            """
+            Check if cached roadview needs to be refreshed.
+
+            Criteria for refresh:
+            1. Image capture date is older than image_age_years (default: 10 years)
+            2. Last request date is older than request_age_years (default: 1 year)
+
+            Args:
+                image_date: Date when the roadview image was captured
+                last_requested_at: DateTime when this roadview was last requested
+                image_age_years: Maximum age of image in years (default 10)
+                request_age_years: Maximum age of last request in years (default 1)
+
+            Returns:
+                bool: True if refresh is needed, False if cache is still valid
+            """
+            from datetime import datetime, timedelta
+
+            now = datetime.now()
+
+            # Check if image is too old (captured more than N years ago)
+            if image_date:
+                if isinstance(image_date, str):
+                    # Parse string date (YYYY-MM format from Google)
+                    try:
+                        if len(image_date) == 7:  # YYYY-MM
+                            image_datetime = datetime.strptime(
+                                image_date + "-01", "%Y-%m-%d"
+                            )
+                        else:
+                            image_datetime = datetime.fromisoformat(image_date)
+                    except:
+                        image_datetime = None
+                else:
+                    # Assume it's a date object
+                    image_datetime = datetime.combine(image_date, datetime.min.time())
+
+                if image_datetime:
+                    image_age = now - image_datetime
+                    if image_age.days > (image_age_years * 365):
+                        return True
+
+            # Check if last request is too old
+            if last_requested_at:
+                request_age = now - last_requested_at
+                if request_age.days > (request_age_years * 365):
+                    return True
+
+            # If no date information, don't refresh
+            return False
 
     class RoadviewCache(db.Model):
         """
@@ -260,4 +324,6 @@ def init_models(db):
                 "updated_at": self.updated_at.isoformat() if self.updated_at else None,
             }
 
-    return Roadview, RoadviewCache, RoadviewRequest, RoadviewAPIUsage
+    # Cache the initialized models
+    _initialized_models = (Roadview, RoadviewCache, RoadviewRequest, RoadviewAPIUsage)
+    return _initialized_models

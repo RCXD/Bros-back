@@ -5,7 +5,8 @@ import threading
 import time
 from datetime import datetime, timedelta
 
-from apps.route.models import Hazard, TrafficHazard
+from apps.hazard.models import Hazard
+from apps.route.models import TrafficHazard
 
 _OSRM_ARTIFACT_DIR = os.getenv("OSRM_DATA_DIR") or os.path.join(os.getcwd(), "osrm")
 _OSRM_HAZARD_CSV = os.getenv("OSRM_HAZARD_CSV") or os.path.join(
@@ -212,6 +213,7 @@ def trigger_osrm_customize(osrm_path=None, threads=None):
 
 class _CustomizeWorker:
     """Background worker that debounces repeated osrm-customize requests."""
+
     def __init__(self, cooldown_sec=None):
         self.cooldown = float(
             cooldown_sec or os.getenv("OSRM_CUSTOMIZE_DEBOUNCE", "2.0")
