@@ -555,6 +555,7 @@ def get_user_state():
                 "theme_item_id": st.theme_item_id,
                 "font_item_id": st.font_item_id,
                 "effect_item_id": st.effect_item_id,
+                "badge_item_id": st.badge_item_id,
                 "last_updated": (
                     st.last_updated.isoformat() if st.last_updated else None
                 ),
@@ -585,6 +586,7 @@ def update_user_state():
         "theme_item_id": _parse_int(data.get("theme_item_id")),
         "font_item_id": _parse_int(data.get("font_item_id")),
         "effect_item_id": _parse_int(data.get("effect_item_id")),
+        "badge_item_id": _parse_int(data.get("badge_item_id")),
     }
 
     validations = [
@@ -593,6 +595,7 @@ def update_user_state():
         ("theme_item_id", ItemType.theme),
         ("font_item_id", ItemType.font),
         ("effect_item_id", ItemType.effect),
+        ("badge_item_id", ItemType.badge),
     ]
     for field, req_type in validations:
         ok, reason = _validate_ownership(uid, updates[field], req_type)

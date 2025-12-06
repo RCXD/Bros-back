@@ -14,7 +14,7 @@ class ItemType(enum.Enum):
     theme = "theme"
     font = "font"
     effect = "effect"
-    bedge = "badge"
+    badge = "badge"
     bundle = "bundle"
 
 
@@ -71,6 +71,9 @@ class UserCosmeticState(db.Model):
         db.Integer, db.ForeignKey("cosmetic_item.item_id"), nullable=True
     )
     effect_item_id = db.Column(
+        db.Integer, db.ForeignKey("cosmetic_item.item_id"), nullable=True
+    )
+    badge_item_id = db.Column(
         db.Integer, db.ForeignKey("cosmetic_item.item_id"), nullable=True
     )
     last_updated = db.Column(
