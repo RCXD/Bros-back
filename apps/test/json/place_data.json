@@ -1,0 +1,150 @@
+{
+  "categories": [
+    {
+      "name": "positive",
+      "description": "긍정적 정보 - 맛집, 명소, 좋은 카페 등"
+    },
+    {
+      "name": "negative", 
+      "description": "부정적 정보 - 포트홀, 낙하물, 공사장, 비추천 상점 등"
+    },
+    {
+      "name": "neutral",
+      "description": "일반 정보 - 회사, 관공서 등"
+    }
+  ],
+  "types": [
+    {"name": "pothole", "display_name": "포트홀", "category": "negative", "icon": "warning"},
+    {"name": "restaurant", "display_name": "맛집", "category": "positive", "icon": "restaurant"},
+    {"name": "cafe", "display_name": "카페", "category": "positive", "icon": "cafe"},
+    {"name": "fallen_object", "display_name": "낙하물", "category": "negative", "icon": "alert"},
+    {"name": "construction", "display_name": "공사장", "category": "negative", "icon": "construction"},
+    {"name": "park", "display_name": "공원", "category": "positive", "icon": "park"},
+    {"name": "landmark", "display_name": "명소", "category": "positive", "icon": "star"},
+    {"name": "building", "display_name": "건축물", "category": "positive", "icon": "building"},
+    {"name": "not_recommended", "display_name": "비추천 상점", "category": "negative", "icon": "thumbs_down"},
+    {"name": "unfriendly", "display_name": "불친절 상점", "category": "negative", "icon": "mood_bad"},
+    {"name": "company", "display_name": "회사", "category": "neutral", "icon": "business"},
+    {"name": "government", "display_name": "관공서", "category": "neutral", "icon": "account_balance"}
+  ],
+  "points": {
+    "pothole": [
+      {"name": "강동대로 포트홀 1", "lat": 37.5305, "lon": 127.1235, "description": "대형 포트홀 주의", "danger_level": 7.5, "recommendation_score": 1.0},
+      {"name": "천호대로 포트홀", "lat": 37.5385, "lon": 127.1267, "description": "우측 차선 파손", "danger_level": 6.0, "recommendation_score": 1.0},
+      {"name": "올림픽로 포트홀", "lat": 37.5225, "lon": 127.1089, "description": "중앙선 근처 도로 파손", "danger_level": 8.0, "recommendation_score": 1.0},
+      {"name": "양재대로 포트홀", "lat": 37.5156, "lon": 127.1312, "description": "좌회전 차선 포트홀", "danger_level": 5.5, "recommendation_score": 1.0},
+      {"name": "성내로 포트홀", "lat": 37.5289, "lon": 127.1198, "description": "버스정류장 앞 포트홀", "danger_level": 7.0, "recommendation_score": 1.0},
+      {"name": "아리수로 포트홀 1", "lat": 37.5512, "lon": 127.1456, "description": "도로 균열 심함", "danger_level": 6.5, "recommendation_score": 1.0},
+      {"name": "고덕로 포트홀", "lat": 37.5567, "lon": 127.1523, "description": "비 오면 물웅덩이", "danger_level": 5.0, "recommendation_score": 1.0},
+      {"name": "상일로 포트홀", "lat": 37.5498, "lon": 127.1678, "description": "깊은 포트홀 주의", "danger_level": 8.5, "recommendation_score": 1.0},
+      {"name": "명일로 포트홀", "lat": 37.5445, "lon": 127.1389, "description": "연속 포트홀 구간", "danger_level": 7.0, "recommendation_score": 1.0},
+      {"name": "둔촌로 포트홀 1", "lat": 37.5234, "lon": 127.1345, "description": "보수 필요 구간", "danger_level": 6.0, "recommendation_score": 1.0},
+      {"name": "둔촌로 포트홀 2", "lat": 37.5256, "lon": 127.1378, "description": "소형 포트홀 다수", "danger_level": 4.5, "recommendation_score": 1.5},
+      {"name": "암사로 포트홀", "lat": 37.5523, "lon": 127.1289, "description": "횡단보도 앞 파손", "danger_level": 7.5, "recommendation_score": 1.0},
+      {"name": "길동로 포트홀", "lat": 37.5345, "lon": 127.1423, "description": "야간 주의 필요", "danger_level": 6.5, "recommendation_score": 1.0},
+      {"name": "천중로 포트홀", "lat": 37.5412, "lon": 127.1234, "description": "급커브 구간 포트홀", "danger_level": 8.0, "recommendation_score": 1.0},
+      {"name": "풍성로 포트홀", "lat": 37.5278, "lon": 127.1456, "description": "아스팔트 균열", "danger_level": 5.0, "recommendation_score": 1.5},
+      {"name": "성안로 포트홀 1", "lat": 37.5367, "lon": 127.1312, "description": "대형 트럭 통행로 파손", "danger_level": 7.0, "recommendation_score": 1.0},
+      {"name": "성안로 포트홀 2", "lat": 37.5389, "lon": 127.1334, "description": "연속 파손 구간", "danger_level": 6.5, "recommendation_score": 1.0},
+      {"name": "동남로 포트홀", "lat": 37.5245, "lon": 127.1189, "description": "버스 정차 지점 파손", "danger_level": 6.0, "recommendation_score": 1.0},
+      {"name": "강동구청로 포트홀", "lat": 37.5301, "lon": 127.1267, "description": "이면도로 포트홀", "danger_level": 5.5, "recommendation_score": 1.5},
+      {"name": "아리수로 포트홀 2", "lat": 37.5534, "lon": 127.1478, "description": "소형 포트홀", "danger_level": 4.0, "recommendation_score": 2.0}
+    ],
+    "restaurant": [
+      {"name": "소문난감자탕 천호점", "lat": 37.5389, "lon": 127.1234, "description": "24시간 감자탕 전문점, 뼈해장국 추천", "danger_level": 0.0, "recommendation_score": 4.5},
+      {"name": "명동칼국수 강동점", "lat": 37.5312, "lon": 127.1289, "description": "수제 칼국수와 만두가 일품", "danger_level": 0.0, "recommendation_score": 4.8},
+      {"name": "청기와타운 본점", "lat": 37.5456, "lon": 127.1356, "description": "고급 한정식, 가족모임 추천", "danger_level": 0.0, "recommendation_score": 4.7},
+      {"name": "황소곱창 길동점", "lat": 37.5334, "lon": 127.1412, "description": "신선한 곱창, 막창 맛집", "danger_level": 0.0, "recommendation_score": 4.6},
+      {"name": "홍콩반점 천호점", "lat": 37.5398, "lon": 127.1267, "description": "중화요리 맛집, 짬뽕 추천", "danger_level": 0.0, "recommendation_score": 4.3},
+      {"name": "고래밥상 둔촌점", "lat": 37.5223, "lon": 127.1378, "description": "가성비 좋은 백반집", "danger_level": 0.0, "recommendation_score": 4.4},
+      {"name": "명인등심 강동점", "lat": 37.5478, "lon": 127.1456, "description": "프리미엄 한우 전문점", "danger_level": 0.0, "recommendation_score": 4.9},
+      {"name": "봉피양 천호점", "lat": 37.5367, "lon": 127.1234, "description": "냉면과 불고기 맛집", "danger_level": 0.0, "recommendation_score": 4.5},
+      {"name": "마포갈매기 고덕점", "lat": 37.5556, "lon": 127.1512, "description": "숯불 갈매기살 전문", "danger_level": 0.0, "recommendation_score": 4.4},
+      {"name": "통영굴밥 암사점", "lat": 37.5512, "lon": 127.1289, "description": "신선한 해산물 요리", "danger_level": 0.0, "recommendation_score": 4.6},
+      {"name": "이모네순두부 성내점", "lat": 37.5289, "lon": 127.1189, "description": "얼큰한 순두부찌개 맛집", "danger_level": 0.0, "recommendation_score": 4.3},
+      {"name": "진짜루 강동점", "lat": 37.5423, "lon": 127.1345, "description": "탕수육이 유명한 중국집", "danger_level": 0.0, "recommendation_score": 4.2},
+      {"name": "삼원가든 천호점", "lat": 37.5378, "lon": 127.1256, "description": "갈비와 냉면 전문점", "danger_level": 0.0, "recommendation_score": 4.7},
+      {"name": "풍년쌈밥 길동점", "lat": 37.5345, "lon": 127.1398, "description": "건강한 쌈밥 정식", "danger_level": 0.0, "recommendation_score": 4.4},
+      {"name": "대림중화 명일점", "lat": 37.5445, "lon": 127.1378, "description": "양장피와 팔보채 추천", "danger_level": 0.0, "recommendation_score": 4.5},
+      {"name": "하이디라오 천호점", "lat": 37.5395, "lon": 127.1278, "description": "프리미엄 훠궈 레스토랑", "danger_level": 0.0, "recommendation_score": 4.6},
+      {"name": "참나무장작구이 상일점", "lat": 37.5498, "lon": 127.1645, "description": "장작구이 삼겹살 전문", "danger_level": 0.0, "recommendation_score": 4.5},
+      {"name": "본가스시 고덕점", "lat": 37.5578, "lon": 127.1534, "description": "신선한 초밥 오마카세", "danger_level": 0.0, "recommendation_score": 4.8},
+      {"name": "명륜진사갈비 둔촌점", "lat": 37.5245, "lon": 127.1356, "description": "무한리필 갈비 전문", "danger_level": 0.0, "recommendation_score": 4.2},
+      {"name": "도쿄라멘 천호점", "lat": 37.5401, "lon": 127.1245, "description": "정통 일본 라멘 맛집", "danger_level": 0.0, "recommendation_score": 4.4}
+    ],
+    "cafe": [
+      {"name": "스타벅스 천호역점", "lat": 37.5392, "lon": 127.1256, "description": "넓은 좌석, 지하철역 연결", "danger_level": 0.0, "recommendation_score": 4.0},
+      {"name": "투썸플레이스 강동점", "lat": 37.5312, "lon": 127.1312, "description": "조용한 분위기, 케이크 맛있음", "danger_level": 0.0, "recommendation_score": 4.3},
+      {"name": "블루보틀 고덕점", "lat": 37.5567, "lon": 127.1523, "description": "스페셜티 커피 전문", "danger_level": 0.0, "recommendation_score": 4.7},
+      {"name": "어니언 강동점", "lat": 37.5434, "lon": 127.1378, "description": "베이커리 카페, 브런치 추천", "danger_level": 0.0, "recommendation_score": 4.6},
+      {"name": "카페꼼마 천호점", "lat": 37.5378, "lon": 127.1234, "description": "아늑한 분위기, 수제 디저트", "danger_level": 0.0, "recommendation_score": 4.5},
+      {"name": "메가커피 길동점", "lat": 37.5334, "lon": 127.1423, "description": "가성비 좋은 대용량 커피", "danger_level": 0.0, "recommendation_score": 3.8},
+      {"name": "할리스커피 암사점", "lat": 37.5523, "lon": 127.1312, "description": "루프탑 테라스, 한강 조망", "danger_level": 0.0, "recommendation_score": 4.4},
+      {"name": "폴바셋 천호롯데점", "lat": 37.5385, "lon": 127.1267, "description": "프리미엄 에스프레소 바", "danger_level": 0.0, "recommendation_score": 4.5},
+      {"name": "앤트러사이트 고덕점", "lat": 37.5545, "lon": 127.1489, "description": "산업풍 인테리어, 로스팅 카페", "danger_level": 0.0, "recommendation_score": 4.6},
+      {"name": "커피빈 둔촌점", "lat": 37.5234, "lon": 127.1367, "description": "조용한 독서 카페", "danger_level": 0.0, "recommendation_score": 4.1}
+    ],
+    "fallen_object": [
+      {"name": "강동대로 낙하물 주의", "lat": 37.5298, "lon": 127.1223, "description": "화물차 낙하물 빈발 구간", "danger_level": 7.0, "recommendation_score": 1.0},
+      {"name": "올림픽로 낙하물 위험", "lat": 37.5212, "lon": 127.1078, "description": "공사현장 인근 낙하물", "danger_level": 8.0, "recommendation_score": 1.0},
+      {"name": "천호대로 낙하물", "lat": 37.5401, "lon": 127.1289, "description": "타이어 파편 주의", "danger_level": 6.5, "recommendation_score": 1.0},
+      {"name": "양재대로 낙하물 구간", "lat": 37.5167, "lon": 127.1334, "description": "적재물 낙하 빈발", "danger_level": 7.5, "recommendation_score": 1.0},
+      {"name": "고덕로 낙하물 주의", "lat": 37.5578, "lon": 127.1545, "description": "건설자재 낙하 위험", "danger_level": 8.5, "recommendation_score": 1.0},
+      {"name": "상일로 도로 파편", "lat": 37.5512, "lon": 127.1667, "description": "도로 파편 산재", "danger_level": 6.0, "recommendation_score": 1.0},
+      {"name": "성내로 낙하물", "lat": 37.5278, "lon": 127.1178, "description": "야간 낙하물 주의", "danger_level": 7.0, "recommendation_score": 1.0},
+      {"name": "아리수로 낙하물 구간", "lat": 37.5523, "lon": 127.1445, "description": "대형차 통행로 낙하물", "danger_level": 6.5, "recommendation_score": 1.0},
+      {"name": "명일로 파편 주의", "lat": 37.5456, "lon": 127.1401, "description": "소형 파편 산재", "danger_level": 5.5, "recommendation_score": 1.5},
+      {"name": "둔촌로 낙하물", "lat": 37.5245, "lon": 127.1389, "description": "공사구간 낙하물 위험", "danger_level": 7.5, "recommendation_score": 1.0}
+    ],
+    "construction": [
+      {"name": "강동구청역 공사현장", "lat": 37.5301, "lon": 127.1256, "description": "지하철 연결통로 공사 중, 2025년 완공 예정", "danger_level": 6.0, "recommendation_score": 1.5},
+      {"name": "고덕강일지구 공사", "lat": 37.5589, "lon": 127.1589, "description": "대규모 아파트 단지 건설 중", "danger_level": 7.0, "recommendation_score": 1.0},
+      {"name": "천호대로 도로확장 공사", "lat": 37.5412, "lon": 127.1312, "description": "도로 확장 공사, 교통 통제 중", "danger_level": 5.5, "recommendation_score": 2.0},
+      {"name": "올림픽공원 인근 공사", "lat": 37.5189, "lon": 127.1123, "description": "상가건물 신축 공사", "danger_level": 5.0, "recommendation_score": 2.0},
+      {"name": "상일동역 광장 공사", "lat": 37.5489, "lon": 127.1656, "description": "역 광장 정비 공사 중", "danger_level": 4.5, "recommendation_score": 2.5}
+    ]
+  },
+  "polygons": {
+    "restaurant": [
+      {"name": "천호동 맛집거리", "lat": 37.5385, "lon": 127.1256, "description": "다양한 음식점이 밀집한 맛집 거리", "danger_level": 0.0, "recommendation_score": 4.5, "polygon": [[127.1236, 37.5375], [127.1276, 37.5375], [127.1276, 37.5395], [127.1236, 37.5395], [127.1236, 37.5375]]},
+      {"name": "길동 먹자골목", "lat": 37.5345, "lon": 127.1423, "description": "저렴하고 맛있는 로컬 맛집 골목", "danger_level": 0.0, "recommendation_score": 4.3, "polygon": [[127.1403, 37.5335], [127.1443, 37.5335], [127.1443, 37.5355], [127.1403, 37.5355], [127.1403, 37.5335]]}
+    ],
+    "park": [
+      {"name": "올림픽공원", "lat": 37.5202, "lon": 127.1212, "description": "넓은 잔디밭과 다양한 체육시설, 조각공원이 있는 대형 공원", "danger_level": 0.0, "recommendation_score": 4.8, "polygon": [[127.1052, 37.5102], [127.1372, 37.5102], [127.1372, 37.5302], [127.1052, 37.5302], [127.1052, 37.5102]]},
+      {"name": "길동생태공원", "lat": 37.5389, "lon": 127.1456, "description": "자연 생태계를 관찰할 수 있는 생태공원", "danger_level": 0.0, "recommendation_score": 4.5, "polygon": [[127.1426, 37.5369], [127.1486, 37.5369], [127.1486, 37.5409], [127.1426, 37.5409], [127.1426, 37.5369]]},
+      {"name": "암사생태공원", "lat": 37.5545, "lon": 127.1312, "description": "한강변 습지 생태공원, 철새 관찰 가능", "danger_level": 0.0, "recommendation_score": 4.6, "polygon": [[127.1252, 37.5515], [127.1372, 37.5515], [127.1372, 37.5575], [127.1252, 37.5575], [127.1252, 37.5515]]},
+      {"name": "고덕산근린공원", "lat": 37.5578, "lon": 127.1489, "description": "등산로와 산책로가 잘 조성된 산림공원", "danger_level": 0.0, "recommendation_score": 4.4, "polygon": [[127.1449, 37.5548], [127.1529, 37.5548], [127.1529, 37.5608], [127.1449, 37.5608], [127.1449, 37.5548]]},
+      {"name": "일자산자연공원", "lat": 37.5112, "lon": 127.1456, "description": "도심 속 자연을 느낄 수 있는 산림 공원", "danger_level": 0.0, "recommendation_score": 4.5, "polygon": [[127.1396, 37.5052], [127.1516, 37.5052], [127.1516, 37.5172], [127.1396, 37.5172], [127.1396, 37.5052]]}
+    ],
+    "landmark": [
+      {"name": "암사동 선사유적지", "lat": 37.5534, "lon": 127.1289, "description": "신석기시대 유적지, 역사 교육의 장", "danger_level": 0.0, "recommendation_score": 4.7, "polygon": [[127.1249, 37.5514], [127.1329, 37.5514], [127.1329, 37.5554], [127.1249, 37.5554], [127.1249, 37.5514]]},
+      {"name": "소마미술관", "lat": 37.5189, "lon": 127.1178, "description": "올림픽공원 내 현대미술 전시관", "danger_level": 0.0, "recommendation_score": 4.6, "polygon": [[127.1158, 37.5169], [127.1198, 37.5169], [127.1198, 37.5209], [127.1158, 37.5209], [127.1158, 37.5169]]},
+      {"name": "광나루한강공원", "lat": 37.5423, "lon": 127.0989, "description": "한강 조망과 수상레저를 즐길 수 있는 공원", "danger_level": 0.0, "recommendation_score": 4.5, "polygon": [[127.0929, 37.5403], [127.1049, 37.5403], [127.1049, 37.5443], [127.0929, 37.5443], [127.0929, 37.5403]]}
+    ],
+    "building": [
+      {"name": "롯데백화점 강동점", "lat": 37.5385, "lon": 127.1267, "description": "대형 백화점, 쇼핑과 문화시설 구비", "danger_level": 0.0, "recommendation_score": 4.3, "polygon": [[127.1247, 37.5375], [127.1287, 37.5375], [127.1287, 37.5395], [127.1247, 37.5395], [127.1247, 37.5375]]},
+      {"name": "현대백화점 천호점", "lat": 37.5378, "lon": 127.1234, "description": "프리미엄 백화점, 다양한 브랜드 입점", "danger_level": 0.0, "recommendation_score": 4.4, "polygon": [[127.1214, 37.5368], [127.1254, 37.5368], [127.1254, 37.5388], [127.1214, 37.5388], [127.1214, 37.5368]]},
+      {"name": "강동아트센터", "lat": 37.5356, "lon": 127.1423, "description": "공연장과 전시관이 있는 복합문화공간", "danger_level": 0.0, "recommendation_score": 4.6, "polygon": [[127.1403, 37.5346], [127.1443, 37.5346], [127.1443, 37.5366], [127.1403, 37.5366], [127.1403, 37.5346]]}
+    ],
+    "not_recommended": [
+      {"name": "강동 번화가 유흥업소 밀집지역", "lat": 37.5401, "lon": 127.1278, "description": "유흥업소 밀집, 야간 소음 심함", "danger_level": 4.0, "recommendation_score": 1.5, "polygon": [[127.1258, 37.5391], [127.1298, 37.5391], [127.1298, 37.5411], [127.1258, 37.5411], [127.1258, 37.5391]]},
+      {"name": "천호역 북측 상가", "lat": 37.5412, "lon": 127.1234, "description": "노후 상가, 바가지 요금 빈발", "danger_level": 2.0, "recommendation_score": 2.0, "polygon": [[127.1214, 37.5402], [127.1254, 37.5402], [127.1254, 37.5422], [127.1214, 37.5422], [127.1214, 37.5402]]}
+    ],
+    "unfriendly": [
+      {"name": "길동 구시가지 상가", "lat": 37.5323, "lon": 127.1389, "description": "일부 상점 불친절 리뷰 다수", "danger_level": 1.0, "recommendation_score": 2.0, "polygon": [[127.1369, 37.5313], [127.1409, 37.5313], [127.1409, 37.5333], [127.1369, 37.5333], [127.1369, 37.5313]]},
+      {"name": "명일동 재래시장 일부", "lat": 37.5445, "lon": 127.1356, "description": "호객행위 및 불친절 응대 주의", "danger_level": 1.5, "recommendation_score": 2.5, "polygon": [[127.1336, 37.5435], [127.1376, 37.5435], [127.1376, 37.5455], [127.1336, 37.5455], [127.1336, 37.5435]]}
+    ],
+    "company": [
+      {"name": "강동구청 관내 오피스 단지", "lat": 37.5301, "lon": 127.1289, "description": "다수의 기업 입주 오피스 빌딩", "danger_level": 0.0, "recommendation_score": 3.0, "polygon": [[127.1269, 37.5291], [127.1309, 37.5291], [127.1309, 37.5311], [127.1269, 37.5311], [127.1269, 37.5291]]},
+      {"name": "천호 비즈니스센터", "lat": 37.5392, "lon": 127.1256, "description": "스타트업 및 중소기업 밀집", "danger_level": 0.0, "recommendation_score": 3.0, "polygon": [[127.1236, 37.5382], [127.1276, 37.5382], [127.1276, 37.5402], [127.1236, 37.5402], [127.1236, 37.5382]]},
+      {"name": "고덕 산업단지", "lat": 37.5589, "lon": 127.1623, "description": "제조업 및 물류 기업 밀집 지역", "danger_level": 0.0, "recommendation_score": 3.0, "polygon": [[127.1583, 37.5569], [127.1663, 37.5569], [127.1663, 37.5609], [127.1583, 37.5609], [127.1583, 37.5569]]}
+    ],
+    "government": [
+      {"name": "강동구청", "lat": 37.5301, "lon": 127.1267, "description": "강동구 행정 업무 담당 관공서", "danger_level": 0.0, "recommendation_score": 3.5, "polygon": [[127.1247, 37.5291], [127.1287, 37.5291], [127.1287, 37.5311], [127.1247, 37.5311], [127.1247, 37.5291]]},
+      {"name": "강동경찰서", "lat": 37.5312, "lon": 127.1234, "description": "강동구 관할 경찰서", "danger_level": 0.0, "recommendation_score": 3.5, "polygon": [[127.1214, 37.5302], [127.1254, 37.5302], [127.1254, 37.5322], [127.1214, 37.5322], [127.1214, 37.5302]]},
+      {"name": "강동소방서", "lat": 37.5278, "lon": 127.1289, "description": "강동구 소방 및 구조 담당", "danger_level": 0.0, "recommendation_score": 3.5, "polygon": [[127.1269, 37.5268], [127.1309, 37.5268], [127.1309, 37.5288], [127.1269, 37.5288], [127.1269, 37.5268]]},
+      {"name": "강동우체국", "lat": 37.5334, "lon": 127.1312, "description": "우편 및 금융 서비스", "danger_level": 0.0, "recommendation_score": 3.0, "polygon": [[127.1292, 37.5324], [127.1332, 37.5324], [127.1332, 37.5344], [127.1292, 37.5344], [127.1292, 37.5324]]},
+      {"name": "강동세무서", "lat": 37.5356, "lon": 127.1267, "description": "세금 관련 행정 업무", "danger_level": 0.0, "recommendation_score": 3.0, "polygon": [[127.1247, 37.5346], [127.1287, 37.5346], [127.1287, 37.5366], [127.1247, 37.5366], [127.1247, 37.5346]]}
+    ]
+  }
+}

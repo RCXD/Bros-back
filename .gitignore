@@ -314,3 +314,4 @@ test/.gen.env
 .env.production
 migrations/versions/8adbfeddc44f_add_uuid_code_category_product_img_.py
 /migrations
+apps/logs/success.log.1

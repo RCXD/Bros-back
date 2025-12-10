@@ -4,6 +4,7 @@
 
 import os
 import json
+from math import radians, sin, cos, sqrt, atan2
 from apps.config.server import db
 from apps.post.models import Category
 
@@ -754,3 +755,166 @@ def generate_cat3_json(output_dir="json"):
         json.dump(cat3_data, f, ensure_ascii=False, indent=2)
 
     return output_path
+
+
+def haversine_distance(lat1, lon1, lat2, lon2):
+    """
+    두 지점 간의 거리를 계산 (Haversine 공식)
+
+    Args:
+        lat1, lon1: 첫 번째 지점의 위도/경도
+        lat2, lon2: 두 번째 지점의 위도/경도
+
+    Returns:
+        float: 두 지점 간의 거리 (미터)
+    """
+    R = 6371000  # 지구 반지름 (미터)
+
+    phi1 = radians(lat1)
+    phi2 = radians(lat2)
+    delta_phi = radians(lat2 - lat1)
+    delta_lambda = radians(lon2 - lon1)
+
+    a = sin(delta_phi / 2) ** 2 + cos(phi1) * cos(phi2) * sin(delta_lambda / 2) ** 2
+    c = 2 * atan2(sqrt(a), sqrt(1 - a))
+
+    return R * c
+
+
+def find_place_by_name(place_name, places_cache=None):
+    """
+    Place 이름으로 Place 객체 조회
+
+    Args:
+        place_name: Place 이름
+        places_cache: Place 캐시 (dict: {name: place_id})
+
+    Returns:
+        int or None: place_id (없으면 None)
+    """
+    if places_cache and place_name in places_cache:
+        return places_cache[place_name]
+
+    try:
+        from apps.place.models import Place
+
+        place = Place.query.filter_by(name=place_name).first()
+        if place:
+            return place.place_id
+    except Exception:
+        pass
+
+    return None
+
+
+def find_nearest_place(lat, lon, max_distance_m=500, places_cache=None):
+    """
+    좌표에서 가장 가까운 Place 조회
+
+    Args:
+        lat: 위도
+        lon: 경도
+        max_distance_m: 최대 검색 거리 (미터, 기본값: 500m)
+        places_cache: Place 캐시 (list of {place_id, lat, lon, name})
+
+    Returns:
+        int or None: 가장 가까운 place_id (없으면 None)
+    """
+    try:
+        from apps.place.models import Place
+
+        if places_cache:
+            # 캐시에서 가장 가까운 Place 검색
+            nearest = None
+            min_distance = max_distance_m
+
+            for p in places_cache:
+                dist = haversine_distance(lat, lon, p["lat"], p["lon"])
+                if dist < min_distance:
+                    min_distance = dist
+                    nearest = p["place_id"]
+
+            return nearest
+
+        # DB에서 모든 Place 조회 후 거리 계산
+        places = Place.query.all()
+        nearest = None
+        min_distance = max_distance_m
+
+        for place in places:
+            place_lat, place_lon = place.get_coordinates()
+            if place_lat and place_lon:
+                dist = haversine_distance(lat, lon, place_lat, place_lon)
+                if dist < min_distance:
+                    min_distance = dist
+                    nearest = place.place_id
+
+        return nearest
+    except Exception:
+        return None
+
+
+def build_places_cache():
+    """
+    Place 테이블에서 캐시 데이터 생성
+
+    Returns:
+        tuple: (name_to_id: dict, coord_list: list)
+            - name_to_id: {place_name: place_id}
+            - coord_list: [{place_id, lat, lon, name}, ...]
+    """
+    try:
+        from apps.place.models import Place
+
+        places = Place.query.all()
+        name_to_id = {}
+        coord_list = []
+
+        for place in places:
+            name_to_id[place.name] = place.place_id
+            lat, lon = place.get_coordinates()
+            if lat and lon:
+                coord_list.append(
+                    {
+                        "place_id": place.place_id,
+                        "lat": lat,
+                        "lon": lon,
+                        "name": place.name,
+                    }
+                )
+
+        return name_to_id, coord_list
+    except Exception:
+        return {}, []
+
+
+def resolve_place_id(post_data, name_cache=None, coord_cache=None, max_distance_m=500):
+    """
+    게시글 데이터에서 place_id 결정
+
+    1. place_name 필드가 있으면 이름으로 검색
+    2. locations 필드가 있으면 좌표로 가장 가까운 Place 검색
+
+    Args:
+        post_data: 게시글 데이터 (dict)
+        name_cache: Place 이름 캐시 (dict)
+        coord_cache: Place 좌표 캐시 (list)
+        max_distance_m: 최대 검색 거리 (미터)
+
+    Returns:
+        int or None: place_id (없으면 None)
+    """
+    # 1. place_name으로 검색
+    place_name = post_data.get("place_name")
+    if place_name:
+        place_id = find_place_by_name(place_name, name_cache)
+        if place_id:
+            return place_id
+
+    # 2. locations 좌표로 검색
+    locations = post_data.get("locations")
+    if locations and isinstance(locations, list) and len(locations) >= 2:
+        lat, lon = locations[0], locations[1]
+        return find_nearest_place(lat, lon, max_distance_m, coord_cache)
+
+    return None
