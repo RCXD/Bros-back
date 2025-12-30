@@ -169,23 +169,60 @@ def get_followers(user_id):
     page = request.args.get("page", default=1, type=int)
     per_page = request.args.get("per_page", default=20, type=int)
 
-    pagination = Follow.query.filter_by(to_user_id=user_id).paginate(
-        page=page, per_page=per_page, error_out=False
+    # 최적화 전 버전 - N+1 문제 발생 가능
+    # pagination = Follow.query.filter_by(to_user_id=user_id).paginate(
+    #     page=page, per_page=per_page, error_out=False
+    # )
+    # followers = pagination.items
+
+    # result = []
+    # for follow in followers:
+    #     user = User.query.get(follow.from_user_id)
+    #     if user:
+    #         result.append(
+    #             {
+    #                 "user_id": user.user_id,
+    #                 "username": user.username,
+    #                 "nickname": user.nickname,
+    #                 "profile_img": user.profile_img,
+    #             }
+    #         )
+
+    # return (
+    #     jsonify(
+    #         {
+    #             "items": result,
+    #             "total": pagination.total,
+    #             "pages": pagination.pages,
+    #             "page": page,
+    #             "per_page": per_page,
+    #             "has_next": pagination.has_next,
+    #             "has_prev": pagination.has_prev,
+    #         }
+    #     ),
+    #     200,
+    # )
+
+    # 최적화 버전 : JOIN을 사용해 Follow + User 한 번에 조회
+    pagination = (
+        db.session.query(User)
+        .join(Follow, Follow.from_user_id == User.user_id)
+        .filter(Follow.to_user_id == user_id)
+        .paginate(page=page, per_page=per_page,
+        error_out=False)
     )
+
     followers = pagination.items
 
-    result = []
-    for follow in followers:
-        user = User.query.get(follow.from_user_id)
-        if user:
-            result.append(
-                {
-                    "user_id": user.user_id,
-                    "username": user.username,
-                    "nickname": user.nickname,
-                    "profile_img": user.profile_img,
-                }
-            )
+    result = [
+        {
+            "user_id" : follower.user_id,
+            "username" : follower.username,
+            "nickname" : follower.nickname,
+            "profile_img" : follower.profile_img,
+        }
+        for follower in followers
+    ]
 
     return (
         jsonify(
@@ -199,7 +236,7 @@ def get_followers(user_id):
                 "has_prev": pagination.has_prev,
             }
         ),
-        200,
+        200
     )
 
 

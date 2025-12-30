@@ -117,77 +117,141 @@ def api_info():
 @bp.get("")
 @jwt_required()
 def get_feed():
-    """
-    개인화된 사용자 피드 조회
-    Query params:
-        - page: 페이지 번호
-        - per_page: 페이지당 항목 수
-    """
     current_user_id = int(get_jwt_identity())
     page = request.args.get("page", 1, type=int)
     per_page = request.args.get("per_page", 20, type=int)
 
-    # 현재 사용자가 팔로우하는 사용자 ID 조회
-    following_ids = [
-        f.to_user_id for f in Follow.query.filter_by(from_user_id=current_user_id).all()
-    ]
+    # 최적화 전 코드
+    # # 현재 사용자가 팔로우하는 사용자 ID 조회
+    # following_ids = [
+    #     f.to_user_id for f in Follow.query.filter_by(from_user_id=current_user_id).all()
+    # ]
 
-    # 자신의 게시글 포함
-    following_ids.append(current_user_id)
+    # # 자신의 게시글 포함
+    # following_ids.append(current_user_id)
 
-    # 팔로우한 사용자들의 게시글 조회
+    # # 팔로우한 사용자들의 게시글 조회
+    # pagination = (
+    #     Post.query.filter(Post.user_id.in_(following_ids))
+    #     .order_by(Post.created_at.desc())
+    #     .paginate(page=page, per_page=per_page, error_out=False)
+    # )
+
+    # posts = []
+    # for post in pagination.items:
+    #     author = User.query.get(post.user_id)
+    #     like_count = PostLike.query.filter_by(post_id=post.post_id).count()
+    #     images = Image.query.filter_by(post_id=post.post_id).all()
+
+    #     posts.append(
+    #         {
+    #             "post_id": post.post_id,
+    #             "author": (
+    #                 {"nickname": author.nickname, "profile_img": author.profile_img}
+    #                 if author
+    #                 else None
+    #             ),
+    #             "content": post.content,
+    #             "category": post.category.category_name if post.category else None,
+    #             "view_counts": post.view_counts,
+    #             "like_count": like_count,
+    #             "images": [
+    #                 {
+    #                     "image_id": img.image_id,
+    #                     "uuid": img.uuid,
+    #                     "directory": img.directory,
+    #                     "original_image_name": img.original_image_name,
+    #                     "ext": img.ext,
+    #                 }
+    #                 for img in images
+    #             ],
+    #             "created_at": post.created_at.isoformat(),
+    #         }
+    #     )
+
+    # return (
+    #     jsonify(
+    #         {
+    #             "items": posts,
+    #             "total": pagination.total,
+    #             "pages": pagination.pages,
+    #             "page": page,
+    #             "per_page": per_page,
+    #             "has_next": pagination.has_next,
+    #             "has_prev": pagination.has_prev,
+    #         }
+    #     ),
+    #     200,
+    # )
+
+    # 서브쿼리로 팔로우 id 조회
+    following_subquery = (
+        db.session.query(Follow.to_user_id)
+        .filter(Follow.from_user_id == current_user_id)
+        .subquery()
+    )
+
     pagination = (
-        Post.query.filter(Post.user_id.in_(following_ids))
+        db.session.query(
+            Post,
+            User,
+            func.count(PostLike.post_id).label("like_count")
+        )
+        .outerjoin(PostLike, Post.post_id == PostLike.post_id)
+        .join(User, Post.user_id == User.user_id)
+        .filter(
+            (Post.user_id == current_user_id) |
+            (Post.user_id.in_(following_subquery))
+        )
+        .group_by(Post.post_id, User.user_id)
         .order_by(Post.created_at.desc())
         .paginate(page=page, per_page=per_page, error_out=False)
     )
 
-    posts = []
-    for post in pagination.items:
-        author = User.query.get(post.user_id)
-        like_count = PostLike.query.filter_by(post_id=post.post_id).count()
-        images = Image.query.filter_by(post_id=post.post_id).all()
+    posts_data = []
+    post_ids = [item[0].post_id for item in pagination.items]
 
-        posts.append(
-            {
-                "post_id": post.post_id,
-                "author": (
-                    {"nickname": author.nickname, "profile_img": author.profile_img}
-                    if author
-                    else None
-                ),
-                "content": post.content,
-                "category": post.category.category_name if post.category else None,
-                "view_counts": post.view_counts,
-                "like_count": like_count,
-                "images": [
-                    {
-                        "image_id": img.image_id,
-                        "uuid": img.uuid,
-                        "directory": img.directory,
-                        "original_image_name": img.original_image_name,
-                        "ext": img.ext,
-                    }
-                    for img in images
-                ],
-                "created_at": post.created_at.isoformat(),
-            }
-        )
+    # 한 번에 모든 이미지 조회
+    images_map = {}
+    if post_ids:
+        images = Image.query.filter(Image.post_id.in_(post_ids)).all()
+        for img in images:
+            if img.post_id not in images_map:
+                images_map[img.post_id] = []
+            images_map[img.post_id].append(img)
 
-    return (
-        jsonify(
-            {
-                "items": posts,
-                "total": pagination.total,
-                "pages": pagination.pages,
-                "page": page,
-                "per_page": per_page,
-                "has_next": pagination.has_next,
-                "has_prev": pagination.has_prev,
-            }
-        ),
-        200,
-    )
+    # 데이터 조합
+    for post, author, like_count in pagination.items:
+        posts_data.append({
+            "post_id": post.post_id,
+            "author": {
+                "nickname": author.nickname,
+                "profile_img": author.profile_img
+            },
+            "content": post.content,
+            "like_count": like_count,
+            "images": [
+                {
+                    "image_id": img.image_id,
+                    "uuid": img.uuid,
+                    "directory": img.directory,
+                    "original_image_name": img.original_image_name,
+                    "ext": img.ext,
+                }
+                for img in images_map.get(post.post_id, [])
+            ],
+            "created_at": post.created_at.isoformat(),
+        })
+
+    return jsonify({
+        "items": posts_data,
+        "total": pagination.total,
+        "pages": pagination.pages,
+        "page": page,
+        "per_page": per_page,
+        "has_next": pagination.has_next,
+        "has_prev": pagination.has_prev,
+    }), 200
 
 
 @bp.get("/trending")

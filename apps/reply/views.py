@@ -103,149 +103,262 @@ def api_info():
 
 @bp.get("")
 def get_replies():
-    """
-    게시글의 댓글 조회
-    Query params:
-        - post_id: 필수 - 댓글을 조회할 게시글 ID
-        - page: 페이지 번호
-        - per_page: 페이지당 항목 수
-    """
+    # 최적화 전
+    # """
+    # 게시글의 댓글 조회
+    # Query params:
+    #     - post_id: 필수 - 댓글을 조회할 게시글 ID
+    #     - page: 페이지 번호
+    #     - per_page: 페이지당 항목 수
+    # """
+    # post_id = request.args.get("post_id", type=int)
+    # if not post_id:
+    #     return jsonify({"message": "post_id는 필수입니다"}), 400
+
+    # # 게시글 존재 확인
+    # Post.query.get_or_404(post_id)
+
+    # page = request.args.get("page", 1, type=int)
+    # per_page = request.args.get("per_page", 20, type=int)
+    # order_by = request.args.get("order_by", "asc").lower()
+
+    # if order_by == "desc":
+    #     order_method = Reply.created_at.desc()
+    # else:
+    #     order_method = Reply.created_at.asc()
+
+    # # 현재 로그인한 사용자 ID 가져오기 (없으면 None)
+    # current_user_id = None
+    # from flask_jwt_extended import verify_jwt_in_request
+
+    # current_user_id = None
+    # try:
+    #     verify_jwt_in_request(optional=True)
+    #     user_identity = get_jwt_identity()
+    #     if user_identity:
+    #         current_user_id = int(user_identity)
+    # except:
+    #     pass
+
+    # # 최상위 댓글 조회 (부모 댓글이 없는 것)
+    # pagination = (
+    #     Reply.query.filter_by(post_id=post_id, parent_id=None)
+    #     .order_by(order_method)
+    #     .paginate(page=page, per_page=per_page, error_out=False)
+    # )
+
+    # # 좋아요 top 3 댓글
+    # top_liked_query = (
+    #     db.session.query(Reply, db.func.count(ReplyLike.user_id).label("like_count"))
+    #     .outerjoin(ReplyLike, Reply.reply_id == ReplyLike.reply_id)
+    #     .filter(Reply.post_id == post_id)
+    #     .group_by(Reply.reply_id)
+    #     .order_by(db.desc("like_count"))
+    #     .limit(3)
+    #     .all()
+    # )
+
+    # # top 3 댓글을 딕셔너리로 변환
+    # top_liked_replies = []
+    # for reply, like_count in top_liked_query:
+    #     author = User.query.get(reply.user_id)
+    #     # 현재 사용자의 좋아요 여부 확인
+    #     is_liked = False
+    #     if current_user_id:
+    #         is_liked = (
+    #             ReplyLike.query.filter_by(
+    #                 reply_id=reply.reply_id, user_id=current_user_id
+    #             ).first()
+    #             is not None
+    #         )
+
+    #     top_liked_replies.append(
+    #         {
+    #             "reply_id": reply.reply_id,
+    #             "post_id": reply.post_id,
+    #             "author": (
+    #                 {
+    #                     "user_id": author.user_id,
+    #                     "nickname": author.nickname,
+    #                     "profile_img": author.profile_img,
+    #                 }
+    #                 if author
+    #                 else None
+    #             ),
+    #             "content": reply.content,
+    #             "like_count": like_count,
+    #             "is_liked": is_liked,
+    #             "created_at": reply.created_at.isoformat(),
+    #             "updated_at": reply.updated_at.isoformat(),
+    #         }
+    #     )
+
+    # replies = []
+    # for reply in pagination.items:
+    #     author = User.query.get(reply.user_id)
+    #     like_count = ReplyLike.query.filter_by(reply_id=reply.reply_id).count()
+    #     child_count = Reply.query.filter_by(parent_id=reply.reply_id).count()
+
+    #     # 현재 사용자의 좋아요 여부 확인
+    #     is_liked = False
+    #     if current_user_id:
+    #         is_liked = (
+    #             ReplyLike.query.filter_by(
+    #                 reply_id=reply.reply_id, user_id=current_user_id
+    #             ).first()
+    #             is not None
+    #         )
+
+    #     replies.append(
+    #         {
+    #             "reply_id": reply.reply_id,
+    #             "post_id": reply.post_id,
+    #             "author": (
+    #                 {
+    #                     "user_id": reply.user_id,
+    #                     "nickname": author.nickname,
+    #                     "profile_img": author.profile_img,
+    #                 }
+    #                 if author
+    #                 else None
+    #             ),
+    #             "content": reply.content,
+    #             "parent_id": reply.parent_id,
+    #             "like_count": like_count,
+    #             "child_count": child_count,
+    #             "is_liked": is_liked,  # 추가된 필드
+    #             "created_at": reply.created_at.isoformat(),
+    #             "updated_at": reply.updated_at.isoformat(),
+    #         }
+    #     )
+
+    # return (
+    #     jsonify(
+    #         {
+    #             "top_liked_replies": top_liked_replies,
+    #             "items": replies,
+    #             "total": pagination.total,
+    #             "pages": pagination.pages,
+    #             "page": page,
+    #             "per_page": per_page,
+    #             "has_next": pagination.has_next,
+    #             "has_prev": pagination.has_prev,
+    #         }
+    #     ),
+    #     200,
+    # )
+    
+    # 최적화 후
     post_id = request.args.get("post_id", type=int)
     if not post_id:
         return jsonify({"message": "post_id는 필수입니다"}), 400
 
-    # 게시글 존재 확인
     Post.query.get_or_404(post_id)
 
     page = request.args.get("page", 1, type=int)
     per_page = request.args.get("per_page", 20, type=int)
     order_by = request.args.get("order_by", "asc").lower()
+    order_method = Reply.created_at.desc() if order_by == "desc" else Reply.created_at.asc()
 
-    if order_by == "desc":
-        order_method = Reply.created_at.desc()
-    else:
-        order_method = Reply.created_at.asc()
-
-    # 현재 로그인한 사용자 ID 가져오기 (없으면 None)
-    current_user_id = None
-    from flask_jwt_extended import verify_jwt_in_request
+    # 현재 로그인 사용자
+    from flask_jwt_extended import verify_jwt_in_request, get_jwt_identity
 
     current_user_id = None
     try:
         verify_jwt_in_request(optional=True)
-        user_identity = get_jwt_identity()
-        if user_identity:
-            current_user_id = int(user_identity)
+        current_user_id = get_jwt_identity()
     except:
         pass
 
-    # 최상위 댓글 조회 (부모 댓글이 없는 것)
+    # 최상위 댓글 페이지네이션
     pagination = (
         Reply.query.filter_by(post_id=post_id, parent_id=None)
         .order_by(order_method)
         .paginate(page=page, per_page=per_page, error_out=False)
     )
 
-    # 좋아요 top 3 댓글
-    top_liked_query = (
-        db.session.query(Reply, db.func.count(ReplyLike.user_id).label("like_count"))
-        .outerjoin(ReplyLike, Reply.reply_id == ReplyLike.reply_id)
-        .filter(Reply.post_id == post_id)
-        .group_by(Reply.reply_id)
-        .order_by(db.desc("like_count"))
-        .limit(3)
+    replies = pagination.items
+    reply_ids = [r.reply_id for r in replies]
+    user_ids = list({r.user_id for r in replies})
+
+    # 작성자 배치 조회
+    users = User.query.filter(User.user_id.in_(user_ids)).all()
+    user_map = {u.user_id: u for u in users}
+
+    # 좋아요 수 배치 조회
+    likes = (
+        db.session.query(
+            ReplyLike.reply_id,
+            db.func.count(ReplyLike.user_id).label("count"),
+        )
+        .filter(ReplyLike.reply_id.in_(reply_ids))
+        .group_by(ReplyLike.reply_id)
         .all()
     )
+    like_map = {reply_id: count for reply_id, count in likes}
 
-    # top 3 댓글을 딕셔너리로 변환
-    top_liked_replies = []
-    for reply, like_count in top_liked_query:
-        author = User.query.get(reply.user_id)
-        # 현재 사용자의 좋아요 여부 확인
-        is_liked = False
-        if current_user_id:
-            is_liked = (
-                ReplyLike.query.filter_by(
-                    reply_id=reply.reply_id, user_id=current_user_id
-                ).first()
-                is not None
-            )
-
-        top_liked_replies.append(
-            {
-                "reply_id": reply.reply_id,
-                "post_id": reply.post_id,
-                "author": (
-                    {
-                        "user_id": author.user_id,
-                        "nickname": author.nickname,
-                        "profile_img": author.profile_img,
-                    }
-                    if author
-                    else None
-                ),
-                "content": reply.content,
-                "like_count": like_count,
-                "is_liked": is_liked,
-                "created_at": reply.created_at.isoformat(),
-                "updated_at": reply.updated_at.isoformat(),
-            }
+    # 자식 댓글 수 배치 조회
+    children = (
+        db.session.query(
+            Reply.parent_id,
+            db.func.count(Reply.reply_id).label("count"),
         )
+        .filter(Reply.parent_id.in_(reply_ids))
+        .group_by(Reply.parent_id)
+        .all()
+    )
+    child_map = {parent_id: count for parent_id, count in children}
 
-    replies = []
-    for reply in pagination.items:
-        author = User.query.get(reply.user_id)
-        like_count = ReplyLike.query.filter_by(reply_id=reply.reply_id).count()
-        child_count = Reply.query.filter_by(parent_id=reply.reply_id).count()
-
-        # 현재 사용자의 좋아요 여부 확인
-        is_liked = False
-        if current_user_id:
-            is_liked = (
-                ReplyLike.query.filter_by(
-                    reply_id=reply.reply_id, user_id=current_user_id
-                ).first()
-                is not None
+    # 내가 좋아요 누른 댓글들 배치 조회
+    liked_set = set()
+    if current_user_id:
+        liked = (
+            db.session.query(ReplyLike.reply_id)
+            .filter(
+                ReplyLike.reply_id.in_(reply_ids),
+                ReplyLike.user_id == current_user_id,
             )
+            .all()
+        )
+        liked_set = {reply_id for (reply_id,) in liked}
 
-        replies.append(
+    # 응답 조립
+    result = []
+    for reply in replies:
+        author = user_map.get(reply.user_id)
+
+        result.append(
             {
                 "reply_id": reply.reply_id,
                 "post_id": reply.post_id,
-                "author": (
-                    {
-                        "user_id": reply.user_id,
-                        "nickname": author.nickname,
-                        "profile_img": author.profile_img,
-                    }
-                    if author
-                    else None
-                ),
+                "author": {
+                    "user_id": author.user_id,
+                    "nickname": author.nickname,
+                    "profile_img": author.profile_img,
+                }
+                if author
+                else None,
                 "content": reply.content,
                 "parent_id": reply.parent_id,
-                "like_count": like_count,
-                "child_count": child_count,
-                "is_liked": is_liked,  # 추가된 필드
+                "like_count": like_map.get(reply.reply_id, 0),
+                "child_count": child_map.get(reply.reply_id, 0),
+                "is_liked": reply.reply_id in liked_set,
                 "created_at": reply.created_at.isoformat(),
                 "updated_at": reply.updated_at.isoformat(),
             }
         )
 
-    return (
-        jsonify(
-            {
-                "top_liked_replies": top_liked_replies,
-                "items": replies,
-                "total": pagination.total,
-                "pages": pagination.pages,
-                "page": page,
-                "per_page": per_page,
-                "has_next": pagination.has_next,
-                "has_prev": pagination.has_prev,
-            }
-        ),
-        200,
-    )
+    return jsonify(
+        {
+            "items": result,
+            "total": pagination.total,
+            "pages": pagination.pages,
+            "page": page,
+            "per_page": per_page,
+            "has_next": pagination.has_next,
+            "has_prev": pagination.has_prev,
+        }
+    ), 200
 
 
 @bp.post("")

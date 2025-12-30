@@ -122,85 +122,97 @@ from flask import g
 
 @bp.get("")
 def get_posts():
+    # 페이지 정보와 카테고리, 정렬 기준 가져오기
     page = request.args.get("page", 1, type=int)
     per_page = request.args.get("per_page", 20, type=int)
     category = request.args.get("category")
     order_by = request.args.get("order_by", "latest")
 
+    # 기본 쿼리 생성
     query = Post.query
 
+    # 카테고리 필터링
     if category:
         cat = Category.query.filter_by(category_name=category).first()
         if cat:
             query = query.filter_by(category_id=cat.category_id)
 
+    # 정렬
     if order_by == "popular":
         query = query.order_by(Post.view_counts.desc())
     else:
         query = query.order_by(Post.created_at.desc())
 
+    # 페이징
     pagination = query.paginate(page=page, per_page=per_page, error_out=False)
+    posts_list = pagination.items
 
+    # 한 번에 모든 게시글의 사용자 ID 수집 (N+1 방지)
+    user_ids = [post.user_id for post in posts_list]
+    users = User.query.filter(User.user_id.in_(user_ids)).all()
+    user_map = {user.user_id: user for user in users}
+
+    # 한 번에 모든 게시글의 이미지 조회 (이미지 N+1 방지)
+    post_ids = [post.post_id for post in posts_list]
+    images = Image.query.filter(Image.post_id.in_(post_ids)).all()
+    images_map = {}
+    for img in images:
+        if img.post_id not in images_map:
+            images_map[img.post_id] = []
+        images_map[img.post_id].append(img)
+
+    # 현재 로그인 유저 ID 가져오기
+    current_user_id = getattr(g, "user_id", None)
+
+    # 현재 로그인 유저가 좋아요한 게시글들 한 번에 조회
+    liked_map = {}
+    if current_user_id:
+        likes = PostLike.query.filter(
+            PostLike.user_id == current_user_id,
+            PostLike.post_id.in_(post_ids)
+        ).all()
+        liked_map = {like.post_id: True for like in likes}
+
+    # 결과 조합
     posts = []
-    current_user_id = getattr(g, "user_id", None)  # 현재 로그인 유저 ID
+    for post in posts_list:
+        user = user_map.get(post.user_id)
+        post_images = images_map.get(post.post_id, [])
+        posts.append({
+            "post_id": post.post_id,
+            "author": {
+                "user_id": user.user_id if user else None,
+                "nickname": user.nickname if user else None,
+                "profile_img": user.profile_img if user else None,
+            },
+            "content": post.content,
+            "category": post.category.category_name if post.category else None,
+            "view_counts": post.view_counts,
+            "like_count": PostLike.query.filter_by(post_id=post.post_id).count(),  # 좋아요 수는 실시간 조회
+            "isLiked": liked_map.get(post.post_id, False),
+            "images": [
+                {
+                    "image_id": img.image_id,
+                    "uuid": img.uuid,
+                    "directory": img.directory,
+                    "original_image_name": img.original_image_name,
+                    "ext": img.ext,
+                }
+                for img in post_images
+            ],
+            "created_at": post.created_at.isoformat(),
+            "updated_at": post.updated_at.isoformat(),
+        })
 
-    for post in pagination.items:
-        user = User.query.get(post.user_id)
-        like_count = PostLike.query.filter_by(post_id=post.post_id).count()
-
-        # ✅ 현재 유저가 좋아요 눌렀는지 확인
-        is_liked = False
-        if current_user_id:
-            is_liked = (
-                PostLike.query.filter_by(
-                    post_id=post.post_id, user_id=current_user_id
-                ).first()
-                is not None
-            )
-
-        images = Image.query.filter_by(post_id=post.post_id).all()
-        posts.append(
-            {
-                "post_id": post.post_id,
-                "author": {
-                    "user_id": user.user_id if user else None,
-                    "nickname": user.nickname if user else None,
-                    "profile_img": user.profile_img if user else None,
-                },
-                "content": post.content,
-                "category": post.category.category_name if post.category else None,
-                "view_counts": post.view_counts,
-                "like_count": like_count,
-                "isLiked": is_liked,
-                "images": [
-                    {
-                        "image_id": img.image_id,
-                        "uuid": img.uuid,
-                        "directory": img.directory,
-                        "original_image_name": img.original_image_name,
-                        "ext": img.ext,
-                    }
-                    for img in images
-                ],
-                "created_at": post.created_at.isoformat(),
-                "updated_at": post.updated_at.isoformat(),
-            }
-        )
-
-    return (
-        jsonify(
-            {
-                "items": posts,
-                "total": pagination.total,
-                "pages": pagination.pages,
-                "page": page,
-                "per_page": per_page,
-                "has_next": pagination.has_next,
-                "has_prev": pagination.has_prev,
-            }
-        ),
-        200,
-    )
+    return jsonify({
+        "items": posts,
+        "total": pagination.total,
+        "pages": pagination.pages,
+        "page": page,
+        "per_page": per_page,
+        "has_next": pagination.has_next,
+        "has_prev": pagination.has_prev,
+    }), 200
 
 
 @bp.post("")
