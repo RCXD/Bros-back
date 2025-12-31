@@ -4,7 +4,17 @@ Flask 기반의 백엔드 프로젝트로, 소셜/로컬 탐색 서비스를 지
 인증, 게시물, 경로/장소, 결제, 알림 등의 기능을 각각 독립된 Blueprint 모듈로 구성했으며,  
 공통 확장기능(SQLAlchemy, Flask-Migrate, CORS, JWT), 로깅, 정적 폴더 초기화는 `apps/app.py`에서 처리한다.
 
-[![404found 프로젝트 시연 영상](https://img.youtube.com/vi/Y5KoIeUuco0/0.jpg)](https://www.youtube.com/watch?v=Y5KoIeUuco0)
+# 🚀 404found 1차 프로젝트
+
+> **프로젝트의 모든 과정을 담은 상세 시연 영상입니다.** > 이미지 또는 버튼을 클릭하면 유튜브 페이지로 이동합니다.
+
+<div align="center">
+  <a href="https://www.youtube.com/watch?v=Y5KoIeUuco0">
+    <img src="https://img.youtube.com/vi/Y5KoIeUuco0/maxresdefault.jpg" width="80%" alt="404found 시연영상">
+    <br>
+    <img src="https://img.shields.io/badge/YouTube-Watch_Video-red?style=for-the-badge&logo=youtube" alt="Youtube Button">
+  </a>
+</div>
 
 ## 📁 폴더 구조
 ```text
