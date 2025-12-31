@@ -4,7 +4,6 @@ Flask 기반의 백엔드 프로젝트로, 소셜/로컬 탐색 서비스를 지
 인증, 게시물, 경로/장소, 결제, 알림 등의 기능을 각각 독립된 Blueprint 모듈로 구성했으며,  
 공통 확장기능(SQLAlchemy, Flask-Migrate, CORS, JWT), 로깅, 정적 폴더 초기화는 `apps/app.py`에서 처리한다.
 
-404Found - 1차 프로젝트 시연 영상
 [![404found 프로젝트 시연 영상](https://img.youtube.com/vi/Y5KoIeUuco0/0.jpg)](https://www.youtube.com/watch?v=Y5KoIeUuco0)
 
 ## 📁 폴더 구조
