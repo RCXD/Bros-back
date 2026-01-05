@@ -1,3 +1,10 @@
+```python
+from apps.route.route_module_check import check_route_module
+
+# Quick sanity check for the endpoints documented below.
+check_route_module()
+```
+
 # Route Module Specification
 
 ## 개요

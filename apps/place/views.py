@@ -5,6 +5,7 @@ from flask import Blueprint, jsonify, request, current_app
 from flask_jwt_extended import jwt_required
 from sqlalchemy import cast, desc, asc
 from sqlalchemy.exc import SQLAlchemyError
+from geoalchemy2.elements import WKTElement
 
 from apps.config.server import db
 from apps.place.models import Place, PlaceCategory, PlaceType, func
@@ -51,13 +52,13 @@ def _store_place_area(place, geom_obj, lat=None, lon=None):
     if geom_type in {"polygon", "multipolygon"}:
         stored_geom = _build_bbox(None, None, geom_obj) if has_geom_column else None
         if has_geom_column:
-            place.geom = _build_bbox(lon_val, lat_val)
+            place.geom = _build_bbox(lat_val, lon_val)
         if has_edges_column:
             place.edges = None
         return
 
     if has_geom_column:
-        geom_value = _build_bbox(lon_val, lat_val, geom_obj)
+        geom_value = _build_bbox(lat_val, lon_val, geom_obj)
         if geom_value is not None:
             place.geom = geom_value
             if has_edges_column:
@@ -378,7 +379,8 @@ def create_place():
     lat_val = payload.pop("lat", None)
     lon_val = payload.pop("lon", None)
     place = Place(**payload)
-    _set_place_coordinate(place, lat_val, lon_val)
+    place.set_lat_lon(payload["lat"], payload["lon"])
+
     _store_place_area(place, geom_obj, lat_val, lon_val)
     try:
         db.session.add(place)
@@ -526,7 +528,8 @@ def _derive_pin_type(properties, extratags=None):
     properties: nominatim 'properties' dict
     extratags: nominatim 'extratags'
     """
-
+    if not isinstance(properties, dict):
+        properties = {}
     category = (properties.get("category") or "").lower()
     ptype = (properties.get("type") or "").lower()
     addresstype = (properties.get("addresstype") or "").lower()
@@ -537,9 +540,6 @@ def _derive_pin_type(properties, extratags=None):
     extraclass = (extratags.get("class") or "").lower()
     extratype = (extratags.get("type") or "").lower()
 
-    # -----------------------------
-    # 1. 정밀 매핑 (category + type)
-    # -----------------------------
     CATEGORY_TYPE_MAP = {
         ("amenity", "cafe"): "cafe",
         ("amenity", "fast_food"): "restaurant",
@@ -563,6 +563,35 @@ def _derive_pin_type(properties, extratags=None):
         ("highway", "crossing"): "traffic",
         ("highway", "traffic_signals"): "traffic",
     }
+    if (category, ptype) in CATEGORY_TYPE_MAP:
+        return CATEGORY_TYPE_MAP[(category, ptype)]
+
+    if addresstype in ("house", "building", "residential", "apartment"):
+        return "house"
+    if addresstype in ("city", "town", "village", "country", "state", "region"):
+        return "city"
+
+    if category == "amenity":
+        return "amenity"
+    if category == "shop":
+        return "shopping"
+    if category == "leisure":
+        return "leisure"
+    if category == "sport":
+        return "sport"
+    if category == "historic":
+        return "historic"
+    if category == "tourism":
+        return "tourism"
+    if category == "place":
+        if ptype in ("city", "town", "village", "hamlet", "suburb"):
+            return "city"
+        return "place"
+
+    if extraclass in ("building", "landuse"):
+        return "building"
+
+    return "default"
 
 
 def _build_label(name=None, alt_name=None, display_name=None):
@@ -590,6 +619,7 @@ def place_to_pin(place):
         "createdAt": raw.get("created_at"),
         "updatedAt": raw.get("updated_at"),
         "raw": raw,
+        "type": pin_type,
     }
 
 
@@ -728,7 +758,8 @@ def _ingest_nominatim_places(search_text, limit):
             description=payload.get("description"),
             tags=payload.get("tags"),
         )
-        _set_place_coordinate(place, lat_val, lon_val)
+        place.set_lat_lon(payload["lat"], payload["lon"])
+
         _store_place_area(place, payload.get("geom"), lat_val, lon_val)
         db.session.add(place)
         inserted = True
@@ -746,21 +777,36 @@ def _ingest_nominatim_places(search_text, limit):
 
 
 def _serialize_transient_place(payload):
-    tags = (
-        payload.get("tags") if isinstance(payload.get("tags"), (dict, list)) else None
-    )
+    tags_raw = payload.get("tags")
+    tags = None
+
+    if isinstance(tags_raw, (dict, list)):
+        # 이미 딕셔너리 또는 리스트인 경우
+        tags = tags_raw
+    elif isinstance(tags_raw, str):
+        # 문자열인 경우, JSON 파싱을 시도합니다.
+        try:
+            tags = json.loads(tags_raw)
+        except json.JSONDecodeError:
+            # 유효하지 않은 JSON 문자열인 경우, None으로 처리하거나 로깅합니다.
+            print(f"JSON Decode Error for tags: {tags_raw}")
+            tags = None
+
+    # tags가 최종적으로 딕셔너리 또는 None이 되었는지 확인합니다.
+
     raw = {
         "place_id": None,
         "name": payload.get("name"),
         "alt_name": payload.get("alt_name"),
         "display_name": payload.get("alt_name") or payload.get("name"),
         "description": payload.get("description"),
-        "tags": tags,
+        "tags": tags,  # 파싱된 딕셔너리 또는 None
         "lat": payload.get("lat"),
         "lon": payload.get("lon"),
         "created_at": None,
         "updated_at": None,
     }
+
     return {
         "id": None,
         "placeId": None,
@@ -768,7 +814,7 @@ def _serialize_transient_place(payload):
         "label": payload.get("alt_name") or payload.get("name"),
         "lat": payload.get("lat"),
         "lng": payload.get("lon"),
-        "type": _derive_pin_type(tags or {}, None),
+        "type": _derive_pin_type(payload.get("name"), tags),
         "tags": tags or {},
         "source": "nominatim",
         "createdAt": None,
