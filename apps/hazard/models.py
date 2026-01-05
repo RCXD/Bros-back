@@ -11,6 +11,7 @@ class Hazard(db.Model):
         db.Index("idx_hazard_active_edge", "is_active", "edge_id"),
         db.Index("idx_hazard_active_osm_edge", "is_active", "osm_edge_id"),
         db.Index("idx_hazard_location", "lat", "lon"),
+        {"extend_existing": True},
     )
 
     hazard_id = db.Column(db.Integer, primary_key=True)
