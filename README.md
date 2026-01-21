@@ -128,3 +128,6 @@ pytest
 
 ## API
 - [Kakao Mobility API](http://xn--dvelopers-bo44b.kakaomobility.com/product/api) - 카카오 모빌리티/지도 API 연동
+
+## ERD 구조
+- [ERD Cloud](https://www.erdcloud.com/d/xRxR3TyrHKaEXArgp) - ERD구조

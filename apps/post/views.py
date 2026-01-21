@@ -168,8 +168,7 @@ def get_posts():
     liked_map = {}
     if current_user_id:
         likes = PostLike.query.filter(
-            PostLike.user_id == current_user_id,
-            PostLike.post_id.in_(post_ids)
+            PostLike.user_id == current_user_id, PostLike.post_id.in_(post_ids)
         ).all()
         liked_map = {like.post_id: True for like in likes}
 
@@ -178,41 +177,50 @@ def get_posts():
     for post in posts_list:
         user = user_map.get(post.user_id)
         post_images = images_map.get(post.post_id, [])
-        posts.append({
-            "post_id": post.post_id,
-            "author": {
-                "user_id": user.user_id if user else None,
-                "nickname": user.nickname if user else None,
-                "profile_img": user.profile_img if user else None,
-            },
-            "content": post.content,
-            "category": post.category.category_name if post.category else None,
-            "view_counts": post.view_counts,
-            "like_count": PostLike.query.filter_by(post_id=post.post_id).count(),  # 좋아요 수는 실시간 조회
-            "isLiked": liked_map.get(post.post_id, False),
-            "images": [
-                {
-                    "image_id": img.image_id,
-                    "uuid": img.uuid,
-                    "directory": img.directory,
-                    "original_image_name": img.original_image_name,
-                    "ext": img.ext,
-                }
-                for img in post_images
-            ],
-            "created_at": post.created_at.isoformat(),
-            "updated_at": post.updated_at.isoformat(),
-        })
+        posts.append(
+            {
+                "post_id": post.post_id,
+                "author": {
+                    "user_id": user.user_id if user else None,
+                    "nickname": user.nickname if user else None,
+                    "profile_img": user.profile_img if user else None,
+                },
+                "content": post.content,
+                "category": post.category.category_id if post.category else None,
+                "view_counts": post.view_counts,
+                "like_count": PostLike.query.filter_by(
+                    post_id=post.post_id
+                ).count(),  # 좋아요 수는 실시간 조회
+                "isLiked": liked_map.get(post.post_id, False),
+                "images": [
+                    {
+                        "image_id": img.image_id,
+                        "uuid": img.uuid,
+                        "directory": img.directory,
+                        "original_image_name": img.original_image_name,
+                        "ext": img.ext,
+                    }
+                    for img in post_images
+                ],
+                "created_at": post.created_at.isoformat(),
+                "updated_at": post.updated_at.isoformat(),
+            }
+        )
 
-    return jsonify({
-        "items": posts,
-        "total": pagination.total,
-        "pages": pagination.pages,
-        "page": page,
-        "per_page": per_page,
-        "has_next": pagination.has_next,
-        "has_prev": pagination.has_prev,
-    }), 200
+    return (
+        jsonify(
+            {
+                "items": posts,
+                "total": pagination.total,
+                "pages": pagination.pages,
+                "page": page,
+                "per_page": per_page,
+                "has_next": pagination.has_next,
+                "has_prev": pagination.has_prev,
+            }
+        ),
+        200,
+    )
 
 
 @bp.post("")
@@ -298,32 +306,45 @@ def create_post():
                 }
             )
 
-        # 팔로워들에게 피드 생성 및 알림 발송
-        followers = (
-            db.session.query(User)
-            .join(
-                db.alias(Follow, name="f"),
-                User.user_id == db.alias(Follow, name="f").c.from_user_id,
-            )
-            .filter(db.alias(Follow, name="f").c.to_user_id == current_user.user_id)
+        # ✅ Write-Heavy 피드 생성: 팔로워들에게 미리 피드 레코드 생성
+        # 팔로워 ID 조회 (N+1 방지)
+        follower_ids = (
+            db.session.query(Follow.from_user_id)
+            .filter(Follow.to_user_id == current_user.user_id)
             .all()
         )
-        for follower in followers:
-            # 피드 생성 (utils 함수 사용)
-            from apps.feed.utils import create_new_post_feed
 
-            feed_item = create_new_post_feed(
-                user_id=follower.user_id,
-                post_id=post.post_id,
-                post_user_id=current_user.user_id,
+        # 벌크 인서트로 모든 팔로워의 피드 생성
+        from apps.feed.models import FeedItem
+
+        feed_items_to_create = []
+        for (follower_id,) in follower_ids:
+            feed_item = FeedItem(
+                user_id=follower_id,
+                feed_type="friend_post",
+                related_post_id=post.post_id,
+                related_user_id=current_user.user_id,
+                created_at=datetime.now(),
             )
+            feed_items_to_create.append(feed_item)
+            db.session.add(feed_item)
 
-            # 알림 생성 (utils 함수 사용)
-            from apps.notification.utils import create_new_post_notification
+        # 팔로워에게 실시간 알림 발송 (SocketIO)
+        if feed_items_to_create:
+            from apps.common.interceptors import socketio
 
-            create_new_post_notification(
-                follower.user_id, current_user.user_id, post, feed_item
-            )
+            # Topic별 알림 (각 팔로워별 개인 채널)
+            for feed_item in feed_items_to_create:
+                socketio.emit(
+                    "new_feed_item",
+                    {
+                        "type": "friend_post",
+                        "post_id": post.post_id,
+                        "author_id": current_user.user_id,
+                        "created_at": post.created_at.isoformat(),
+                    },
+                    room=f"user_{feed_item.user_id}",
+                )
 
         # Mention 생성 및 알림 발송
         mentioned_ids = request.form.get("mentions")
