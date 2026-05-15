@@ -1,5 +1,6 @@
 """
-알림 관련 API 엔드포인트
+Notification-related API endpoints.
+
 Migrated from: app/blueprints/notification.py
 """
 
@@ -22,8 +23,10 @@ bp = Blueprint("notification", __name__, url_prefix="/notification")
 
 @bp.get("/api_info")
 def api_info():
-    """
-    알림 API 정보 제공 (개발용)
+    """Return notification API metadata for development use.
+
+    Returns:
+        JSON object describing available endpoints with 200 status.
     """
     info = {
         "module": "notification",
@@ -93,13 +96,18 @@ def api_info():
 @bp.post("")
 @jwt_required()
 def create_notification():
-    """
-    알림 생성 (수동 호출용)
+    """Create a notification manually (intended for development/testing use).
 
-    === LEGACY: app/blueprints/notification.py의 create_notification() 로직 통합 ===
-    - 기존: type을 문자열로 받아서 .upper() 처리
-    - 추가: product_id 필드 지원 (apps 버전에서 추가됨)
-    === END LEGACY ===
+    Reads JSON from the request body to build a Notification record and
+    persists it to the database.
+
+    Returns:
+        JSON representation of the created notification with 201 status on
+        success, or an error message with 400/404/500 status on failure.
+
+    Raises:
+        IntegrityError: Rolled back and returned as a 400 response when a
+            database constraint is violated.
     """
     data = request.get_json() or {}
     from_user_id = int(get_jwt_identity())
@@ -167,14 +175,16 @@ def create_notification():
 @bp.get("")
 @jwt_required()
 def get_my_notifications():
-    """
-    내 알림 조회
+    """Retrieve the current user's notifications with optional filtering.
 
-    === LEGACY vs 기존 비교 ===
-    - LEGACY (app/blueprints): 페이지네이션 없이 전체 조회
-    - 기존 (apps): 페이지네이션 + unread_only 필터 지원
-    - 선택: 기존 apps 버전 유지 (더 많은 기능)
-    === END ===
+    Supports pagination and an ``unread_only`` flag to limit results to
+    unread notifications. When ``follow_state=true`` is passed, each item
+    is annotated with the mutual-follow relationship between the recipient
+    and the notification sender.
+
+    Returns:
+        JSON object containing a paginated list of notification dicts along
+        with pagination metadata, with 200 status.
     """
     current_user_id = int(get_jwt_identity())
 
@@ -256,7 +266,11 @@ def get_my_notifications():
 @bp.get("/unread-count")
 @jwt_required()
 def get_unread_count():
-    """읽지 않은 알림 개수 조회"""
+    """Return the number of unread notifications for the current user.
+
+    Returns:
+        JSON object ``{"unread_count": <int>}`` with 200 status.
+    """
     current_user_id = int(get_jwt_identity())
 
     count = Notification.query.filter_by(
@@ -269,7 +283,16 @@ def get_unread_count():
 @bp.patch("/<int:notification_id>")
 @jwt_required()
 def mark_notification_as_read(notification_id):
-    """알림 읽음 처리"""
+    """Mark a single notification as read.
+
+    Args:
+        notification_id: Primary key of the notification to update.
+
+    Returns:
+        JSON representation of the updated notification with 200 status, or
+        a 404 error if the notification is not found or does not belong to the
+        current user.
+    """
     current_user_id = int(get_jwt_identity())
 
     notification = Notification.query.filter_by(
@@ -288,7 +311,12 @@ def mark_notification_as_read(notification_id):
 @bp.patch("/mark-all-read")
 @jwt_required()
 def mark_all_as_read():
-    """모든 알림 읽음 처리"""
+    """Mark all unread notifications as read for the current user.
+
+    Returns:
+        JSON object with a confirmation message and ``updated_count`` field
+        indicating how many notifications were updated, with 200 status.
+    """
     current_user_id = int(get_jwt_identity())
 
     updated_count = Notification.query.filter_by(
@@ -311,7 +339,15 @@ def mark_all_as_read():
 @bp.delete("/<int:notification_id>")
 @jwt_required()
 def delete_notification(notification_id):
-    """알림 삭제"""
+    """Delete a notification owned by the current user.
+
+    Args:
+        notification_id: Primary key of the notification to delete.
+
+    Returns:
+        JSON confirmation message with 200 status on success, or 404 if the
+        notification is not found or does not belong to the current user.
+    """
     current_user_id = int(get_jwt_identity())
 
     notification = Notification.query.filter_by(

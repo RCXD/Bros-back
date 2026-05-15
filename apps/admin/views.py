@@ -20,8 +20,11 @@ bp = Blueprint("admin", __name__)
 
 @bp.get("/api_info")
 def api_info():
-    """
-    관리자 API 정보 제공 (개발용)
+    """Provide admin API endpoint information (development use).
+
+    Returns:
+        JSON response describing all available admin API endpoints with their
+        paths, methods, auth requirements, and descriptions.
     """
     info = {
         "module": "admin",
@@ -77,7 +80,12 @@ def api_info():
 
 
 def admin_required():
-    """Decorator to check if user is admin"""
+    """Check if the currently authenticated user has admin privileges.
+
+    Returns:
+        None if the user is an admin, or a JSON error response tuple with
+        HTTP 403 if the user is not an admin or is not authenticated.
+    """
     current_user = get_current_user()
     if not current_user or current_user.account_type != AccountType.ADMIN:
         return jsonify({"message": "관리자 권한이 필요합니다"}), 403
@@ -92,15 +100,18 @@ def admin_required():
 @bp.get("/users")
 @jwt_required()
 def get_users():
-    """
-    Get all users with filtering and pagination
+    """Get all users with filtering and pagination.
+
     Query params:
-        - username: Filter by username
-        - email: Filter by email
-        - nickname: Filter by nickname
-        - account_type: Filter by USER or ADMIN
-        - page: Page number (default 1)
-        - per_page: Items per page (default 20)
+        username: Filter by username (partial match).
+        email: Filter by email (partial match).
+        nickname: Filter by nickname (partial match).
+        account_type: Filter by account type (USER or ADMIN).
+        page: Page number (default 1).
+        per_page: Items per page (default 20).
+
+    Returns:
+        JSON response containing the paginated user list and pagination metadata.
     """
     error = admin_required()
     if error:
@@ -160,7 +171,15 @@ def get_users():
 @bp.get("/users/<int:user_id>")
 @jwt_required()
 def get_user_detail(user_id):
-    """Get detailed user information including statistics"""
+    """Get detailed information and statistics for a specific user.
+
+    Args:
+        user_id: The integer ID of the user to retrieve.
+
+    Returns:
+        JSON response containing the user's profile data and activity statistics
+        (post count, reply count, following, and follower counts).
+    """
     error = admin_required()
     if error:
         return error
@@ -192,10 +211,14 @@ def get_user_detail(user_id):
 @bp.post("/users/<int:user_id>/ban")
 @jwt_required()
 def ban_user(user_id):
-    """
-    Ban/suspend a user account
-    JSON body:
-        - reason: Optional reason for ban
+    """Ban or suspend a user account.
+
+    Args:
+        user_id: The integer ID of the user to ban.
+
+    Returns:
+        JSON response confirming the ban with an optional reason, or an error
+        response if the target is an admin account.
     """
     error = admin_required()
     if error:
@@ -226,7 +249,14 @@ def ban_user(user_id):
 @bp.post("/users/<int:user_id>/unban")
 @jwt_required()
 def unban_user(user_id):
-    """Restore a banned user account"""
+    """Restore a banned user account.
+
+    Args:
+        user_id: The integer ID of the user to unban.
+
+    Returns:
+        JSON response confirming the account has been reinstated.
+    """
     error = admin_required()
     if error:
         return error
@@ -244,7 +274,15 @@ def unban_user(user_id):
 @bp.delete("/users/<int:user_id>")
 @jwt_required()
 def delete_user(user_id):
-    """Permanently delete a user account"""
+    """Permanently delete a user account.
+
+    Args:
+        user_id: The integer ID of the user to delete.
+
+    Returns:
+        JSON response confirming deletion, or an error response if the user is
+        an admin or the deletion fails.
+    """
     error = admin_required()
     if error:
         return error
@@ -271,7 +309,13 @@ def delete_user(user_id):
 @bp.get("/statistics")
 @jwt_required()
 def get_statistics():
-    """Get comprehensive platform statistics"""
+    """Get comprehensive platform statistics.
+
+    Returns:
+        JSON response containing user counts (total, banned, admins, new and
+        active this month), content counts (posts and replies), and report
+        counts (total, pending, resolved).
+    """
     error = admin_required()
     if error:
         return error
@@ -333,7 +377,15 @@ def get_statistics():
 @bp.get("/statistics/activity")
 @jwt_required()
 def get_activity_statistics():
-    """Get daily activity statistics for the last 30 days"""
+    """Get daily activity statistics for a configurable number of past days.
+
+    Query params:
+        days: Number of days to look back (default 30).
+
+    Returns:
+        JSON response with daily user registration counts and daily post counts
+        for the specified time period.
+    """
     error = admin_required()
     if error:
         return error
@@ -386,12 +438,15 @@ def get_activity_statistics():
 @bp.get("/reports")
 @jwt_required()
 def get_reports():
-    """
-    Get all reports with filtering
+    """Get all reports with optional status filtering and pagination.
+
     Query params:
-        - status: pending/resolved
-        - page: Page number
-        - per_page: Items per page
+        status: Filter by resolution status (``pending`` or ``resolved``).
+        page: Page number (default 1).
+        per_page: Items per page (default 20).
+
+    Returns:
+        JSON response containing the paginated report list and pagination metadata.
     """
     error = admin_required()
     if error:
@@ -440,7 +495,14 @@ def get_reports():
 @bp.post("/reports/<int:report_id>/resolve")
 @jwt_required()
 def resolve_report(report_id):
-    """Mark a report as resolved"""
+    """Mark a report as resolved.
+
+    Args:
+        report_id: The integer ID of the report to resolve.
+
+    Returns:
+        JSON response confirming the report has been processed.
+    """
     error = admin_required()
     if error:
         return error
@@ -458,15 +520,19 @@ def resolve_report(report_id):
 @bp.get("/image/user/<string:user_identifier>")
 @jwt_required()
 def get_user_profile_image(user_identifier):
-    """
-    사용자 ID 또는 username으로 프로필 이미지 조회
+    """Retrieve a user's profile image by user ID or username.
+
+    Admin-only endpoint. Accepts either a numeric user ID or a username string.
+    Falls back to the default profile image when no uploaded image is found.
 
     Args:
-        user_identifier: 사용자 ID (숫자) 또는 username (문자열)
+        user_identifier: A numeric user ID string or a plain username string.
+            For example: ``"123"`` resolves by user_id; ``"john_doe"`` resolves
+            by username.
 
-    Examples:
-        /auth/image/user/123       -> user_id로 조회
-        /auth/image/user/john_doe  -> username으로 조회
+    Returns:
+        The profile image file, or the default profile image if none is found.
+        Returns a 404 JSON response when the username does not exist.
     """
     # 관리자인지 확인
     error = admin_required()
@@ -515,12 +581,14 @@ def get_user_profile_image(user_identifier):
 @bp.route("/all", methods=["GET"])
 @jwt_required()
 def get_all_notifications():
-    """
-    관리자용 전체 알림 조회
+    """Retrieve all notifications across all users (admin view).
 
-    LEGACY 엔드포인트: app/blueprints/notification.py에서 가져옴
-    주의: 인증만 체크하고 관리자 권한은 체크하지 않음 (보안 취약)
-    TODO: 관리자 권한 체크 추가 필요
+    Legacy endpoint migrated from app/blueprints/notification.py.
+    Note: only checks authentication, not admin role (security TODO).
+
+    Returns:
+        JSON response with ``success`` flag and a list of serialized
+        Notification objects ordered by creation time descending.
     """
     notifications = Notification.query.order_by(Notification.created_at.desc()).all()
     result = [n.serialize() for n in notifications]  # serialize() 사용 (레거시 호환)

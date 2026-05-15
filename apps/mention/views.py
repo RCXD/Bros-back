@@ -1,5 +1,5 @@
 """
-멘션 뷰
+Mention views — API endpoints for creating and querying user mentions.
 """
 
 from flask import Blueprint, jsonify, request
@@ -17,8 +17,10 @@ bp = Blueprint("mention", __name__, url_prefix="/mention")
 
 @bp.get("/api_info")
 def api_info():
-    """
-    멘션 API 정보 제공 (개발용)
+    """Return mention API metadata for development use.
+
+    Returns:
+        JSON object describing available endpoints with 200 status.
     """
     info = {
         "module": "mention",
@@ -64,7 +66,14 @@ def api_info():
 
 
 def serialize_mention(mention):
-    """멘션 직렬화 헬퍼 함수"""
+    """Serialize a Mention ORM object to a plain dictionary.
+
+    Args:
+        mention: A Mention model instance to serialize.
+
+    Returns:
+        Dictionary containing the mention's fields and related user info.
+    """
     mention_type = "POST" if mention.post_id else "REPLY"
 
     return {
@@ -90,20 +99,24 @@ def serialize_mention(mention):
 @bp.route("/", methods=["POST"])
 @jwt_required()
 def create_mention():
-    """
-    멘션 생성 (POST or REPLY)
+    """Create a mention targeting either a post or a reply.
 
-    Request Body:
-    {
-        "mentioned_user_id": 2,
-        "post_id": 5  // or "reply_id": 10
-    }
+    Expects a JSON body with ``mentioned_user_id`` and exactly one of
+    ``post_id`` or ``reply_id``.  A notification is automatically dispatched
+    to the mentioned user via :func:`create_mention_notification`.
 
-    Response: 201
-    {
-        "message": "멘션 생성 완료",
-        "mention": {...}
-    }
+    Args:
+        (via request body):
+            mentioned_user_id: ID of the user being mentioned.
+            post_id: ID of the post to attach the mention to (mutually
+                exclusive with ``reply_id``).
+            reply_id: ID of the reply to attach the mention to (mutually
+                exclusive with ``post_id``).
+
+    Returns:
+        JSON object with a confirmation message and the serialized mention
+        with 201 status on success, or an error message with 400/404/500
+        status on failure.
     """
     current_user_id = get_jwt_identity()
     data = request.get_json()
@@ -190,13 +203,11 @@ def create_mention():
 @bp.route("/mine", methods=["GET"])
 @jwt_required()
 def get_my_mentions():
-    """
-    내가 받은 멘션 조회
+    """Retrieve all mentions received by the current user, newest first.
 
-    Response: 200
-    {
-        "mentions": [...]
-    }
+    Returns:
+        JSON object with a ``mentions`` list of serialized mention dicts,
+        with 200 status.
     """
     current_user_id = get_jwt_identity()
     # TODO:
@@ -212,13 +223,11 @@ def get_my_mentions():
 @bp.route("/sent", methods=["GET"])
 @jwt_required()
 def get_sent_mentions():
-    """
-    내가 보낸 멘션 조회
+    """Retrieve all mentions sent by the current user, newest first.
 
-    Response: 200
-    {
-        "mentions": [...]
-    }
+    Returns:
+        JSON object with a ``mentions`` list of serialized mention dicts,
+        with 200 status.
     """
     current_user_id = get_jwt_identity()
 
@@ -234,13 +243,14 @@ def get_sent_mentions():
 @bp.route("/post/<int:post_id>", methods=["GET"])
 @jwt_required()
 def get_post_mentions(post_id):
-    """
-    특정 게시글의 모든 멘션 조회
+    """Retrieve all mentions attached to a specific post.
 
-    Response: 200
-    {
-        "mentions": [...]
-    }
+    Args:
+        post_id: Primary key of the post whose mentions are requested.
+
+    Returns:
+        JSON object with a ``mentions`` list of serialized mention dicts with
+        200 status, or a 404 error if the post does not exist.
     """
     post = Post.query.get(post_id)
     if not post:
@@ -258,13 +268,11 @@ def get_post_mentions(post_id):
 @bp.route("/all", methods=["GET"])
 @jwt_required()
 def get_all_mentions():
-    """
-    모든 멘션 조회 (관리자용)
+    """Retrieve every mention in the system, newest first (admin use).
 
-    Response: 200
-    {
-        "mentions": [...]
-    }
+    Returns:
+        JSON object with a ``mentions`` list of all serialized mention dicts,
+        with 200 status.
     """
     # TODO: 관리자 권한 체크 추가 필요
     mentions = Mention.query.order_by(Mention.created_at.desc()).all()
@@ -275,16 +283,14 @@ def get_all_mentions():
 @bp.route("/type/<string:mention_type>", methods=["GET"])
 @jwt_required()
 def get_mentions_by_type(mention_type):
-    """
-    타입별 멘션 조회
+    """Retrieve the current user's received mentions filtered by type.
 
-    Parameters:
-    - mention_type: "POST" or "REPLY"
+    Args:
+        mention_type: Either ``"POST"`` or ``"REPLY"`` (case-insensitive).
 
-    Response: 200
-    {
-        "mentions": [...]
-    }
+    Returns:
+        JSON object with a ``mentions`` list of serialized mention dicts with
+        200 status, or a 400 error if ``mention_type`` is not valid.
     """
     current_user_id = get_jwt_identity()
 

@@ -23,8 +23,11 @@ bp = Blueprint("roadview", __name__)
 
 @bp.get("/api_info")
 def api_info():
-    """
-    로드뷰 API 정보 제공 (개발용)
+    """Provide roadview API endpoint information (development use).
+
+    Returns:
+        JSON response describing all available roadview API endpoints with their
+        paths, methods, auth requirements, and query parameters.
     """
     info = {
         "module": "roadview",
@@ -73,7 +76,11 @@ RoadviewAPIUsage = None
 
 
 def init_roadview_models(db):
-    """Initialize roadview models with db instance"""
+    """Initialize roadview models with a SQLAlchemy db instance.
+
+    Args:
+        db: The SQLAlchemy database instance used to create the model classes.
+    """
     global Roadview, RoadviewCache, RoadviewRequest, RoadviewAPIUsage
     Roadview, RoadviewCache, RoadviewRequest, RoadviewAPIUsage = init_models(db)
 
@@ -81,25 +88,27 @@ def init_roadview_models(db):
 @bp.route("/check", methods=["POST"])
 @jwt_required()
 def check_roadview():
-    """
-    Check roadview availability at a location
+    """Check roadview availability at a given location.
 
-    Request JSON:
-        {
-            "latitude": 37.5665,
-            "longitude": 126.9780,
-            "radius": 50,
-            "provider": "google" // optional: "google", "kakao", "naver"
-        }
+    Checks the cache first (valid for 30 days) before querying external APIs.
+    Tries providers in priority order and records the request and result.
 
-    Response:
-        {
-            "available": true,
-            "provider": "google",
-            "roadview_id": 123,
-            "metadata": {...},
-            "cache_hit": false
-        }
+    Args (JSON body):
+        latitude: Latitude of the location to check.
+        longitude: Longitude of the location to check.
+        radius: Search radius in metres (default 50).
+        provider: Preferred provider name — ``google``, ``kakao``, or ``naver``
+            (optional).
+
+    Returns:
+        JSON response with availability flag, provider name, roadview_id,
+        metadata, cache_hit status, and response time on success (HTTP 200),
+        or an unavailability response (HTTP 404) when no roadview is found.
+
+    Raises:
+        HTTP 400: If latitude or longitude are missing from the request body.
+        HTTP 503: If no roadview API clients are configured.
+        HTTP 500: On unexpected errors.
     """
     user_id = get_jwt_identity()
     data = request.get_json()
@@ -330,22 +339,20 @@ def check_roadview():
 @bp.route("/check-all", methods=["POST"])
 @jwt_required()
 def check_all_providers():
-    """
-    Check roadview availability across all providers
+    """Check roadview availability across all configured providers.
 
-    Request JSON:
-        {
-            "latitude": 37.5665,
-            "longitude": 126.9780,
-            "radius": 50
-        }
+    Args (JSON body):
+        latitude: Latitude of the location to check.
+        longitude: Longitude of the location to check.
+        radius: Search radius in metres (default 50).
 
-    Response:
-        {
-            "google": {"available": true, "metadata": {...}},
-            "kakao": {"available": false},
-            "naver": {"available": true, "metadata": {...}}
-        }
+    Returns:
+        JSON response mapping each provider name to its availability result
+        and metadata.
+
+    Raises:
+        HTTP 400: If latitude or longitude are missing from the request body.
+        HTTP 500: On unexpected errors.
     """
     data = request.get_json()
 
@@ -369,7 +376,15 @@ def check_all_providers():
 @bp.route("/roadview/<int:roadview_id>", methods=["GET"])
 @jwt_required()
 def get_roadview(roadview_id):
-    """Get roadview details by ID"""
+    """Get roadview details by ID.
+
+    Args:
+        roadview_id: The integer ID of the roadview record.
+
+    Returns:
+        JSON response with the roadview's serialized data (HTTP 200), or a
+        404 JSON response if the record does not exist.
+    """
     from ..config.common import db
 
     roadview = db.session.get(Roadview, roadview_id)
@@ -383,12 +398,15 @@ def get_roadview(roadview_id):
 @bp.route("/history", methods=["GET"])
 @jwt_required()
 def get_user_history():
-    """
-    Get user's roadview request history
+    """Get the current user's roadview request history.
 
     Query params:
-        limit: Max results (default 50)
-        offset: Pagination offset
+        limit: Maximum number of results to return (default 50, max 100).
+        offset: Number of records to skip for pagination (default 0).
+
+    Returns:
+        JSON response with total record count, applied limit and offset, and
+        the list of serialized roadview request records.
     """
     user_id = get_jwt_identity()
 
@@ -419,7 +437,12 @@ def get_user_history():
 
 @bp.route("/cache/stats", methods=["GET"])
 def get_cache_stats():
-    """Get cache statistics"""
+    """Get roadview cache statistics.
+
+    Returns:
+        JSON response with the total number of cached locations and the count
+        of locations available for each provider (Google, Kakao, Naver).
+    """
     from ..config.common import db
 
     total_cached = RoadviewCache.query.count()
@@ -442,11 +465,14 @@ def get_cache_stats():
 
 @bp.route("/usage/stats", methods=["GET"])
 def get_usage_stats():
-    """
-    Get API usage statistics
+    """Get API usage statistics for a configurable number of past days.
 
     Query params:
-        days: Number of days to look back (default 7)
+        days: Number of days to look back (default 7).
+
+    Returns:
+        JSON response with date range and per-provider totals for requests,
+        successes, failures, cached hits, and estimated cost.
     """
     days = int(request.args.get("days", 7))
     start_date = datetime.now().date() - timedelta(days=days)
@@ -486,7 +512,14 @@ def get_usage_stats():
 def update_api_usage(
     db, provider: RoadviewProvider, success: bool = True, cached: bool = False
 ):
-    """Update API usage statistics"""
+    """Update API usage statistics for a provider on the current date.
+
+    Args:
+        db: The SQLAlchemy database instance.
+        provider: The RoadviewProvider enum value representing the API used.
+        success: Whether the API call succeeded (default True).
+        cached: Whether the result was served from cache (default False).
+    """
     today = datetime.now().date()
 
     usage = RoadviewAPIUsage.query.filter_by(provider=provider, date=today).first()
@@ -514,28 +547,27 @@ def update_api_usage(
 @bp.route("/location-info", methods=["POST"])
 @jwt_required()
 def get_location_info():
-    """
-    Google Places API를 사용하여 위치의 상세 정보 조회
+    """Retrieve detailed location information using the Google Places API.
 
-    Request JSON:
-        {
-            "latitude": 37.5665,
-            "longitude": 126.9780
-        }
+    Finds the nearest place to the given coordinates via Nearby Search, then
+    fetches full details (name, address, ratings, reviews, photos, etc.) via
+    Place Details.
 
-    Response:
-        {
-            "name": "음식점 이름",
-            "address": "주소",
-            "rating": 4.5,
-            "reviews_count": 123,
-            "phone": "010-xxxx-xxxx",
-            "website": "https://example.com",
-            "opening_hours": {...},
-            "types": ["restaurant", "food"],
-            "reviews": [...],
-            "photos": [...]
-        }
+    Args (JSON body):
+        latitude: Latitude of the target location.
+        longitude: Longitude of the target location.
+
+    Returns:
+        JSON response with place details including name, address, phone,
+        website, rating, review count, types, opening hours, coordinates,
+        recent reviews, and photo metadata (HTTP 200).
+
+    Raises:
+        HTTP 400: If latitude or longitude are missing from the request body.
+        HTTP 404: If no place is found near the coordinates.
+        HTTP 500: If the Google API call fails.
+        HTTP 503: If the Google Maps API key is not configured.
+        HTTP 504: If the Google API request times out.
     """
     data = request.get_json()
 
@@ -664,26 +696,26 @@ def get_location_info():
 @bp.route("/get-image", methods=["POST"])
 @jwt_required()
 def get_roadview_image():
-    """
-    Download Google Street View image and save to disk
+    """Download a Google Street View image and save it to disk.
 
-    Request JSON:
-        {
-            "latitude": 37.5665,
-            "longitude": 126.9780,
-            "heading": 90,
-            "pitch": 0,
-            "fov": 90,
-            "width": 640,
-            "height": 640
-        }
+    Args (JSON body):
+        latitude: Latitude of the target location.
+        longitude: Longitude of the target location.
+        heading: Camera heading in degrees (default 0).
+        pitch: Camera pitch in degrees (default 0).
+        fov: Field of view in degrees (default 90).
+        width: Image width in pixels (default 640).
+        height: Image height in pixels (default 640).
 
-    Response:
-        {
-            "success": true,
-            "file_path": "./downloads/roadview/2025-11-20/image_123456.jpg",
-            "metadata": {...}
-        }
+    Returns:
+        JSON response with ``success`` flag, the saved ``file_path``, and
+        image metadata on success (HTTP 200).
+
+    Raises:
+        HTTP 400: If latitude or longitude are missing from the request body.
+        HTTP 404: If no Street View image is available at the location.
+        HTTP 503: If the Google Maps API key is not configured.
+        HTTP 500: On unexpected errors.
     """
     data = request.get_json()
 
