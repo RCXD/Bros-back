@@ -28,8 +28,10 @@ bp = Blueprint("reply", __name__)
 
 @bp.get("/api_info")
 def api_info():
-    """
-    댓글 API 정보 제공 (개발용)
+    """Return API endpoint information for the reply module (development use).
+
+    Returns:
+        JSON response with 200 status containing a description of all reply endpoints.
     """
     info = {
         "module": "reply",
@@ -103,6 +105,22 @@ def api_info():
 
 @bp.get("")
 def get_replies():
+    """Retrieve a paginated list of top-level replies for a post.
+
+    Uses batched queries for authors, like counts, child counts, and current-user
+    like status to avoid N+1 database calls.
+
+    Query params:
+        post_id: ID of the post whose replies to retrieve (required).
+        page: Page number (default: 1).
+        per_page: Items per page (default: 20).
+        order_by: Sort order, either 'asc' (default) or 'desc'.
+
+    Returns:
+        JSON response with 200 status containing paginated reply data including
+        author info, like counts, child reply counts, and like status for the
+        current user. Returns 400 if post_id is missing.
+    """
     # 최적화 전
     # """
     # 게시글의 댓글 조회
@@ -364,12 +382,24 @@ def get_replies():
 @bp.post("")
 @jwt_required()
 def create_reply():
-    """
-    댓글 작성
+    """Create a new reply or nested reply on a post.
+
+    Requires JWT authentication. Sends a notification to the post author or parent
+    reply author (unless replying to one's own content) and awards reward points to
+    both the writer and the recipient.
+
     JSON body:
-        - post_id: 필수
-        - content: 필수
-        - parent_id: 선택 (대댓글용)
+        post_id: ID of the post to reply to (required).
+        content: Reply text (required).
+        parent_id: ID of the parent reply for a nested reply (optional).
+
+    Returns:
+        JSON response with 201 status containing the new reply ID on success.
+        Returns 400 if required fields are missing or on an unexpected error.
+
+    Raises:
+        404: If the post or parent reply is not found.
+        400: If post_id or content is missing.
     """
     try:
         current_user = get_current_user()
@@ -442,7 +472,15 @@ def create_reply():
 
 @bp.get("/<int:reply_id>")
 def get_reply(reply_id):
-    """ID로 단일 댓글 조회"""
+    """Retrieve a single reply by its ID.
+
+    Args:
+        reply_id: The ID of the reply to retrieve.
+
+    Returns:
+        JSON response with 200 status containing reply details including author info,
+        like count, and timestamps. Returns 404 if the reply does not exist.
+    """
     reply = Reply.query.get_or_404(reply_id)
     author = User.query.get(reply.user_id)
     like_count = ReplyLike.query.filter_by(reply_id=reply_id).count()
@@ -475,10 +513,22 @@ def get_reply(reply_id):
 @bp.put("/<int:reply_id>")
 @jwt_required()
 def update_reply(reply_id):
-    """
-    댓글 수정
+    """Update the content of an existing reply.
+
+    Requires JWT authentication. Only the reply author may update the reply.
+
+    Args:
+        reply_id: The ID of the reply to update.
+
     JSON body:
-        - content: 필수
+        content: New reply text (required).
+
+    Returns:
+        JSON response with 200 status on success.
+
+    Raises:
+        403: If the current user does not own the reply.
+        400: If content is missing or on an unexpected error.
     """
     try:
         current_user = get_current_user()
@@ -507,7 +557,20 @@ def update_reply(reply_id):
 @bp.delete("/<int:reply_id>")
 @jwt_required()
 def delete_reply(reply_id):
-    """댓글 삭제"""
+    """Delete a reply, its nested replies, and all associated notifications.
+
+    Requires JWT authentication. Only the reply author may delete the reply.
+
+    Args:
+        reply_id: The ID of the reply to delete.
+
+    Returns:
+        JSON response with 200 status on success.
+
+    Raises:
+        403: If the current user does not own the reply.
+        400: On unexpected error.
+    """
     try:
         current_user = get_current_user()
         reply = Reply.query.get_or_404(reply_id)
@@ -541,7 +604,19 @@ def delete_reply(reply_id):
 @bp.post("/<int:reply_id>/like")
 @jwt_required()
 def like_reply(reply_id):
-    """댓글 좋아요 (토글)"""
+    """Toggle a like on a reply for the current user.
+
+    Requires JWT authentication. Adds a like if not already liked; removes it
+    otherwise. Awards reward points to both the liker and the reply author when
+    liking another user's reply.
+
+    Args:
+        reply_id: The ID of the reply to like or unlike.
+
+    Returns:
+        JSON response with 201 status and updated like count when a like is added,
+        or 200 status when a like is removed. Returns 404 if the reply does not exist.
+    """
     current_user_id = int(get_jwt_identity())
 
     # 댓글 존재 확인
@@ -592,7 +667,16 @@ def like_reply(reply_id):
 @bp.delete("/<int:reply_id>/like")
 @jwt_required()
 def unlike_reply(reply_id):
-    """댓글 좋아요 취소"""
+    """Remove a like from a reply for the current user.
+
+    Requires JWT authentication. Silently succeeds if no like exists.
+
+    Args:
+        reply_id: The ID of the reply to unlike.
+
+    Returns:
+        JSON response with 200 status after the like is removed.
+    """
     current_user_id = int(get_jwt_identity())
 
     try:
@@ -609,7 +693,21 @@ def unlike_reply(reply_id):
 
 @bp.get("/<int:reply_id>/replies")
 def get_nested_replies(reply_id):
-    """댓글의 대댓글 조회 (페이지네이션)"""
+    """Retrieve a paginated list of nested replies (child replies) for a parent reply.
+
+    Args:
+        reply_id: The ID of the parent reply.
+
+    Query params:
+        page: Page number (default: 1).
+        per_page: Items per page (default: 20).
+        order_by: Sort order, either 'asc' (default) or 'desc'.
+
+    Returns:
+        JSON response with 200 status containing paginated nested reply data
+        including author info, like counts, child counts, and like status for the
+        current user. Returns 404 if the parent reply does not exist.
+    """
     # 부모 댓글 존재 확인
     Reply.query.get_or_404(reply_id)
 

@@ -21,8 +21,10 @@ MAX_PAGE_SIZE = 100
 
 @bp.get("/api_info")
 def api_info():
-    """
-    즐겨찾기 API 정보 제공 (개발용)
+    """Return API endpoint information for the favorite module (development use).
+
+    Returns:
+        JSON response with 200 status containing a description of all favorite endpoints.
     """
     info = {
         "module": "favorite",
@@ -85,12 +87,19 @@ def api_info():
 @bp.get("")
 @jwt_required()
 def get_favorites():
-    """
-    현재 사용자의 즐겨찾기 조회
+    """Retrieve the current user's favorites, optionally filtered by item type.
+
+    Requires JWT authentication.
+
     Query params:
-        - item_type: 타입별 필터 (STORY, ROUTE, REVIEW, REPORT, PRODUCT)
-        - page: 페이지 번호
-        - per_page: 페이지당 항목 수
+        item_type: Type filter — STORY, ROUTE, REVIEW, REPORT, PRODUCT, or PLACE
+            (optional).
+        page: Page number (default: 1).
+        per_page: Items per page (default: 20).
+
+    Returns:
+        JSON response with 200 status containing paginated favorite records.
+        Returns 400 if an invalid item_type is provided.
     """
     current_user_id = int(get_jwt_identity())
 
@@ -134,10 +143,18 @@ def get_favorites():
 @bp.get("/me/<string:item_type>")
 @jwt_required()
 def get_favorites_by_type(item_type):
-    """
-    현재 사용자의 특정 타입 즐겨찾기 조회 (실제 Post/Product 목록 반환)
-    Path params:
-        - item_type: story, route, review, report, product, place
+    """Retrieve the current user's favorited items of a specific type with full details.
+
+    Requires JWT authentication. Returns the actual Post, Product, or Place objects
+    rather than raw Favorite records.
+
+    Args:
+        item_type: Item category string — story, route, review, report, product,
+            or place.
+
+    Returns:
+        JSON response with 200 status containing a list of full item objects and
+        the total count. Returns 400 if item_type is invalid.
     """
     current_user_id = int(get_jwt_identity())
 
@@ -246,11 +263,25 @@ def get_favorites_by_type(item_type):
 @bp.patch("/<string:item_type>/<int:item_id>")
 @jwt_required()
 def toggle_favorite(item_type, item_id):
-    """
-    즐겨찾기 토글 (추가/제거)
-    Path params:
-        - item_type: story, product, route 등
-        - item_id: 아이템 ID
+    """Toggle a favorite for a specific item for the current user.
+
+    Requires JWT authentication. Adds the item to favorites if not already
+    favorited; removes it otherwise. The stored FavoriteType is resolved from the
+    item's actual category rather than the URL parameter alone.
+
+    Args:
+        item_type: Item category string — story, route, review, report, product,
+            or place.
+        item_id: The ID of the item to favorite or unfavorite.
+
+    Returns:
+        JSON response with 201 status and updated per-type item ID lists when a
+        favorite is added, or 200 status with is_favorited=False when removed.
+        Returns 400 for an invalid type or missing category, 404 if item not found.
+
+    Raises:
+        400: If item_type is invalid or the post has no category.
+        404: If the item does not exist.
     """
     current_user_id = int(get_jwt_identity())
 
@@ -342,11 +373,19 @@ def toggle_favorite(item_type, item_id):
 @bp.delete("/<string:item_type>/<int:item_id>")
 @jwt_required()
 def remove_from_favorites(item_type, item_id):
-    """
-    즐겨찾기 제거
-    Path params:
-        - item_type: post, product, route 등
-        - item_id: 아이템 ID
+    """Remove a specific item from the current user's favorites.
+
+    Requires JWT authentication.
+
+    Args:
+        item_type: Item category string — story, route, review, report, product,
+            or place.
+        item_id: The ID of the item to remove from favorites.
+
+    Returns:
+        JSON response with 200 status on success.
+        Returns 400 for an invalid item_type, or 404 if the favorite record does
+        not exist.
     """
     current_user_id = int(get_jwt_identity())
 
@@ -381,11 +420,17 @@ def remove_from_favorites(item_type, item_id):
 @bp.get("/check/<string:item_type>/<int:item_id>")
 @jwt_required()
 def check_favorite(item_type, item_id):
-    """
-    즐겨찾기 여부 확인
-    Path params:
-        - item_type: post, product, route 등
-        - item_id: 아이템 ID
+    """Check whether a specific item is in the current user's favorites.
+
+    Requires JWT authentication.
+
+    Args:
+        item_type: Item category string — story, route, review, report, or product.
+        item_id: The ID of the item to check.
+
+    Returns:
+        JSON response with 200 status containing a boolean 'is_favorited' field.
+        Returns 400 if item_type is invalid.
     """
     current_user_id = int(get_jwt_identity())
 

@@ -13,8 +13,10 @@ bp = Blueprint("image", __name__)
 
 @bp.get("/api_info")
 def api_info():
-    """
-    이미지 API 정보 제공 (개발용)
+    """Return API endpoint information for the image module (development use).
+
+    Returns:
+        JSON response with 200 status containing a description of all image endpoints.
     """
     info = {
         "module": "image",
@@ -53,14 +55,14 @@ def api_info():
 
 @bp.get("/profile/<string:uuid>")
 def get_profile_image(uuid):
-    """
-    프로필 이미지 조회
+    """Serve a profile image file by UUID.
 
     Args:
-        uuid: 이미지 UUID 또는 'default_profile'
+        uuid: The image UUID, or 'default_profile' to serve the default placeholder.
 
     Returns:
-        이미지 파일
+        The image file as a direct file response.
+        Returns 404 if the image record exists but the file is missing from disk.
     """
     if uuid == "default_profile":
         folder = os.path.join(current_app.root_path, "static")
@@ -83,14 +85,14 @@ def get_profile_image(uuid):
 
 @bp.get("/post/<string:uuid>")
 def get_post_image(uuid):
-    """
-    게시글 이미지 조회
+    """Serve a post image file by UUID.
 
     Args:
-        uuid: 이미지 UUID
+        uuid: The image UUID.
 
     Returns:
-        이미지 파일
+        The image file as a direct file response.
+        Returns 404 if the image record does not exist.
     """
     image = Image.query.filter_by(uuid=uuid).first_or_404(description="이미지 없음")
     return send_from_directory(
@@ -100,14 +102,14 @@ def get_post_image(uuid):
 
 @bp.get("/product/<string:uuid>")
 def get_product_image(uuid):
-    """
-    상품 이미지 조회
+    """Serve a product image file by UUID.
 
     Args:
-        uuid: 이미지 UUID
+        uuid: The image UUID.
 
     Returns:
-        이미지 파일
+        The image file as a direct file response.
+        Returns 404 if the image record does not exist or the file is missing from disk.
     """
     image = Image.query.filter_by(uuid=uuid).first_or_404(description="이미지 없음")
 
