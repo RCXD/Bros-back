@@ -1,6 +1,4 @@
-"""
-User model for authentication
-"""
+"""User model for authentication."""
 
 import enum
 from datetime import datetime
@@ -10,7 +8,7 @@ from apps.config.server import db
 
 
 class OauthType(enum.Enum):
-    """OAuth provider types"""
+    """OAuth provider type used during social login."""
 
     NONE = "NONE"
     KAKAO = "KAKAO"
@@ -19,14 +17,19 @@ class OauthType(enum.Enum):
 
 
 class AccountType(enum.Enum):
-    """Account privilege levels"""
+    """Account privilege level (regular user vs. administrator)."""
 
     USER = "USER"
     ADMIN = "ADMIN"
 
 
 class User(db.Model):
-    """User model"""
+    """SQLAlchemy model representing an application user.
+
+    Stores authentication credentials, profile information, account
+    status flags, and aggregate statistics (follower count, reward
+    points).
+    """
 
     __tablename__ = "users"
 
@@ -65,20 +68,31 @@ class User(db.Model):
     # posts = db.relationship("Post", backref="author", lazy=True)
     # replies = db.relationship("Reply", backref="author", lazy=True)
 
-    def set_password(self, password):
-        """Hash and set password"""
+    def set_password(self, password: str) -> None:
+        """Hash *password* and store it on the instance.
+
+        Args:
+            password: Plain-text password to hash.
+        """
         self.password_hash = generate_password_hash(password)
 
-    def check_password(self, password):
-        """Verify password"""
+    def check_password(self, password: str) -> bool:
+        """Verify *password* against the stored hash.
+
+        Args:
+            password: Plain-text password to check.
+
+        Returns:
+            ``True`` if *password* matches the stored hash.
+        """
         return check_password_hash(self.password_hash, password)
 
-    def renew_login(self):
-        """Update last login timestamp"""
+    def renew_login(self) -> None:
+        """Update :attr:`last_login` to the current timestamp."""
         self.last_login = datetime.now()
 
-    def calculate_follower(self):
-        """Calculate follower count"""
+    def calculate_follower(self) -> None:
+        """Refresh :attr:`follower_count` from the ``Follow`` table."""
         from apps.user.models import Follow
 
         self.follower_count = (
@@ -89,8 +103,13 @@ class User(db.Model):
             .scalar()
         )
 
-    def to_dict(self):
-        """Convert to dictionary"""
+    def to_dict(self) -> dict:
+        """Serialise the user instance to a plain dictionary.
+
+        Returns:
+            Dictionary containing all public user fields suitable for
+            JSON serialisation.
+        """
         return {
             "user_id": self.user_id,
             "username": self.username,
@@ -107,5 +126,5 @@ class User(db.Model):
             "points": self.points,
         }
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"<User {self.username}>"

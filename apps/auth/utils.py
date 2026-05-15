@@ -1,6 +1,4 @@
-"""
-Authentication utilities
-"""
+"""Authentication utilities."""
 
 import re
 from flask_jwt_extended import create_access_token, create_refresh_token, get_csrf_token
@@ -14,22 +12,38 @@ PHONE_REGEX = re.compile(r"^0\d{1,2}-?\d{3,4}-?\d{4}$")
 
 
 def is_valid_phone(phone: str) -> bool:
-    """Validate Korean phone number format"""
+    """Validate a Korean phone number format.
+
+    Args:
+        phone: Phone number string to validate.
+
+    Returns:
+        ``True`` if *phone* matches the Korean mobile/landline pattern.
+    """
     return bool(PHONE_REGEX.match(phone))
 
 
-def token_provider(user_id, access_require=True, refresh_require=True, **kwargs):
-    """
-    Generate JWT tokens for user authentication
+def token_provider(user_id: int, access_require: bool = True, refresh_require: bool = True, **kwargs):
+    """Generate JWT tokens for the given user and return a login response.
+
+    Builds an access token and/or refresh token with additional claims
+    derived from the user's ``oauth_type`` and ``account_type``.
+    Security headers (``X-Content-Type-Options``, ``X-Frame-Options``)
+    are added to the response.
 
     Args:
-        user_id: User ID to generate tokens for
-        access_require: Whether to generate access token
-        refresh_require: Whether to generate refresh token
-        **kwargs: Additional claims to include in token
+        user_id: Primary key of the user to generate tokens for.
+        access_require: When ``True``, generate an access token.
+        refresh_require: When ``True``, generate a refresh token.
+        **kwargs: Extra key-value pairs to include as additional JWT
+            claims.
 
     Returns:
-        JSON response with tokens and user data
+        A :class:`flask.Response` object with a JSON body containing
+        the tokens and user data.
+
+    Raises:
+        werkzeug.exceptions.NotFound: If no user with *user_id* exists.
     """
     user = User.query.filter(User.user_id == user_id).first_or_404()
 
@@ -76,24 +90,37 @@ def token_provider(user_id, access_require=True, refresh_require=True, **kwargs)
     return response
 
 
-def user_to_dict(user):
-    """
-    Convert User model to dictionary
-    (Backward compatibility - use user.to_dict() instead)
+def user_to_dict(user: "User") -> dict:
+    """Convert a :class:`~apps.auth.models.User` instance to a dict.
+
+    .. deprecated::
+        Call ``user.to_dict()`` directly instead.
+
+    Args:
+        user: User model instance to serialise.
+
+    Returns:
+        Dictionary of public user fields.
     """
     return user.to_dict()
 
 
-def generate_login_response(user, db_session):
-    """
-    Generate standardized login response with tokens
+def generate_login_response(user: "User", db_session) -> tuple:
+    """Build a standardised login response with JWT tokens.
+
+    Updates the user's ``last_login`` timestamp, fetches medal and
+    league info, then delegates to :func:`token_provider` to create the
+    JWT tokens with enriched additional claims.
 
     Args:
-        user: User model instance
-        db_session: Database session for commit
+        user: Authenticated :class:`~apps.auth.models.User` instance.
+        db_session: Active SQLAlchemy session used to commit the
+            ``last_login`` update.
 
     Returns:
-        tuple: (response_dict, status_code)
+        A two-tuple ``(response_dict, status_code)`` where
+        *response_dict* is the JSON-serialisable login payload and
+        *status_code* is ``200``.
     """
     # Update last login time
     user.renew_login()
@@ -131,21 +158,30 @@ def generate_login_response(user, db_session):
 
 
 def find_or_create_oauth_user(
-    username, email, nickname, oauth_type, db_session, profile_img_url=None
-):
-    """
-    Find existing OAuth user or create new one
+    username: str,
+    email: str,
+    nickname: str,
+    oauth_type: "OauthType",
+    db_session,
+    profile_img_url: str = None,
+) -> "User":
+    """Find an existing OAuth user or create a new one.
+
+    Looks up a ``User`` by *username* + *oauth_type*.  If no match is
+    found a new user row is inserted with a default profile image.
 
     Args:
-        username: OAuth user ID (social_id)
-        email: User email
-        nickname: Display name
-        oauth_type: OauthType enum value
-        db_session: Database session
-        profile_img_url: Optional profile image URL
+        username: OAuth provider user ID (e.g. Google ``sub`` value).
+        email: User e-mail address.
+        nickname: Display name.
+        oauth_type: :class:`~apps.auth.models.OauthType` enum value.
+        db_session: Active SQLAlchemy session.
+        profile_img_url: Optional URL of the provider's profile image
+            (reserved for future download logic).
 
     Returns:
-        User: User model instance
+        The found or newly created :class:`~apps.auth.models.User`
+        instance.
     """
     user = User.query.filter_by(username=username, oauth_type=oauth_type).first()
 
@@ -170,16 +206,25 @@ def find_or_create_oauth_user(
     return user
 
 
-def verify_oauth_token(provider, token):
-    """
-    Verify OAuth token and extract user information
+def verify_oauth_token(provider: str, token: str) -> tuple:
+    """Verify an OAuth token and extract user information.
+
+    Makes an HTTP request to the appropriate provider API to validate
+    *token* and retrieve the user's identity fields.
 
     Args:
-        provider: OAuth provider ("google", "kakao", "naver")
-        token: OAuth token
+        provider: OAuth provider name – ``"google"``, ``"kakao"``, or
+            ``"naver"``.
+        token: Provider access or ID token string.
 
     Returns:
-        tuple: (oauth_type, username, email, nickname, profile_img_url) or (None, error_message)
+        On success: a five-tuple
+        ``(oauth_type, username, email, nickname, profile_img_url)``
+        where *oauth_type* is the matching
+        :class:`~apps.auth.models.OauthType` enum value.
+
+        On failure: a two-tuple ``(None, error_message)`` where
+        *error_message* is a human-readable description of the error.
     """
     import requests
 

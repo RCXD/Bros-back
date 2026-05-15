@@ -49,6 +49,7 @@ class ProductMetadataMixin:
             A unique slug derived from ``base``, appending a numeric suffix
             (``-2``, ``-3``, …) when collisions are detected.
         """
+        candidate = base
         suffix = 1
         while cls.query.filter_by(slug=candidate).first():
             suffix += 1
@@ -241,6 +242,7 @@ class Product(db.Model):
                 ``n_satisfied_customers``, ``n_repeated_customers``,
                 ``product_url``, ``options``, and ``is_active``.
         """
+        self.uuid = str(uuid_lib.uuid4())
         self.code = code
         self.name = name
         self.category = category

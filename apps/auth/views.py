@@ -1,6 +1,7 @@
-"""
-인증 뷰 (라우트)
-사용자 등록, 로그인, 로그아웃, 프로필 관리 처리
+"""Authentication views (routes).
+
+Handles user registration, login (standard and OAuth), logout, and
+profile management.
 """
 
 from flask import Blueprint, request, jsonify, send_from_directory, current_app
@@ -22,9 +23,7 @@ bp = Blueprint("auth", __name__)
 
 @bp.get("/api_info")
 def api_info():
-    """
-    인증 API 정보 제공 (개발용)
-    """
+    """Return auth API metadata for development/debugging purposes."""
     info = {
         "module": "auth",
         "base_path": "/auth",
@@ -127,16 +126,22 @@ NAVER_USER_INFO_URL = "https://openapi.naver.com/v1/nid/me"
 # =====================================================
 
 
-def save_profile_image(file, user_id=None):
-    """
-    프로필 이미지를 저장하고 Image 레코드 생성
+def save_profile_image(file, user_id: int = None) -> str:
+    """Save a profile image file and create an :class:`~apps.image.models.Image` record.
+
+    Stores the file in
+    ``static/profile_images/<YYYY-MM-DD>/<uuid>.<ext>`` and, when
+    *user_id* is provided, inserts a corresponding ``Image`` row via
+    the current database session (not committed here).
 
     Args:
-        file: 업로드된 파일 객체
-        user_id: 사용자 ID (선택)
+        file: Uploaded file object (``FileStorage`` or similar) with a
+            ``filename`` attribute.
+        user_id: ID of the owning user.  When ``None`` no ``Image``
+            record is created.
 
     Returns:
-        str: 저장된 이미지의 UUID
+        The UUID string assigned to the saved image file.
     """
     print(
         f"[DEBUG] save_profile_image 시작 - user_id={user_id}, filename={file.filename}"
@@ -183,17 +188,21 @@ def save_profile_image(file, user_id=None):
 
 @bp.post("/user")
 def signup():
-    """
-    사용자 등록 엔드포인트
+    """Register a new user account.
 
-    Form data:
-        - username: 필수
-        - password: 필수
-        - email: 필수
-        - nickname: 선택
-        - address: 선택
-        - phone: 선택
-        - profile_img: 선택 (multipart file)
+    Accepts ``multipart/form-data`` with the following fields:
+
+    * ``username`` *(required)* – unique login name.
+    * ``password`` *(required)* – plain-text password (hashed before storage).
+    * ``email`` *(required)* – valid e-mail address.
+    * ``nickname`` *(optional)* – display name; defaults to *username*.
+    * ``address`` *(optional)* – address string.
+    * ``phone`` *(optional)* – Korean phone number.
+    * ``profile_img`` *(optional)* – profile image file upload.
+
+    Returns:
+        JSON 201 with ``{message, user: {user_id}}`` on success,
+        or a JSON error body with the appropriate 4xx status code.
     """
     try:
         # 폼 데이터 추출
@@ -309,17 +318,22 @@ def signup():
 
 @bp.post("/login")
 def login():
-    """
-    통합 로그인 엔드포인트 (일반 로그인 + OAuth)
+    """Unified login endpoint supporting standard and OAuth login.
 
-    JSON body:
-        일반 로그인:
-            - username: 필수
-            - password: 필수
+    Accepts a JSON body.  The request is routed to the appropriate
+    handler based on the presence of the ``provider`` field.
 
-        OAuth 로그인:
-            - provider: 필수 ("google", "kakao", "naver")
-            - token: 필수 (OAuth 토큰)
+    Standard login body::
+
+        {"username": "...", "password": "..."}
+
+    OAuth login body::
+
+        {"provider": "google" | "kakao" | "naver", "token": "..."}
+
+    Returns:
+        JSON 200 with JWT tokens and user data on success,
+        or a JSON error body with the appropriate 4xx status code.
     """
     try:
         data = request.get_json()
@@ -399,10 +413,13 @@ def login():
 
 @bp.post("/login/google")
 def google_login():
-    """
-    Google OAuth 로그인 (Deprecated)
+    """Handle Google OAuth login (deprecated).
 
-    대신 POST /login with {"provider": "google", "token": "..."} 사용
+    Use ``POST /login`` with ``{"provider": "google", "token": "..."}``
+    instead.
+
+    Returns:
+        JSON login response from :func:`login_with_provider`.
     """
     try:
         token = request.json.get("token")
@@ -418,10 +435,13 @@ def google_login():
 
 @bp.post("/login/kakao")
 def kakao_login():
-    """
-    Kakao OAuth 로그인 (Deprecated)
+    """Handle Kakao OAuth login (deprecated).
 
-    대신 POST /login with {"provider": "kakao", "token": "..."} 사용
+    Use ``POST /login`` with ``{"provider": "kakao", "token": "..."}``
+    instead.
+
+    Returns:
+        JSON login response from :func:`login_with_provider`.
     """
     try:
         token = request.json.get("token")
@@ -437,10 +457,13 @@ def kakao_login():
 
 @bp.post("/login/naver")
 def naver_login():
-    """
-    Naver OAuth 로그인 (Deprecated)
+    """Handle Naver OAuth login (deprecated).
 
-    대신 POST /login with {"provider": "naver", "token": "..."} 사용
+    Use ``POST /login`` with ``{"provider": "naver", "token": "..."}``
+    instead.
+
+    Returns:
+        JSON login response from :func:`login_with_provider`.
     """
     try:
         token = request.json.get("token")
@@ -454,8 +477,20 @@ def naver_login():
         return jsonify({"message": f"Naver 로그인 실패: {str(e)}"}), 400
 
 
-def login_with_provider(provider, token):
-    """내부 헬퍼: provider별 OAuth 로그인 처리"""
+def login_with_provider(provider: str, token: str):
+    """Process an OAuth login for the given provider and token.
+
+    Internal helper used by the deprecated per-provider endpoints.
+
+    Args:
+        provider: OAuth provider name (``"google"``, ``"kakao"``, or
+            ``"naver"``).
+        token: OAuth access or ID token string.
+
+    Returns:
+        JSON login response (tokens + user data) with HTTP 200, or a
+        JSON error response with 401.
+    """
     from apps.auth.utils import (
         verify_oauth_token,
         find_or_create_oauth_user,
@@ -489,16 +524,21 @@ def login_with_provider(provider, token):
 @bp.put("/user")
 @jwt_required()
 def update_profile():
-    """
-    사용자 프로필 수정
+    """Update the authenticated user's profile.
 
-    Form data (모두 선택):
-        - email
-        - password
-        - nickname
-        - address
-        - phone
-        - profile_img (multipart file)
+    Accepts ``multipart/form-data``.  All fields are optional — only
+    provided fields are updated:
+
+    * ``email`` – must be a valid e-mail address and not already taken.
+    * ``password`` – new plain-text password (hashed before storage).
+    * ``nickname`` – new display name.
+    * ``address`` – address string.
+    * ``phone`` – Korean phone number.
+    * ``profile_img`` – new profile image file upload.
+
+    Returns:
+        JSON 200 with the updated user data dict on success, or a JSON
+        error body with the appropriate 4xx status code.
     """
     try:
         current_user = get_current_user()
@@ -710,9 +750,10 @@ def update_profile():
 @bp.delete("/logout")
 @jwt_required()
 def logout():
-    """
-    사용자 로그아웃 엔드포인트
-    현재 토큰을 블랙리스트에 추가
+    """Log the current user out by adding the JWT to the blocklist.
+
+    Returns:
+        JSON 200 with a success message.
     """
     jti = get_jwt()["jti"]
     BLACKLIST.add(jti)
@@ -727,8 +768,13 @@ def logout():
 @bp.delete("/user")
 @jwt_required()
 def remove_account():
-    """
-    사용자 계정 삭제 (연관된 모든 데이터 삭제)
+    """Delete the authenticated user's account and all related data.
+
+    Also deletes all :class:`~apps.notification.models.Notification`
+    records where the user is the sender or recipient.
+
+    Returns:
+        JSON 200 with a confirmation message.
     """
     current_user = get_current_user()
 
@@ -753,8 +799,11 @@ def remove_account():
 @bp.post("/refresh")
 @jwt_required(refresh=True)
 def refresh():
-    """
-    리프레시 토큰을 사용하여 액세스 토큰 갱신
+    """Issue a new access token using the provided refresh token.
+
+    Returns:
+        JSON 200 with a new ``access_token`` (and associated CSRF
+        token).
     """
     user_id = get_jwt_identity()
     return token_provider(user_id, access_require=True, refresh_require=False)
@@ -768,8 +817,11 @@ def refresh():
 @bp.get("/me")
 @jwt_required()
 def get_me():
-    """
-    현재 인증된 사용자 정보 조회
+    """Return the profile of the currently authenticated user.
+
+    Returns:
+        JSON 200 with the user data dict, or JSON 404 if the user
+        cannot be found.
     """
     current_user = get_current_user()
     if not current_user:

@@ -43,11 +43,24 @@ IMAGE_RULES = {
 }
 
 
-def compress_image(file, image_type="default"):
-    """
-    이미지 압축 및 리사이즈 공용 함수
-    - IMAGE_RULES[image_type]에 따라 크기와 용량 제한 적용
-    - 반환: (BytesIO 압축 데이터, 확장자, 원본 파일명)
+def compress_image(file, image_type: str = "default"):
+    """Compress and resize an image according to the rules for *image_type*.
+
+    Applies the size and byte limits defined in :data:`IMAGE_RULES` for
+    the given *image_type*.  Quality is reduced iteratively until the
+    output fits within the byte limit.
+
+    Args:
+        file: File-like object (e.g. a Flask ``FileStorage``) with a
+            ``filename`` attribute pointing to the original file name.
+        image_type: Rule key in :data:`IMAGE_RULES`.  Defaults to
+            ``"default"``.
+
+    Returns:
+        A three-tuple ``(output, fmt, original_filename)`` where
+        *output* is a :class:`io.BytesIO` containing the compressed
+        image data, *fmt* is the lowercase format string (e.g. ``"jpeg"``),
+        and *original_filename* is ``file.filename``.
     """
     rule = IMAGE_RULES.get(image_type, IMAGE_RULES["default"])
     max_size = rule["max_size"]
@@ -80,12 +93,24 @@ def compress_image(file, image_type="default"):
     return output, fmt, file.filename
 
 
-def save_to_disk(output_stream, ext, filename, category="post"):
-    """
-    카테고리/날짜별로 이미지 저장
-    - category: post / reply / profile
-    - 날짜별 폴더 생성 (ex: static/post_images/2025-10-30/)
-    - 반환: 상대경로 (ex: static/post_images/2025-10-30/uuid.jpg)
+def save_to_disk(output_stream, ext: str, filename: str, category: str = "post") -> str:
+    """Persist an image stream to disk under a date-partitioned folder.
+
+    Creates ``static/<category>_images/<YYYY-MM-DD>/`` if it does not
+    exist, writes the stream to ``<filename>`` inside that folder, and
+    returns the relative path.
+
+    Args:
+        output_stream: Readable binary stream (e.g. :class:`io.BytesIO`)
+            containing the image data.
+        ext: File extension without the leading dot (e.g. ``"jpg"``).
+        filename: Destination file name (including extension).
+        category: Image category sub-folder prefix.  One of
+            ``"post"``, ``"reply"``, or ``"profile"``.
+
+    Returns:
+        Relative path to the saved file, e.g.
+        ``"static/post_images/2025-10-30/uuid.jpg"``.
     """
     category_folder = f"static/{category}_images"
     if not os.path.exists(os.path.join(current_app.root_path, category_folder)):
@@ -112,16 +137,20 @@ def save_to_disk(output_stream, ext, filename, category="post"):
     return rel_path
 
 
-def delete_image(image, category="post"):
-    """
-    이미지를 서버에서 삭제 (DB는 Blueprint에서 처리)
+def delete_image(image, category: str = "post") -> bool:
+    """Delete an image file from disk.
+
+    The database record deletion is the caller's responsibility.
 
     Args:
-        image: Image 모델 객체 또는 directory 속성이 있는 객체
-        category: 이미지 카테고리 (post, profile, reply)
+        image: An object that has a ``directory`` attribute containing
+            the relative (or absolute) path to the image file.
+        category: Image category, provided for contextual logging.
 
     Returns:
-        bool: 삭제 성공 여부
+        ``True`` if the file was found and deleted successfully;
+        ``False`` if the file did not exist, the *image* argument was
+        ``None``, or an error occurred during deletion.
     """
     if not image:
         if current_app:
@@ -160,17 +189,28 @@ def delete_image(image, category="post"):
         return False
 
 
-def upload_profile(user, file=None, url=None):
-    """
-    프로필 이미지 업로드 및 DB 반영
+def upload_profile(user, file=None, url: str = None) -> str:
+    """Upload a profile image and update the user record.
+
+    Handles three cases:
+
+    * **No file, no URL** – leaves the current profile image unchanged
+      (or sets the default if the user has none).
+    * **URL only** – downloads the image from *url* and saves it.
+    * **File** – compresses and saves the uploaded file.
+
+    The previous profile image (if any and not the default) is moved to
+    a backup folder before the new one is saved.
 
     Args:
-        user: User 모델 객체
-        file: 업로드 파일 객체
-        url: 소셜 로그인 프로필 이미지 URL
+        user: :class:`~apps.auth.models.User` model instance to update.
+        file: Optional file-like object (``FileStorage`` or
+            ``BytesIO``) containing the new profile image.
+        url: Optional URL to download the profile image from (used for
+            social-login avatar images).
 
     Returns:
-        str: 저장된 이미지 상대 경로
+        Relative path to the saved (or unchanged) profile image.
     """
     folder = "static/profile_images"
     backup_folder = os.path.join(folder, "backup")
@@ -240,17 +280,23 @@ def upload_profile(user, file=None, url=None):
     return relative_path
 
 
-def compress_product_image(file, max_size=(2048, 2048), max_bytes=2 * 1024 * 1024):
-    """
-    제품 이미지 압축 및 리사이즈
+def compress_product_image(file, max_size: tuple = (2048, 2048), max_bytes: int = 2 * 1024 * 1024):
+    """Compress and resize a product image.
+
+    Converts the image to RGB if necessary (handles RGBA/LA/P modes),
+    resizes it to fit within *max_size* while preserving aspect ratio,
+    then iteratively reduces JPEG quality until the output is within
+    *max_bytes*.
 
     Args:
-        file: 이미지 파일 객체 (FileStorage 또는 BytesIO)
-        max_size: 최대 이미지 크기 (width, height)
-        max_bytes: 최대 파일 크기 (바이트)
+        file: Image file object (``FileStorage`` or ``BytesIO``).
+        max_size: Maximum ``(width, height)`` in pixels.
+        max_bytes: Maximum output size in bytes.
 
     Returns:
-        tuple: (BytesIO 압축 데이터, 확장자)
+        A two-tuple ``(output, ext)`` where *output* is a
+        :class:`io.BytesIO` of the compressed data and *ext* is the
+        lowercase extension string (``"jpg"`` for JPEG).
     """
     # 파일 포인터를 처음으로 이동
     if hasattr(file, "seek"):
@@ -299,16 +345,18 @@ def compress_product_image(file, max_size=(2048, 2048), max_bytes=2 * 1024 * 102
     return output, ext
 
 
-def save_product_image(file, category="general") -> str:
-    """
-    제품 메인 이미지를 저장하고 UUID 반환
+def save_product_image(file, category: str = "general") -> str:
+    """Compress and save a product main image, returning its UUID.
+
+    The image is stored at
+    ``static/product_images/<category>/<YYYY-MM-DD>/<uuid>.<ext>``.
 
     Args:
-        file: 이미지 파일 객체
-        category: 제품 카테고리 (fishing, camping, etc.)
+        file: Image file object to compress and save.
+        category: Product category sub-folder (e.g. ``"fishing"``).
 
     Returns:
-        str: 저장된 이미지의 UUID
+        The UUID string assigned to the saved image file.
     """
     # 이미지 압축
     compressed, ext = compress_product_image(file)
@@ -339,16 +387,18 @@ def save_product_image(file, category="general") -> str:
     return image_uuid
 
 
-def save_product_detail_images(files, category="general") -> list:
-    """
-    제품 상세 이미지들을 저장하고 UUID 리스트 반환
+def save_product_detail_images(files, category: str = "general") -> list:
+    """Compress and save multiple product detail images.
+
+    Iterates over *files*, calling :func:`save_product_image` for each.
+    Failures for individual files are logged and skipped.
 
     Args:
-        files: 이미지 파일 객체 리스트
-        category: 제품 카테고리
+        files: Iterable of image file objects to save.
+        category: Product category sub-folder.
 
     Returns:
-        List[str]: 저장된 이미지들의 UUID 리스트
+        List of UUID strings for the successfully saved images.
     """
     if not files:
         return []
@@ -367,16 +417,20 @@ def save_product_detail_images(files, category="general") -> list:
 
 
 def get_product_image_path(image_uuid: str, category: str, date: str = None) -> str:
-    """
-    UUID로부터 제품 이미지 파일 경로 조회
+    """Locate a product image file by its UUID.
+
+    Searches for a filename that starts with *image_uuid* in the
+    ``static/product_images/<category>/<date>/`` directory.
 
     Args:
-        image_uuid: 이미지 UUID
-        category: 제품 카테고리
-        date: 날짜 (YYYY-MM-DD 형식, None이면 현재 날짜 사용)
+        image_uuid: UUID prefix to search for.
+        category: Product category sub-folder.
+        date: Date string in ``"YYYY-MM-DD"`` format.  Defaults to
+            today's date.
 
     Returns:
-        str: 이미지 파일의 상대 경로 (파일이 없으면 None)
+        Relative path to the matching image file, or ``None`` if not
+        found.
     """
     if not date:
         date = datetime.now().strftime("%Y-%m-%d")
@@ -398,16 +452,16 @@ def get_product_image_path(image_uuid: str, category: str, date: str = None) -> 
 
 
 def delete_product_image(image_uuid: str, category: str, date: str = None) -> bool:
-    """
-    제품 이미지 삭제
+    """Delete a product image file identified by its UUID.
 
     Args:
-        image_uuid: 삭제할 이미지 UUID
-        category: 제품 카테고리
-        date: 날짜 (YYYY-MM-DD)
+        image_uuid: UUID of the image to delete.
+        category: Product category sub-folder.
+        date: Date string in ``"YYYY-MM-DD"`` format used to locate the
+            file.  Defaults to today's date.
 
     Returns:
-        bool: 삭제 성공 여부
+        ``True`` if the file was found and deleted; ``False`` otherwise.
     """
     image_path = get_product_image_path(image_uuid, category, date)
 
