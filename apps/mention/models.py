@@ -8,14 +8,14 @@ from apps.config.server import db
 
 
 class MentionItemType(enum.Enum):
-    """멘션 대상 아이템 타입"""
+    """Enumeration of content item types that can contain a mention."""
 
     POST = "POST"
     REPLY = "REPLY"
 
 
 class Mention(db.Model):
-    """멘션 모델"""
+    """SQLAlchemy model representing a user mention inside a post or reply."""
 
     __tablename__ = "mentions"
 
@@ -63,7 +63,11 @@ class Mention(db.Model):
     )
 
     def to_dict(self):
-        """딕셔너리로 변환"""
+        """Serialize the mention to a JSON-compatible dictionary.
+
+        Returns:
+            A dictionary containing all public mention fields.
+        """
         return {
             "mention_id": self.mention_id,
             "mentioner_id": self.mentioner_id,
@@ -75,4 +79,5 @@ class Mention(db.Model):
         }
 
     def __repr__(self):
+        """Return a developer-readable representation of the mention."""
         return f"<Mention {self.mention_id}: {self.mentioner_id} → {self.mentioned_user_id} ({self.item_type.value}:{self.item_id})>"

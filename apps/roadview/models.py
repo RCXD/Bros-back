@@ -25,7 +25,15 @@ class RoadviewStatus(enum.Enum):
 
 
 def init_models(db):
-    """Initialize roadview models with db instance"""
+    """Define and return the roadview SQLAlchemy models bound to the given db instance.
+
+    Args:
+        db: The Flask-SQLAlchemy ``SQLAlchemy`` instance to bind the models to.
+
+    Returns:
+        A tuple of ``(Roadview, RoadviewCache, RoadviewRequest, RoadviewAPIUsage)``
+        model classes.
+    """
 
     class Roadview(db.Model):
         """
@@ -83,7 +91,12 @@ def init_models(db):
         expires_at = db.Column(db.DateTime)  # URL expiration time
 
         def to_dict(self):
-            """Convert to dictionary for JSON response"""
+            """Serialize the roadview record to a JSON-compatible dictionary.
+
+            Returns:
+                A dictionary with roadview metadata, image URLs, provider info,
+                and timestamps.
+            """
             return {
                 "roadview_id": self.roadview_id,
                 "latitude": self.latitude,
@@ -139,7 +152,12 @@ def init_models(db):
         __table_args__ = (db.Index("idx_location_cache", "lat_rounded", "lng_rounded"),)
 
         def to_dict(self):
-            """Convert to dictionary"""
+            """Serialize the cache entry to a JSON-compatible dictionary.
+
+            Returns:
+                A dictionary with rounded coordinates, per-provider availability
+                flags, best provider, and cache usage metadata.
+            """
             return {
                 "cache_id": self.cache_id,
                 "lat_rounded": self.lat_rounded,
@@ -188,7 +206,12 @@ def init_models(db):
         created_at = db.Column(db.DateTime, default=datetime.now, index=True)
 
         def to_dict(self):
-            """Convert to dictionary"""
+            """Serialize the request record to a JSON-compatible dictionary.
+
+            Returns:
+                A dictionary containing request coordinates, provider info,
+                metrics such as response time and API call count, and status.
+            """
             return {
                 "request_id": self.request_id,
                 "user_id": self.user_id,
@@ -245,7 +268,12 @@ def init_models(db):
         )
 
         def to_dict(self):
-            """Convert to dictionary"""
+            """Serialize the API usage record to a JSON-compatible dictionary.
+
+            Returns:
+                A dictionary containing provider, date, request counts, cost
+                estimate, and quota status.
+            """
             return {
                 "usage_id": self.usage_id,
                 "provider": self.provider.value if self.provider else None,

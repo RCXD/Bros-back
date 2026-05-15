@@ -5,6 +5,8 @@ from apps.config.server import db
 
 
 class KSLink(db.Model):
+    """SQLAlchemy model representing a Korean Standard road network link segment."""
+
     __tablename__ = "ks_links"
     # __table_args__ = (
     #     db.Index("idx_kslink_link_osm", "link_id", "osm_edges"),
@@ -18,6 +20,8 @@ class KSLink(db.Model):
 
 
 class TrafficHazard(db.Model):
+    """SQLAlchemy model representing a traffic hazard penalty mapped to a road edge."""
+
     __tablename__ = "traffic_hazards"
     __table_args__ = (
         db.Index("idx_traffic_hazard_link", "link_id"),
@@ -33,6 +37,8 @@ class TrafficHazard(db.Model):
 
 
 class MyPath(db.Model):
+    """SQLAlchemy model representing a user-saved custom navigation path."""
+
     __tablename__ = "my_paths"
 
     path_id = db.Column(db.Integer, primary_key=True)
@@ -45,6 +51,12 @@ class MyPath(db.Model):
     updated_at = db.Column(db.DateTime, default=datetime.now, onupdate=datetime.now)
 
     def serialize(self):
+        """Serialize the saved path to a JSON-compatible dictionary.
+
+        Returns:
+            A dictionary containing ``path_id``, ``user_id``, ``name``,
+            ``points``, ``created_at``, and ``updated_at``.
+        """
         return {
             "path_id": self.path_id,
             "user_id": self.user_id,
@@ -56,6 +68,8 @@ class MyPath(db.Model):
 
 
 class Hazard(db.Model):
+    """SQLAlchemy model representing a geo-located road hazard with a routing penalty."""
+
     __tablename__ = "hazards"
     __table_args__ = (
         db.Index("idx_hazard_active_edge", "is_active", "edge_id"),
@@ -75,6 +89,13 @@ class Hazard(db.Model):
     updated_at = db.Column(db.DateTime, default=datetime.now, onupdate=datetime.now)
 
     def serialize(self):
+        """Serialize the hazard record to a JSON-compatible dictionary.
+
+        Returns:
+            A dictionary containing ``hazard_id``, location coordinates,
+            ``danger_score``, ``is_active``, edge identifiers,
+            ``weight_penalty``, and timestamps.
+        """
         return {
             "hazard_id": self.hazard_id,
             "lat": self.lat,

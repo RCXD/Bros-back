@@ -8,6 +8,7 @@ from apps.config.server import db
 
 
 class ReportType(enum.Enum):
+    """Enumeration of content types that can be reported."""
 
     USER = "USER"
     POST = "POST"
@@ -15,6 +16,8 @@ class ReportType(enum.Enum):
 
 
 class Report(db.Model):
+    """SQLAlchemy model representing a content moderation report submitted by a user."""
+
     __tablename__ = "reports"
 
     report_id = db.Column(db.Integer, primary_key=True, autoincrement=True)
@@ -48,4 +51,5 @@ class Report(db.Model):
     )
 
     def __repr__(self):
+        """Return a developer-readable representation of the report."""
         return f"<Report {self.report_id} - {self.target_type.name}:{self.target_id}>"

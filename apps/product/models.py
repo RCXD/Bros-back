@@ -14,13 +14,23 @@ from apps.config.server import db
 
 
 def _slugify_value(value: str) -> str:
-    """간단한 슬러그 생성"""
+    """Convert a string into a URL-friendly slug.
+
+    Args:
+        value: The raw string to slugify.
+
+    Returns:
+        A lowercase, hyphen-separated slug derived from ``value``.
+        Falls back to ``"meta"`` if the result would be empty.
+    """
     cleaned = re.sub(r"[^\w]+", "-", value.strip().lower())
     cleaned = cleaned.strip("-")
     return cleaned or "meta"
 
 
 class ProductMetadataMixin:
+    """Abstract mixin providing shared name/slug/logo behaviour for product metadata models."""
+
     __abstract__ = True
 
     name = db.Column(db.String(100), unique=True, nullable=False)
@@ -30,7 +40,15 @@ class ProductMetadataMixin:
 
     @classmethod
     def _build_unique_slug(cls, base: str) -> str:
-        candidate = base
+        """Generate a slug that does not already exist in the database.
+
+        Args:
+            base: The initial candidate slug string.
+
+        Returns:
+            A unique slug derived from ``base``, appending a numeric suffix
+            (``-2``, ``-3``, …) when collisions are detected.
+        """
         suffix = 1
         while cls.query.filter_by(slug=candidate).first():
             suffix += 1
@@ -39,6 +57,17 @@ class ProductMetadataMixin:
 
     @classmethod
     def get_or_create(cls, name: str, logo_filename: str = None):
+        """Fetch an existing metadata entry by name, or create one if absent.
+
+        Args:
+            name: The display name to look up or create (case-insensitive match).
+            logo_filename: Optional explicit logo file name. Defaults to
+                ``<slug>.png`` when omitted.
+
+        Returns:
+            The existing or newly created model instance, or ``None`` if
+            ``name`` is falsy.
+        """
         if not name:
             return None
         normalized = name.strip()
@@ -54,6 +83,14 @@ class ProductMetadataMixin:
         return entry
 
     def to_dict(self):
+        """Serialize the metadata entry to a JSON-compatible dictionary.
+
+        Returns:
+            A dictionary with ``id``, ``name``, ``slug``, and ``logo_url`` keys.
+
+        Raises:
+            NotImplementedError: If ``id_field`` is not defined on the subclass.
+        """
         if not self.id_field:
             raise NotImplementedError("id_field must be defined on metadata subclasses")
         return {
@@ -65,14 +102,18 @@ class ProductMetadataMixin:
 
     @property
     def logo_url(self):
+        """Return the URL path for this entry's logo image."""
         filename = self.logo_filename or f"{self.slug}.png"
         return f"/static/logo_images/{filename}"
 
     def __repr__(self):
+        """Return a developer-readable representation of the metadata entry."""
         return f"<{self.__class__.__name__} {self.name}>"
 
 
 class ProductSeller(ProductMetadataMixin, db.Model):
+    """SQLAlchemy model representing a product seller/vendor entity."""
+
     __tablename__ = "product_sellers"
     id_field = "seller_id"
 
@@ -81,6 +122,8 @@ class ProductSeller(ProductMetadataMixin, db.Model):
 
 
 class ProductMall(ProductMetadataMixin, db.Model):
+    """SQLAlchemy model representing an online shopping mall entity."""
+
     __tablename__ = "product_malls"
     id_field = "mall_id"
 
@@ -89,6 +132,8 @@ class ProductMall(ProductMetadataMixin, db.Model):
 
 
 class ProductBrand(ProductMetadataMixin, db.Model):
+    """SQLAlchemy model representing a product brand entity."""
+
     __tablename__ = "product_brands"
     id_field = "brand_id"
 
@@ -97,7 +142,7 @@ class ProductBrand(ProductMetadataMixin, db.Model):
 
 
 class Product(db.Model):
-    """상품 모델"""
+    """SQLAlchemy model representing a purchasable product."""
 
     __tablename__ = "products"
 
@@ -180,7 +225,22 @@ class Product(db.Model):
     updated_at = db.Column(db.DateTime, default=datetime.now, onupdate=datetime.now)
 
     def __init__(self, code, name, category, price, **kwargs):
-        self.uuid = str(uuid_lib.uuid4())
+        """Initialize a Product instance with required and optional attributes.
+
+        Args:
+            code: Unique product code string.
+            name: Human-readable product name.
+            category: Product category string (e.g. ``"general"``).
+            price: Current selling price; converted to ``Decimal`` internally.
+            **kwargs: Optional product attributes including ``description``,
+                ``original_price``, ``discount_percentage``, ``currency``,
+                ``reward_points``, ``rocket_delivery``, ``stock``,
+                ``seller_entity``/``seller_name``, ``mall_entity``/``mall_name``,
+                ``brand_entity``/``brand``, ``mall_url``, ``seller_url``,
+                ``model_number``, ``rating``, ``n_reviews``,
+                ``n_satisfied_customers``, ``n_repeated_customers``,
+                ``product_url``, ``options``, and ``is_active``.
+        """
         self.code = code
         self.name = name
         self.category = category
@@ -243,10 +303,12 @@ class Product(db.Model):
 
     @property
     def seller_name(self):
+        """Return the name of the associated seller, or ``None`` if unset."""
         return self.seller_entity.name if self.seller_entity else None
 
     @seller_name.setter
     def seller_name(self, value):
+        """Set the seller by name string or ``ProductSeller`` instance."""
         if isinstance(value, ProductSeller):
             self.seller_entity = value
         elif value:
@@ -256,10 +318,12 @@ class Product(db.Model):
 
     @property
     def mall_name(self):
+        """Return the name of the associated mall, or ``None`` if unset."""
         return self.mall_entity.name if self.mall_entity else None
 
     @mall_name.setter
     def mall_name(self, value):
+        """Set the mall by name string or ``ProductMall`` instance."""
         if isinstance(value, ProductMall):
             self.mall_entity = value
         elif value:
@@ -269,10 +333,12 @@ class Product(db.Model):
 
     @property
     def brand(self):
+        """Return the name of the associated brand, or ``None`` if unset."""
         return self.brand_entity.name if self.brand_entity else None
 
     @brand.setter
     def brand(self, value):
+        """Set the brand by name string or ``ProductBrand`` instance."""
         if isinstance(value, ProductBrand):
             self.brand_entity = value
         elif value:
@@ -281,8 +347,9 @@ class Product(db.Model):
             self.brand_entity = None
 
     def __repr__(self):
+        """Return a developer-readable representation of the product."""
         return f"<Product {self.product_id}: {self.name}>"
 
     def update(self):
-        """업데이트 시각 갱신"""
+        """Refresh the ``updated_at`` timestamp to the current time."""
         self.updated_at = datetime.now()

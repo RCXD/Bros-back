@@ -9,6 +9,8 @@ from apps.config.server import db
 
 
 class ItemType(enum.Enum):
+    """Enumeration of cosmetic item categories."""
+
     border = "border"
     overlay = "overlay"
     theme = "theme"
@@ -19,6 +21,8 @@ class ItemType(enum.Enum):
 
 
 class CosmeticItem(db.Model):
+    """SQLAlchemy model representing a purchasable cosmetic item."""
+
     __tablename__ = "cosmetic_item"
 
     item_id = db.Column(db.Integer, primary_key=True)
@@ -36,6 +40,8 @@ class CosmeticItem(db.Model):
 
 
 class UserItem(db.Model):
+    """SQLAlchemy model recording a cosmetic item owned by a user."""
+
     __tablename__ = "user_item"
 
     user_item_id = db.Column(db.Integer, primary_key=True)
@@ -54,6 +60,8 @@ class UserItem(db.Model):
 
 
 class UserCosmeticState(db.Model):
+    """SQLAlchemy model storing the currently equipped cosmetic items for a user."""
+
     __tablename__ = "user_cosmetic_state"
 
     # Enforce a single row per user via PK on user_id
@@ -82,6 +90,8 @@ class UserCosmeticState(db.Model):
 
 
 class CosmeticSet(db.Model):
+    """SQLAlchemy model representing a bundle of cosmetic items sold together."""
+
     __tablename__ = "cosmetic_set"
 
     set_id = db.Column(db.Integer, primary_key=True)
@@ -96,6 +106,8 @@ class CosmeticSet(db.Model):
 
 
 class CosmeticSetItem(db.Model):
+    """SQLAlchemy join-table model linking cosmetic sets to individual items."""
+
     __tablename__ = "cosmetic_set_item"
 
     set_id = db.Column(
@@ -107,6 +119,8 @@ class CosmeticSetItem(db.Model):
 
 
 class CosmeticTag(db.Model):
+    """SQLAlchemy model representing a searchable tag for cosmetic items."""
+
     __tablename__ = "cosmetic_tag"
 
     tag_id = db.Column(db.Integer, primary_key=True)
@@ -114,6 +128,8 @@ class CosmeticTag(db.Model):
 
 
 class CosmeticItemTag(db.Model):
+    """SQLAlchemy join-table model linking cosmetic items to tags."""
+
     __tablename__ = "cosmetic_item_tag"
 
     tag_id = db.Column(
