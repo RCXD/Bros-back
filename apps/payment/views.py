@@ -25,8 +25,10 @@ bp = Blueprint("payment", __name__)
 
 @bp.get("/api_info")
 def api_info():
-    """
-    주문 API 정보 제공 (개발용)
+    """Return payment module API metadata for development reference.
+
+    Returns:
+        JSON response with module info and endpoint list, HTTP 200.
     """
     info = {
         "module": "payment",
@@ -81,7 +83,21 @@ def save_ready_order(
     quantity,
     total_amount,
 ):
-    """Create a new READY order with item snapshot values."""
+    """Create a new READY order record with item snapshot values.
+
+    Args:
+        order_id: Unique order identifier string.
+        user_id: ID of the user placing the order.
+        item_id: ID of the CosmeticItem being purchased.
+        quantity: Number of units ordered.
+        total_amount: Total price in the smallest currency unit.
+
+    Returns:
+        The newly created Order instance, or an existing one on a duplicate key.
+
+    Raises:
+        IntegrityError: Re-raised if the duplicate key belongs to a different record.
+    """
     order = Order(
         order_id=order_id,
         user_id=user_id,
@@ -103,13 +119,33 @@ def save_ready_order(
 
 
 def persist_order_tid(order, tid):
+    """Persist the KakaoPay transaction ID onto an existing Order.
+
+    Args:
+        order: The Order instance to update.
+        tid: KakaoPay transaction ID string.
+
+    Returns:
+        The updated Order instance.
+    """
     order.tid = tid
     db.session.commit()
     return order
 
 
 def log_payment_event(order, event, status=None, payload=None, tid=None):
-    """Keep a lightweight audit trail for each KakaoPay call."""
+    """Persist a PaymentLog audit record for a KakaoPay lifecycle event.
+
+    Args:
+        order: The Order instance associated with the event.
+        event: Event name string (e.g. ``READY``, ``APPROVE``, ``CANCEL``).
+        status: Optional order status string at the time of the event.
+        payload: Optional dict of raw Kakao response data to serialize as JSON.
+        tid: Optional KakaoPay transaction ID.
+
+    Returns:
+        The newly created PaymentLog instance.
+    """
     payload_dump = json.dumps(payload, ensure_ascii=False) if payload else None
     log = PaymentLog(
         order=order,
@@ -130,6 +166,15 @@ def log_payment_event(order, event, status=None, payload=None, tid=None):
 
 
 def validate_request_fields(source, required_fields):
+    """Validate that all required fields are present in a request data source.
+
+    Args:
+        source: Dict-like object (e.g. request JSON body or request.args) to check.
+        required_fields: Iterable of field name strings that must be present.
+
+    Returns:
+        None if all fields are present; otherwise a (Response, 400) error tuple.
+    """
     missing = [field for field in required_fields if field not in source]
     if not missing:
         return None
@@ -137,7 +182,16 @@ def validate_request_fields(source, required_fields):
 
 
 def resolve_order_from_args(source):
-    """Locate an order by Kakao-provided query params."""
+    """Locate an Order by KakaoPay callback query parameters.
+
+    Args:
+        source: Dict-like object containing ``partner_order_id``/``order_id``
+            and ``partner_user_id``/``user_id``.
+
+    Returns:
+        A tuple of ``(Order, None)`` on success, or ``(None, (Response, status_code))``
+        on validation failure or when the order is not found.
+    """
     order_id = source.get("partner_order_id") or source.get("order_id")
     user_id = source.get("partner_user_id") or source.get("user_id")
     if not order_id or not user_id:
@@ -156,7 +210,17 @@ def resolve_order_from_args(source):
 
 
 def finalize_terminal_order(order, status, event, payload):
-    """Persist terminal order state then audit the Kakao callback."""
+    """Persist a terminal order status and write an audit log entry.
+
+    Args:
+        order: The Order instance to update.
+        status: Final status string (e.g. ``CANCELED`` or ``FAILED``).
+        event: PaymentLog event name string.
+        payload: Dict of raw callback query parameters to log.
+
+    Returns:
+        A JSON Response with a confirmation message and the ``order_id``.
+    """
     order.status = status
     db.session.commit()
     log_payment_event(order, event, status, payload, tid=order.tid)
@@ -167,7 +231,12 @@ def finalize_terminal_order(order, status, event, payload):
 
 @bp.get("/cancel")
 def pay_cancel():
-    """Handle a Kakao cancel redirect and persist the cancellation."""
+    """Handle the KakaoPay cancel redirect callback and persist the cancellation.
+
+    Returns:
+        JSON response confirming the order was marked as CANCELED, HTTP 200.
+        HTTP 400/404 if the order cannot be resolved from query params.
+    """
     order, error = resolve_order_from_args(request.args)
     if error:
         return error
@@ -177,7 +246,12 @@ def pay_cancel():
 
 @bp.get("/fail")
 def pay_fail():
-    """Handle a Kakao fail redirect and persist the failure."""
+    """Handle the KakaoPay fail redirect callback and persist the failure.
+
+    Returns:
+        JSON response confirming the order was marked as FAILED, HTTP 200.
+        HTTP 400/404 if the order cannot be resolved from query params.
+    """
     order, error = resolve_order_from_args(request.args)
     if error:
         return error
@@ -186,6 +260,11 @@ def pay_fail():
 
 
 def kakao_headers():
+    """Build the Authorization and Content-Type headers for KakaoPay API calls.
+
+    Returns:
+        A dict with ``Authorization`` and ``Content-Type`` headers.
+    """
     return {
         "Authorization": f"KakaoAK {current_app.config['KAKAO_ADMIN_KEY']}",
         "Content-Type": "application/x-www-form-urlencoded;charset=utf-8",
@@ -193,6 +272,20 @@ def kakao_headers():
 
 
 def kakao_post_with_retry(url, data, max_attempts=3, backoff_factor=0.5):
+    """POST to a KakaoPay endpoint with exponential-backoff retry logic.
+
+    Args:
+        url: Full KakaoPay API endpoint URL.
+        data: Dict of form parameters to URL-encode and send.
+        max_attempts: Maximum number of attempts before re-raising (default 3).
+        backoff_factor: Base delay in seconds, doubled after each failure (default 0.5).
+
+    Returns:
+        The successful ``requests.Response`` object.
+
+    Raises:
+        requests.RequestException: If all retry attempts are exhausted.
+    """
     encoded_data = urllib.parse.urlencode(data)
     delay = backoff_factor
     for attempt in range(max_attempts):
@@ -212,9 +305,18 @@ def kakao_post_with_retry(url, data, max_attempts=3, backoff_factor=0.5):
 
 @bp.route("/ready", methods=["POST", "OPTIONS"])
 def pay_ready():
-    """
-    React → POST /order/ready
-    body: { orderId, user_id, itemId, quantity, amount }
+    """Initiate a KakaoPay payment session and return redirect URLs.
+
+    Validates the JSON body, verifies the amount against the server-side item
+    price, creates or updates the Order record, then calls the KakaoPay /ready
+    endpoint.
+
+    Returns:
+        JSON with ``tid``, ``next_redirect_pc_url``, and
+        ``next_redirect_mobile_url``, HTTP 200.
+        HTTP 400 if required fields are missing or amounts do not match.
+        HTTP 404 if the user or item is not found.
+        HTTP 500/502 on KakaoPay API failure.
     """
     # CORS preflight
     if request.method == "OPTIONS":
@@ -344,9 +446,16 @@ def pay_ready():
 
 @bp.route("/approve", methods=["GET", "OPTIONS"])
 def pay_approve():
-    """
-    KakaoPay redirect → GET /approve
-    query: pg_token, order_id, user_id
+    """Approve a KakaoPay payment after the user completes the checkout flow.
+
+    Validates the ``pg_token`` and order state, calls the KakaoPay /approve
+    endpoint, marks the order as SUCCESS, and grants the purchased CosmeticItem
+    to the user via a UserItem record.
+
+    Returns:
+        Redirect to the frontend success page on approval.
+        HTTP 400 if the token or order state is invalid.
+        HTTP 500 on KakaoPay API failure.
     """
     print("🔥 APPROVE HIT")
     # --- Step 1. Query validation ---
@@ -426,7 +535,16 @@ def pay_approve():
 @bp.get("/purchase/result")
 @jwt_required
 def purchase_result():
-    order_id = request.args.get("order_id")
+    """Return the current status and details of a purchase order.
+
+    Args (query string):
+        order_id: The order ID to look up (required).
+
+    Returns:
+        JSON with order status, item info, amount, and grant flag, HTTP 200.
+        HTTP 400 if ``order_id`` is missing.
+        HTTP 404 if the order does not belong to the current user.
+    """
     if not order_id:
         return jsonify({"error": "order_id required"}), 400
 

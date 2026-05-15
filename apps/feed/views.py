@@ -21,7 +21,15 @@ INFO_PATH = Path(__file__).resolve().parent / "info.json"
 
 
 def _serialize_post(post, preview_length=None):
-    """공통 포스트를 딕셔너리로 변환"""
+    """Serialize a Post ORM object to a dictionary.
+
+    Args:
+        post: The Post instance to serialize.
+        preview_length: If set, truncates the post content to this many characters.
+
+    Returns:
+        A dict containing post metadata, author info, image list, and engagement stats.
+    """
     author = post.author or User.query.get(post.user_id)
     images = Image.query.filter_by(post_id=post.post_id).all()
     like_count = post.likes.count()
@@ -56,6 +64,17 @@ def _serialize_post(post, preview_length=None):
 
 
 def _pack_feed_response(posts_payload, pagination, page, per_page):
+    """Build a standard paginated JSON response for feed endpoints.
+
+    Args:
+        posts_payload: List of serialized post dicts to include in the response.
+        pagination: SQLAlchemy Pagination object holding totals and page flags.
+        page: Current page number.
+        per_page: Number of items per page.
+
+    Returns:
+        A tuple of (Response, 200) containing the paginated feed data as JSON.
+    """
     return (
         jsonify(
             {
@@ -73,6 +92,14 @@ def _pack_feed_response(posts_payload, pagination, page, per_page):
 
 
 def _serialize_product(product):
+    """Serialize a Product ORM object to a flat dictionary.
+
+    Args:
+        product: The Product instance to serialize.
+
+    Returns:
+        A dict with product fields suitable for JSON output.
+    """
     return {
         "product_id": product.product_id,
         "uuid": product.uuid,
@@ -97,8 +124,10 @@ def _serialize_product(product):
 
 @bp.get("/api_info")
 def api_info():
-    """
-    피드 API 정보 제공 (개발용)
+    """Return feed API endpoint metadata for development reference.
+
+    Returns:
+        JSON response with module info and endpoint list, HTTP 200.
     """
     try:
         with INFO_PATH.open("r", encoding="utf-8") as fh:
@@ -117,11 +146,14 @@ def api_info():
 @bp.get("")
 @jwt_required()
 def get_feed():
-    """
-    개인 피드 조회 (Write-Heavy 모델)
+    """Retrieve the personalized feed for the authenticated user (Write-Heavy model).
 
-    FeedItem 테이블을 활용하여 게시물 작성 시 미리 생성된 피드를 조회합니다.
-    이를 통해 복잡한 Follow JOIN을 피하고 단순한 SELECT로 O(1) 성능을 보장합니다.
+    Reads pre-built FeedItem rows rather than performing a live Follow JOIN,
+    providing O(1) SELECT performance. Images are fetched in a single batch
+    query to avoid N+1 database calls.
+
+    Returns:
+        Paginated JSON feed response with ``items``, pagination metadata, HTTP 200.
     """
     current_user_id = int(get_jwt_identity())
     page = request.args.get("page", 1, type=int)
@@ -202,11 +234,14 @@ def get_feed():
 
 @bp.get("/trending")
 def get_trending():
-    """
-    트렌딩 게시글 조회
-    Query params:
-        - period: 기간 (today, week, month)
-        - limit: 반환할 게시글 수
+    """Return trending posts ranked by view count within a time window.
+
+    Args (query string):
+        period: Time window - ``today``, ``week`` (default), or ``month``.
+        limit: Maximum number of posts to return (default 20).
+
+    Returns:
+        JSON with ``items`` list of trending post dicts and ``count``, HTTP 200.
     """
     period = request.args.get("period", "week")
     limit = request.args.get("limit", 20, type=int)
@@ -266,7 +301,16 @@ def get_trending():
 @bp.get("/reels")
 @jwt_required()
 def get_reels():
-    """릴스 스타일의 짧은 콘텐츠 피드"""
+    """Return a paginated reel-style feed of short posts.
+
+    Args (query string):
+        page: Page number (default 1).
+        per_page: Items per page (default 12).
+        max_length: Maximum post content length in characters (default 140).
+
+    Returns:
+        Paginated JSON feed response, HTTP 200.
+    """
     page = request.args.get("page", 1, type=int)
     per_page = request.args.get("per_page", 12, type=int)
     max_length = request.args.get("max_length", 140, type=int)
@@ -286,7 +330,14 @@ def get_reels():
 @bp.get("/recommendations")
 @jwt_required()
 def get_recommendations():
-    """사용자 취향 기반 추천 피드"""
+    """Return a personalized recommendation feed based on the user's liked categories.
+
+    Excludes posts from already-followed users and prioritises high-view posts
+    in the same categories as previously liked content.
+
+    Returns:
+        Paginated JSON feed response, HTTP 200.
+    """
     current_user_id = int(get_jwt_identity())
     page = request.args.get("page", 1, type=int)
     per_page = request.args.get("per_page", 20, type=int)
@@ -324,7 +375,16 @@ def get_recommendations():
 
 @bp.get("/shop")
 def get_shop_feed():
-    """상품/쇼핑 피드"""
+    """Return a paginated shopping feed of active products.
+
+    Args (query string):
+        page: Page number (default 1).
+        per_page: Items per page (default 16).
+        category: Optional case-insensitive category name filter.
+
+    Returns:
+        Paginated JSON product feed, HTTP 200.
+    """
     page = request.args.get("page", 1, type=int)
     per_page = request.args.get("per_page", 16, type=int)
     category = request.args.get("category")
@@ -358,7 +418,15 @@ def get_shop_feed():
 @bp.get("/highlights")
 @jwt_required()
 def get_highlights():
-    """하이라이트 피드 (팔로우 대상 중심)"""
+    """Return highlight posts from followed users that exceed a minimum view count.
+
+    Args (query string):
+        limit: Maximum number of posts to return (default 12).
+        min_views: Minimum view count threshold to qualify as a highlight (default 200).
+
+    Returns:
+        JSON with ``items`` list of highlight post dicts and ``count``, HTTP 200.
+    """
     current_user_id = int(get_jwt_identity())
     limit = request.args.get("limit", 12, type=int)
     min_views = request.args.get("min_views", 200, type=int)
@@ -383,11 +451,15 @@ def get_highlights():
 
 @bp.get("/explore")
 def get_explore():
-    """
-    탐색 피드 (새로운 콘텐츠 발견)
-    Query params:
-        - category: 카테고리별 필터
-        - page: 페이지 번호
+    """Return a paginated explore feed for discovering new content.
+
+    Args (query string):
+        category: Optional category name to filter posts.
+        page: Page number (default 1).
+        per_page: Items per page (default 20).
+
+    Returns:
+        Paginated JSON feed response, HTTP 200.
     """
     page = request.args.get("page", 1, type=int)
     per_page = request.args.get("per_page", 20, type=int)
@@ -456,12 +528,16 @@ def get_explore():
 @bp.get("/nearby")
 @jwt_required()
 def get_nearby():
-    """
-    주변 위치의 게시글 조회
-    Query params:
-        - lat: 위도
-        - lon: 경도
-        - radius: 검색 반경(km)
+    """Return posts near a geographic coordinate (geospatial query not yet implemented).
+
+    Args (query string):
+        lat: Latitude of the search origin (required).
+        lon: Longitude of the search origin (required).
+        radius: Search radius in kilometres (default 10).
+
+    Returns:
+        JSON with empty ``items`` list and a status message, HTTP 200.
+        HTTP 400 if ``lat`` or ``lon`` is missing.
     """
     lat = request.args.get("lat", type=float)
     lon = request.args.get("lon", type=float)
