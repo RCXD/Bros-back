@@ -8,7 +8,7 @@ from apps.config.server import db
 
 
 class Category(db.Model):
-    """Post categories"""
+    """Represents a post category."""
 
     __tablename__ = "categories"
 
@@ -16,10 +16,13 @@ class Category(db.Model):
     category_name = db.Column(db.String(50), unique=True, nullable=False)
 
     def __repr__(self):
+        """Returns string representation of the Category instance."""
         return f"<Category {self.category_name}>"
 
 
 class Post(db.Model):
+    """Represents a post authored by a user."""
+
     __tablename__ = "posts"
 
     post_id = db.Column(db.Integer, primary_key=True)
@@ -39,6 +42,7 @@ class Post(db.Model):
         self.view_counts = self.view_counts + 1
 
     def __repr__(self):
+        """Returns string representation of the Post instance."""
         return f"<Post {self.post_id}>"
 
 

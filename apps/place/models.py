@@ -15,12 +15,32 @@ from apps.config.server import db
 
 
 def point_from_lat_lon(lat, lon):
+    """Creates a WKTElement POINT geometry from latitude and longitude.
+
+    Args:
+        lat: Latitude value, or None.
+        lon: Longitude value, or None.
+
+    Returns:
+        A WKTElement with SRID 4326, or None if either coordinate is None.
+    """
     if lat is None or lon is None:
         return None
     return WKTElement(f"POINT({lon} {lat})", srid=4326)
 
 
 def coordinate_to_lat_lon(value):
+    """Parses a raw geometry value and extracts latitude and longitude.
+
+    Supports GeoAlchemy2 binary values, as well as list/tuple and dict
+    representations for flexibility.
+
+    Args:
+        value: A raw geometry value (GeoAlchemy2 element, list/tuple, or dict).
+
+    Returns:
+        A (lat, lon) tuple of floats, or (None, None) if the value cannot be parsed.
+    """
     if value is None:
         return (None, None)
     data = getattr(value, "data", None)
@@ -50,6 +70,8 @@ def coordinate_to_lat_lon(value):
 
 
 class Place(db.Model):
+    """Represents a geographic place with a point coordinate and optional polygon geometry."""
+
     __tablename__ = "place"
     __table_args__ = (
         db.Index("idx_place_point", "coordinate"),
@@ -73,6 +95,17 @@ class Place(db.Model):
     updated_at = db.Column(db.DateTime, default=datetime.now, onupdate=datetime.now)
 
     def __init__(self, **kwargs):
+        """Initializes a Place instance, accepting lat/lon in addition to standard columns.
+
+        Args:
+            lat: Latitude of the place (used together with lon to set coordinate).
+            lon: Longitude of the place (used together with lat to set coordinate).
+            coordinate: A pre-built geometry value; takes precedence over lat/lon.
+            **kwargs: Additional column values passed to the SQLAlchemy model.
+
+        Raises:
+            ValueError: If only one of lat or lon is provided.
+        """
         lat = kwargs.pop("lat", None)
         lon = kwargs.pop("lon", None)
         coordinate = kwargs.pop("coordinate", None)
@@ -88,16 +121,38 @@ class Place(db.Model):
 
     @reconstructor
     def _on_load(self):
+        """Resets coordinate caches after the instance is loaded from the database."""
         self._lat_cache = None
         self._lon_cache = None
 
     @staticmethod
     def _point_from_latlon(lat, lon):
+        """Builds an ST_GeomFromText POINT expression for use in SQL statements.
+
+        Args:
+            lat: Latitude value.
+            lon: Longitude value.
+
+        Returns:
+            A SQLAlchemy function expression for the POINT geometry, or None if
+            either coordinate is None.
+        """
         if lat is None or lon is None:
             return None
         return func.ST_GeomFromText(f"POINT({float(lat)} {float(lon)})", 4326)
 
     def set_lat_lon(self, lat, lon):
+        """Sets the coordinate column from explicit latitude and longitude values.
+
+        Also updates the internal lat/lon caches to avoid redundant DB queries.
+
+        Args:
+            lat: Latitude as a numeric value.
+            lon: Longitude as a numeric value.
+
+        Raises:
+            ValueError: If either lat or lon is None.
+        """
         if lat is None or lon is None:
             raise ValueError("lat and lon are required")
         lat_f = float(lat)
@@ -108,6 +163,13 @@ class Place(db.Model):
 
     @hybrid_property
     def lat(self):
+        """Returns the latitude of the place's coordinate.
+
+        Uses a cached value when available; otherwise queries ST_Y from the database.
+
+        Returns:
+            Latitude as a float, or None if coordinate is not set.
+        """
         if self.coordinate is None:
             return None
         if self._lat_cache is not None:
@@ -118,10 +180,18 @@ class Place(db.Model):
 
     @lat.expression
     def lat(cls):
+        """Returns the SQL expression for the latitude (ST_Y of coordinate)."""
         return func.ST_Y(cls.coordinate)
 
     @hybrid_property
     def lon(self):
+        """Returns the longitude of the place's coordinate.
+
+        Uses a cached value when available; otherwise queries ST_X from the database.
+
+        Returns:
+            Longitude as a float, or None if coordinate is not set.
+        """
         if self.coordinate is None:
             return None
         if self._lon_cache is not None:
@@ -132,9 +202,19 @@ class Place(db.Model):
 
     @lon.expression
     def lon(cls):
+        """Returns the SQL expression for the longitude (ST_X of coordinate)."""
         return func.ST_X(cls.coordinate)
 
     def to_dict(self, include_geom=True):
+        """Converts the Place instance to a serializable dictionary.
+
+        Args:
+            include_geom: If True, includes the geometry field as a GeoJSON dict.
+
+        Returns:
+            A dict with place_id, name, alt_name, lat, lon, geom, description,
+            created_at, and updated_at fields.
+        """
         geom_json = None
         if include_geom and self.geom is not None:
             try:
@@ -158,12 +238,41 @@ class Place(db.Model):
     def find_similar(
         lat, lon, name, distance_threshold_m=50, name_threshold=0.75, limit=10
     ):
+        """Finds existing Place records that are geographically and nominally similar.
+
+        Delegates to the place utility helper.
+
+        Args:
+            lat: Latitude of the candidate location.
+            lon: Longitude of the candidate location.
+            name: Name of the candidate place.
+            distance_threshold_m: Maximum distance in metres to consider a match.
+            name_threshold: Minimum similarity score (0–1) for name matching.
+            limit: Maximum number of results to return.
+
+        Returns:
+            A list of similar Place instances.
+        """
         from apps.place.utils import find_similar
 
         return find_similar(lat, lon, name, distance_threshold_m, name_threshold, limit)
 
     def merge_with(self, other, session=None):
-        """Merge another Place instance into this one, preferring richer metadata."""
+        """Merges another Place instance into this one, preferring richer metadata.
+
+        Copies alt_name, description, tags, geom, and coordinate from ``other``
+        when this instance lacks those values or ``other`` has richer content.
+        Deletes ``other`` from the session after a successful merge.
+
+        Args:
+            other: The Place instance to merge into this one.
+            session: SQLAlchemy session to use; defaults to db.session.
+
+        Returns:
+            True if the merge succeeded; False if ``other`` is None, is the same
+            instance, or an exception occurred (in which case the session is
+            rolled back).
+        """
         if other is None or other is self:
             return False
         session = session or db.session

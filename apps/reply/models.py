@@ -6,6 +6,8 @@ from apps.config.server import db
 
 
 class Reply(db.Model):
+    """Represents a reply (comment) on a post, supporting nested replies."""
+
     __tablename__ = "replies"
 
     reply_id = db.Column(db.Integer, primary_key=True)
@@ -24,6 +26,7 @@ class Reply(db.Model):
     post = db.relationship("Post", backref=db.backref("replies", lazy=True, cascade="all, delete-orphan"))
 
     def __repr__(self):
+        """Returns string representation of the Reply instance."""
         return f'<Reply {self.reply_id}>'
 
 

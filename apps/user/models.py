@@ -26,7 +26,7 @@ class Follow(db.Model):
 
 
 class Friend(db.Model):
-    """즐겨찾기한 팔로잉 기능을 구현하기 위한 테이블. 친구 == 슈퍼팔로잉"""
+    """Super-follow (friend) relationship model used to implement bookmarked following."""
 
     __tablename__ = "friend"
 

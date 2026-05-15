@@ -7,7 +7,7 @@ from apps.config.server import db
 
 
 class FavoriteType(enum.Enum):
-    """즐겨찾기 아이템 타입"""
+    """Enum of supported favorite item types."""
     STORY = "STORY"      # Post 카테고리
     ROUTE = "ROUTE"      # Post 카테고리
     REVIEW = "REVIEW"    # Post 카테고리
@@ -17,7 +17,7 @@ class FavoriteType(enum.Enum):
 
 
 class Favorite(db.Model):
-    """즐겨찾기 모델"""
+    """Represents a favorite item bookmarked by a user."""
     __tablename__ = "favorites"
     
     favorite_id = db.Column(db.Integer, primary_key=True)
@@ -36,7 +36,11 @@ class Favorite(db.Model):
     )
     
     def to_dict(self):
-        """딕셔너리로 변환"""
+        """Converts the favorite instance to a dictionary.
+
+        Returns:
+            A dict with favorite_id, user_id, item_type, item_id, and created_at fields.
+        """
         return {
             "favorite_id": self.favorite_id,
             "user_id": self.user_id,
@@ -46,4 +50,5 @@ class Favorite(db.Model):
         }
     
     def __repr__(self):
+        """Returns string representation of the Favorite instance."""
         return f"<Favorite(id={self.favorite_id}, user_id={self.user_id}, item_type='{self.item_type.name}', item_id={self.item_id})>"

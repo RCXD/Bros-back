@@ -7,7 +7,7 @@ from apps.config.server import db
 
 
 class FeedItem(db.Model):
-    """피드 아이템 모델"""
+    """Feed item model representing a single entry in a user's feed."""
     __tablename__ = 'feed_items'
     
     feed_id = db.Column(db.Integer, primary_key=True)
@@ -20,7 +20,12 @@ class FeedItem(db.Model):
     is_read = db.Column(db.Boolean, default=False)
     
     def to_dict(self):
-        """딕셔너리로 변환"""
+        """Converts the feed item instance to a dictionary.
+
+        Returns:
+            A dict with feed_id, user_id, feed_type, related_post_id,
+            related_reply_id, related_user_id, created_at, and is_read fields.
+        """
         return {
             "feed_id": self.feed_id,
             "user_id": self.user_id,
@@ -34,18 +39,20 @@ class FeedItem(db.Model):
 
 
 class FeedManager:
-    """피드 관리 헬퍼 클래스"""
+    """Helper class for managing feed item creation and retrieval."""
     
     @staticmethod
     def create_mention_feed(user_id: int, from_user_id: int, post_id: int = None, reply_id: int = None) -> FeedItem:
-        """
-        멘션 피드 생성
-        
+        """Creates a feed item for a mention event.
+
         Args:
-            user_id: 멘션된 사용자 ID
-            from_user_id: 멘션한 사용자 ID
-            post_id: 게시글 ID (선택)
-            reply_id: 댓글 ID (선택)
+            user_id: ID of the user who was mentioned.
+            from_user_id: ID of the user who created the mention.
+            post_id: ID of the related post (optional).
+            reply_id: ID of the related reply (optional).
+
+        Returns:
+            The newly created FeedItem instance.
         """
         feed_item = FeedItem(
             user_id=user_id,
@@ -60,13 +67,15 @@ class FeedManager:
     
     @staticmethod
     def create_friend_activity_feed(friend_id: int, post_id: int, post_user_id: int) -> FeedItem:
-        """
-        친구의 게시글 활동 피드 생성
-        
+        """Creates a feed item when a friend publishes a new post.
+
         Args:
-            friend_id: 친구의 사용자 ID
-            post_id: 게시글 ID
-            post_user_id: 게시글 작성자 ID
+            friend_id: ID of the friend (recipient) user.
+            post_id: ID of the newly created post.
+            post_user_id: ID of the user who authored the post.
+
+        Returns:
+            The newly created FeedItem instance.
         """
         feed_item = FeedItem(
             user_id=friend_id,
@@ -80,15 +89,17 @@ class FeedManager:
     
     @staticmethod
     def create_reply_feed(post_owner_id: int, reply_id: int, post_id: int, reply_user_id: int, is_nested: bool = False) -> FeedItem:
-        """
-        댓글/대댓글 피드 생성
-        
+        """Creates a feed item for a new reply or nested reply on a post.
+
         Args:
-            post_owner_id: 게시글 소유자 ID
-            reply_id: 댓글 ID
-            post_id: 게시글 ID
-            reply_user_id: 댓글 작성자 ID
-            is_nested: 대댓글 여부
+            post_owner_id: ID of the post owner who receives the feed entry.
+            reply_id: ID of the newly created reply.
+            post_id: ID of the post being replied to.
+            reply_user_id: ID of the user who wrote the reply.
+            is_nested: True if the reply is a nested reply; False for a top-level reply.
+
+        Returns:
+            The newly created FeedItem instance.
         """
         feed_type = 'nested_reply' if is_nested else 'reply'
         feed_item = FeedItem(
@@ -104,13 +115,15 @@ class FeedManager:
     
     @staticmethod
     def create_recommended_feed(user_id: int, post_id: int, post_user_id: int) -> FeedItem:
-        """
-        추천 게시글 피드 생성
-        
+        """Creates a feed item for a recommended post.
+
         Args:
-            user_id: 사용자 ID
-            post_id: 추천 게시글 ID
-            post_user_id: 게시글 작성자 ID
+            user_id: ID of the user who receives the recommendation.
+            post_id: ID of the recommended post.
+            post_user_id: ID of the user who authored the recommended post.
+
+        Returns:
+            The newly created FeedItem instance.
         """
         feed_item = FeedItem(
             user_id=user_id,
@@ -124,13 +137,15 @@ class FeedManager:
     
     @staticmethod
     def get_user_feed(user_id: int, limit: int = 50, offset: int = 0) -> List[FeedItem]:
-        """
-        사용자의 피드 조회
-        
+        """Retrieves paginated feed items for a user, ordered by most recent.
+
         Args:
-            user_id: 사용자 ID
-            limit: 조회 개수
-            offset: 오프셋
+            user_id: ID of the user whose feed to retrieve.
+            limit: Maximum number of feed items to return.
+            offset: Number of feed items to skip before returning results.
+
+        Returns:
+            A list of FeedItem instances.
         """
         return FeedItem.query.filter_by(user_id=user_id)\
             .order_by(FeedItem.created_at.desc())\
@@ -140,11 +155,13 @@ class FeedManager:
     
     @staticmethod
     def mark_as_read(feed_id: int) -> bool:
-        """
-        피드 항목을 읽음 처리
-        
+        """Marks a single feed item as read.
+
         Args:
-            feed_id: 피드 ID
+            feed_id: ID of the feed item to mark as read.
+
+        Returns:
+            True if the feed item was found and updated; False otherwise.
         """
         feed_item = FeedItem.query.get(feed_id)
         if feed_item:
@@ -155,14 +172,13 @@ class FeedManager:
     
     @staticmethod
     def mark_all_as_read(user_id: int) -> int:
-        """
-        사용자의 모든 피드를 읽음 처리
-        
+        """Marks all unread feed items for a user as read.
+
         Args:
-            user_id: 사용자 ID
-            
+            user_id: ID of the user whose feed items should be marked as read.
+
         Returns:
-            업데이트된 피드 개수
+            The number of feed items that were updated.
         """
         count = FeedItem.query.filter_by(user_id=user_id, is_read=False)\
             .update({FeedItem.is_read: True})
@@ -171,10 +187,12 @@ class FeedManager:
     
     @staticmethod
     def get_unread_count(user_id: int) -> int:
-        """
-        사용자의 읽지 않은 피드 개수 조회
-        
+        """Returns the number of unread feed items for a user.
+
         Args:
-            user_id: 사용자 ID
+            user_id: ID of the user to check.
+
+        Returns:
+            Count of unread FeedItem records for the given user.
         """
         return FeedItem.query.filter_by(user_id=user_id, is_read=False).count()
