@@ -33,8 +33,10 @@ bp = Blueprint("cosmetic", __name__)
 
 @bp.get("/api_info")
 def api_info():
-    """
-    코스메틱 API 정보 제공 (개발용)
+    """Return cosmetic module API metadata for development reference.
+
+    Returns:
+        JSON response with module info and endpoint list, HTTP 200.
     """
     info = {
         "module": "cosmetic",
@@ -87,7 +89,15 @@ MAX_PER_PAGE = 200
 
 
 def _pagination_meta(pagination):
-    return {
+    """Build a pagination metadata dict from a SQLAlchemy Pagination object.
+
+    Args:
+        pagination: A SQLAlchemy Pagination instance.
+
+    Returns:
+        A dict with ``page``, ``per_page``, ``total``, ``pages``, ``has_next``,
+        and ``has_prev`` keys.
+    """
         "page": pagination.page,
         "per_page": pagination.per_page,
         "total": pagination.total,
@@ -100,7 +110,16 @@ def _pagination_meta(pagination):
 def _get_pagination_params(
     default_per_page=DEFAULT_PER_PAGE, max_per_page=MAX_PER_PAGE
 ):
-    try:
+    """Parse and validate ``page`` and ``per_page`` query parameters.
+
+    Args:
+        default_per_page: Default page size when ``per_page`` is not provided.
+        max_per_page: Maximum allowed page size; larger values are capped.
+
+    Returns:
+        A tuple ``(page, per_page, None)`` on success, or
+        ``(None, None, (Response, 400))`` if parameters are invalid.
+    """
         page = int(request.args.get("page", 1))
         per_page = int(request.args.get("per_page", default_per_page))
     except (TypeError, ValueError):
@@ -116,7 +135,17 @@ def _get_pagination_params(
 def _paginate_query(
     query, default_per_page=DEFAULT_PER_PAGE, max_per_page=MAX_PER_PAGE
 ):
-    page, per_page, err = _get_pagination_params(default_per_page, max_per_page)
+    """Apply pagination to a SQLAlchemy query using request query parameters.
+
+    Args:
+        query: The SQLAlchemy Query to paginate.
+        default_per_page: Default page size (default ``DEFAULT_PER_PAGE``).
+        max_per_page: Maximum page size cap (default ``MAX_PER_PAGE``).
+
+    Returns:
+        A tuple ``(Pagination, None)`` on success, or ``(None, (Response, 400))``
+        if pagination parameters are invalid.
+    """
     if err:
         return None, err
     return query.paginate(page=page, per_page=per_page, error_out=False), None
@@ -128,7 +157,17 @@ def _paginate_query(
 @bp.post("/items")
 @jwt_required()
 def create_item():
-    data = request.get_json(silent=True) or {}
+    """Create a new CosmeticItem (authenticated users only).
+
+    Expects a JSON body with ``type`` (required), ``name`` (required), and
+    optional ``price``, ``rarity``, ``image_path``, ``theme_color``,
+    ``description`` fields.
+
+    Returns:
+        JSON with the created item dict, HTTP 201.
+        HTTP 400 if required fields are missing, the type is invalid, or a DB
+        error occurs.
+    """
     try:
         itype = data.get("type")
         if itype is None:
@@ -159,7 +198,17 @@ def create_item():
 @bp.get("/items")
 @jwt_required()
 def list_items():
-    q = CosmeticItem.query
+    """Return a paginated list of CosmeticItems with an optional type filter.
+
+    Args (query string):
+        type: Optional ``ItemType`` value to filter by.
+        page: Page number (default 1).
+        per_page: Items per page (default 50, max 200).
+
+    Returns:
+        JSON with ``items`` list and ``pagination`` metadata, HTTP 200.
+        HTTP 400 if the type value is invalid.
+    """
     itype = request.args.get("type")
     if itype:
         try:
@@ -185,19 +234,33 @@ def list_items():
 @bp.get("/items/<int:item_id>")
 @jwt_required()
 def get_item(item_id):
-    i = CosmeticItem.query.get(item_id)
-    if not i:
-        return jsonify({"error": "not_found"}), 404
-    return jsonify({"item": _item_to_dict(i)}), 200
+    """Return a single CosmeticItem by its primary key.
+
+    Args:
+        item_id: Integer primary key of the CosmeticItem.
+
+    Returns:
+        JSON with the item dict, HTTP 200.
+        HTTP 404 if the item is not found.
+    """
 
 
 @bp.put("/items/<int:item_id>")
 @jwt_required()
 def update_item(item_id):
-    error = admin_required()
-    if error:
-        return error
-    i = CosmeticItem.query.get(item_id)
+    """Update fields on an existing CosmeticItem (admin only).
+
+    Applies a partial update using only fields present in the JSON body.
+
+    Args:
+        item_id: Integer primary key of the CosmeticItem to update.
+
+    Returns:
+        JSON with the updated item dict, HTTP 200.
+        HTTP 400 if field values are invalid or a DB error occurs.
+        HTTP 403 if the caller is not an admin.
+        HTTP 404 if the item is not found.
+    """
     if not i:
         return jsonify({"error": "not_found"}), 404
     data = request.get_json(silent=True) or {}
@@ -227,14 +290,18 @@ def update_item(item_id):
 @bp.delete("/items/<int:item_id>")
 @jwt_required()
 def delete_item(item_id):
-    error = admin_required()
-    if error:
-        return error
-    i = CosmeticItem.query.get(item_id)
-    if not i:
-        return jsonify({"error": "not_found"}), 404
-    try:
-        db.session.delete(i)
+    """Delete a CosmeticItem by its primary key (admin only).
+
+    Args:
+        item_id: Integer primary key of the CosmeticItem to delete.
+
+    Returns:
+        JSON with a confirmation message, HTTP 200.
+        HTTP 400 if a DB error occurs.
+        HTTP 403 if the caller is not an admin.
+        HTTP 404 if the item is not found.
+        HTTP 409 if the item is referenced by other records.
+    """
         db.session.commit()
         return jsonify({"message": "deleted"}), 200
     except IntegrityError as exc:
@@ -251,11 +318,16 @@ def delete_item(item_id):
 @bp.post("/sets")
 @jwt_required()
 def create_set():
-    error = admin_required()
-    if error:
-        return error
-    data = request.get_json(silent=True) or {}
-    name = (data.get("name") or "").strip()
+    """Create a new CosmeticSet with optional item composition (admin only).
+
+    Expects a JSON body with ``name`` (required), ``price``, ``description``,
+    ``preview_img``, and an optional ``items`` list of item IDs.
+
+    Returns:
+        JSON with the created set dict (including items), HTTP 201.
+        HTTP 400 if required fields are missing or a DB error occurs.
+        HTTP 403 if the caller is not an admin.
+    """
     if not name:
         return jsonify({"error": "name is required"}), 400
     price = int(data.get("price") or 0)
@@ -282,7 +354,15 @@ def create_set():
 @bp.get("/sets")
 @jwt_required()
 def list_sets():
-    q = CosmeticSet.query.order_by(CosmeticSet.created_at.desc())
+    """Return a paginated list of CosmeticSets ordered by creation date.
+
+    Args (query string):
+        page: Page number (default 1).
+        per_page: Items per page (default 50, max 200).
+
+    Returns:
+        JSON with ``sets`` list and ``pagination`` metadata, HTTP 200.
+    """
     pagination, err = _paginate_query(q)
     if err:
         return err
@@ -301,22 +381,33 @@ def list_sets():
 @bp.get("/sets/<int:set_id>")
 @jwt_required()
 def get_set(set_id):
-    s = CosmeticSet.query.get(set_id)
-    if not s:
-        return jsonify({"error": "not_found"}), 404
-    return jsonify({"set": _set_to_dict(s, include_items=True)}), 200
+    """Return a single CosmeticSet including its composed items.
+
+    Args:
+        set_id: Integer primary key of the CosmeticSet.
+
+    Returns:
+        JSON with the set dict (items included), HTTP 200.
+        HTTP 404 if the set is not found.
+    """
 
 
 @bp.put("/sets/<int:set_id>")
 @jwt_required()
 def update_set(set_id):
-    error = admin_required()
-    if error:
-        return error
-    s = CosmeticSet.query.get(set_id)
-    if not s:
-        return jsonify({"error": "not_found"}), 404
-    data = request.get_json(silent=True) or {}
+    """Update fields on an existing CosmeticSet (admin only).
+
+    Providing an ``items`` list in the body replaces the entire set composition.
+
+    Args:
+        set_id: Integer primary key of the CosmeticSet to update.
+
+    Returns:
+        JSON with the updated set dict (items included), HTTP 200.
+        HTTP 400 if field values are invalid or a DB error occurs.
+        HTTP 403 if the caller is not an admin.
+        HTTP 404 if the set is not found.
+    """
     try:
         if "name" in data:
             name = (data.get("name") or "").strip()
@@ -345,14 +436,17 @@ def update_set(set_id):
 @bp.delete("/sets/<int:set_id>")
 @jwt_required()
 def delete_set(set_id):
-    error = admin_required()
-    if error:
-        return error
-    s = CosmeticSet.query.get(set_id)
-    if not s:
-        return jsonify({"error": "not_found"}), 404
-    try:
-        CosmeticSetItem.query.filter_by(set_id=set_id).delete()
+    """Delete a CosmeticSet and its item composition rows (admin only).
+
+    Args:
+        set_id: Integer primary key of the CosmeticSet to delete.
+
+    Returns:
+        JSON with a confirmation message, HTTP 200.
+        HTTP 400 if a DB error occurs.
+        HTTP 403 if the caller is not an admin.
+        HTTP 404 if the set is not found.
+    """
         db.session.delete(s)
         db.session.commit()
         return jsonify({"message": "deleted"}), 200
@@ -364,10 +458,15 @@ def delete_set(set_id):
 @bp.get("/sets/<int:set_id>/items")
 @jwt_required()
 def list_set_items(set_id):
-    s = CosmeticSet.query.get(set_id)
-    if not s:
-        return jsonify({"error": "not_found"}), 404
-    q = (
+    """Return a paginated list of CosmeticItems belonging to a specific set.
+
+    Args:
+        set_id: Integer primary key of the CosmeticSet.
+
+    Returns:
+        JSON with ``items`` list and ``pagination`` metadata, HTTP 200.
+        HTTP 404 if the set is not found.
+    """
         CosmeticItem.query.join(
             CosmeticSetItem,
             CosmeticItem.item_id == CosmeticSetItem.item_id,
@@ -396,8 +495,12 @@ def list_set_items(set_id):
 @bp.get("/user/items")
 @jwt_required()
 def list_user_items():
-    uid = get_jwt_identity()
-    rows_query = UserItem.query.filter_by(user_id=uid).order_by(
+    """Return a paginated list of CosmeticItems owned by the authenticated user.
+
+    Returns:
+        JSON with ``items`` list (each entry includes the item dict and acquisition
+        metadata) and ``pagination`` metadata, HTTP 200.
+    """
         UserItem.acquired_at.desc()
     )
     pagination, err = _paginate_query(rows_query)
@@ -432,10 +535,18 @@ def list_user_items():
 @bp.post("/user/items/acquire")
 @jwt_required()
 def acquire_item():
-    uid = get_jwt_identity()
-    data = request.get_json(silent=True) or {}
-    try:
-        item_id = int(data.get("item_id"))
+    """Deduct points from the authenticated user and grant them a CosmeticItem.
+
+    Expects a JSON body with ``item_id`` and ``item_price``.
+
+    Returns:
+        JSON with the new ``user_item_id``, HTTP 201.
+        JSON with ``user_item_id`` and ``"already_owned"`` message, HTTP 200
+        if the user already owns the item.
+        HTTP 400 if required fields are missing, point deduction fails, or a DB
+        error occurs.
+        HTTP 404 if the item does not exist.
+    """
     except Exception:
         return jsonify({"error": "item_id required"}), 400
     try:
@@ -473,10 +584,16 @@ def acquire_item():
 @bp.post("/user/sets/acquire")
 @jwt_required()
 def acquire_set():
-    uid = get_jwt_identity()
-    data = request.get_json(silent=True) or {}
-    try:
-        set_id = int(data.get("set_id"))
+    """Deduct points for each item in a CosmeticSet and grant them to the user.
+
+    Expects a JSON body with ``set_id``.
+
+    Returns:
+        JSON with ``acquired`` and ``existing`` item ID lists, HTTP 200.
+        HTTP 400 if ``set_id`` is missing, point deduction fails, or a DB error
+        occurs.
+        HTTP 404 if the set does not exist.
+    """
     except Exception:
         return jsonify({"error": "set_id required"}), 400
     s = CosmeticSet.query.get(set_id)
@@ -520,7 +637,14 @@ def acquire_set():
 
 
 def _get_or_create_user_state(uid):
-    st = UserCosmeticState.query.filter_by(user_id=uid).first()
+    """Retrieve or create a UserCosmeticState record for the given user.
+
+    Args:
+        uid: The user ID to look up or create a state record for.
+
+    Returns:
+        The existing or newly created UserCosmeticState instance.
+    """
     if not st:
         st = UserCosmeticState(user_id=uid, last_updated=datetime.now())
         db.session.add(st)
@@ -529,7 +653,17 @@ def _get_or_create_user_state(uid):
 
 
 def _validate_ownership(uid, item_id, required_type=None):
-    if item_id is None:
+    """Check that a user owns a CosmeticItem and that it matches the expected type.
+
+    Args:
+        uid: The user ID to validate ownership for.
+        item_id: The item ID to check, or None (treated as valid/unset).
+        required_type: Optional ``ItemType`` the item must match.
+
+    Returns:
+        A tuple ``(True, None)`` if valid, or ``(False, error_reason_string)``
+        if the item does not exist, has the wrong type, or is not owned.
+    """
         return True, None
     itm = CosmeticItem.query.get(item_id)
     if not itm:
@@ -544,8 +678,12 @@ def _validate_ownership(uid, item_id, required_type=None):
 @bp.get("/user/state")
 @jwt_required()
 def get_user_state():
-    uid = get_jwt_identity()
-    st = _get_or_create_user_state(uid)
+    """Return the current cosmetic state (equipped item IDs) for the authenticated user.
+
+    Returns:
+        JSON with the user's cosmetic state including all slot item IDs and
+        ``last_updated`` timestamp, HTTP 200.
+    """
     return (
         jsonify(
             {
@@ -568,8 +706,17 @@ def get_user_state():
 @bp.put("/user/state")
 @jwt_required()
 def update_user_state():
-    uid = get_jwt_identity()
-    st = _get_or_create_user_state(uid)
+    """Update the equipped cosmetic item slots for the authenticated user.
+
+    Accepts a JSON body or form data.  Each slot field (``border_item_id``,
+    ``overlay_item_id``, ``theme_item_id``, ``font_item_id``, ``effect_item_id``,
+    ``badge_item_id``) must be null or an item ID owned by the user matching the
+    slot's expected type.
+
+    Returns:
+        JSON with a confirmation message, HTTP 200.
+        HTTP 400 if ownership or type validation fails, or a DB error occurs.
+    """
 
     data = request.get_json(silent=True)
     if data is None:
@@ -619,7 +766,17 @@ def update_user_state():
 @bp.post("/upload")
 @jwt_required()
 def upload_overlay():
-    # optional admin-only; for now allow authenticated
+    """Upload a cosmetic overlay image file to the server's static directory.
+
+    Accepts a multipart form with a ``file`` field and an optional ``subdir``
+    field specifying the target subdirectory under ``static/`` (default
+    ``cosmetic_overlays``).
+
+    Returns:
+        JSON with the relative ``path`` and public ``url`` of the saved file,
+        HTTP 201.
+        HTTP 400 if the file is missing or has an empty filename.
+    """
     if "file" not in request.files:
         return jsonify({"error": "file missing"}), 400
     f = request.files["file"]

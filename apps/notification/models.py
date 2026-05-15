@@ -8,7 +8,7 @@ from apps.config.server import db
 
 
 class NotificationType(enum.Enum):
-    """알림 유형"""
+    """Enumeration of notification event types."""
 
     MENTION = "MENTION"  # 멘션
     POST_LIKE = "POST_LIKE"  # 게시글 좋아요
@@ -22,7 +22,7 @@ class NotificationType(enum.Enum):
 
 
 class NotificationItemType(enum.Enum):
-    """알림 대상 아이템 타입"""
+    """Enumeration of target item types associated with a notification."""
 
     POST = "POST"
     REPLY = "REPLY"
@@ -33,7 +33,7 @@ class NotificationItemType(enum.Enum):
 
 
 class Notification(db.Model):
-    """알림 모델"""
+    """SQLAlchemy model representing a user notification event."""
 
     __tablename__ = "notifications"
 
@@ -91,8 +91,16 @@ class Notification(db.Model):
     )
 
     def to_dict(self, follow_state_map=None):
-        """
-        알림 정보를 직렬화
+        """Serialize the notification to a JSON-compatible dictionary.
+
+        Args:
+            follow_state_map: Optional mapping of user_id to follow-state string,
+                used to annotate the ``from_user`` entry with the viewer's
+                follow relationship.
+
+        Returns:
+            A dictionary containing all public notification fields, including
+            sender info and optional follow state.
         """
         if self.from_user:
             from_user_info = {
@@ -125,10 +133,15 @@ class Notification(db.Model):
 
     # === LEGACY: app/models/notification.py의 serialize() 메서드 (호환성) ===
     def serialize(self):
-        """레거시 호환용 serialize 메서드 - to_dict()와 동일"""
+        """Return a serialized representation for legacy compatibility.
+
+        Returns:
+            A dictionary identical to the result of ``to_dict()``.
+        """
         return self.to_dict()
 
     # === END LEGACY ===
 
     def __repr__(self):
+        """Return a developer-readable representation of the notification."""
         return f"<Notification {self.notification_id} - {self.type.value} from {self.from_user_id} to {self.to_user_id}>"

@@ -8,8 +8,11 @@ bp = Blueprint("report", __name__)
 
 @bp.get("/api_info")
 def api_info():
-    """
-    신고 API 정보 제공 (개발용)
+    """Provide report API endpoint information (development use).
+
+    Returns:
+        JSON response describing all available report API endpoints with their
+        paths, methods, auth requirements, and descriptions.
     """
     info = {
         "module": "report",
@@ -51,7 +54,18 @@ def api_info():
 @bp.post("/report")
 @jwt_required()
 def create_report():
-    """Create content report"""
+    """Create a new content report submitted by the authenticated user.
+
+    JSON body:
+        target_type: The type of content being reported (USER, POST, or REPLY).
+        target_id: The ID of the reported content.
+        reason: Report reason as a string or list of strings.
+        description: Optional additional details.
+
+    Returns:
+        JSON response with a confirmation message and the new ``report_id``
+        on success (HTTP 201), or an error message on failure (HTTP 400).
+    """
     data = request.get_json()
 
     reporter_id = get_jwt_identity()  # JWT에서 사용자 id 가져오기
@@ -89,7 +103,12 @@ def create_report():
 @bp.get("/report/me")
 @jwt_required()
 def get_my_reports():
-    """Get all reports created by the current user"""
+    """Get all reports created by the current user.
+
+    Returns:
+        JSON response containing a list of the current user's reports ordered
+        by creation time descending.
+    """
     reporter_id = get_jwt_identity()
     reports = (
         Report.query.filter_by(reporter_id=reporter_id)
@@ -120,7 +139,12 @@ def get_my_reports():
 @bp.get("/reports")
 @jwt_required()
 def get_reports():
-    """Get all reports (admin only)"""
+    """Get all reports (admin only).
+
+    Returns:
+        JSON response containing a list of all reports ordered by creation
+        time descending.
+    """
     # TODO: 관리자 여부 체크
     reports = Report.query.order_by(Report.created_at.desc()).all()
     result = []
@@ -147,7 +171,16 @@ def get_reports():
 @bp.post("/accident_report")
 @jwt_required()
 def report_accident():
-    """Report road accident"""
+    """Report a road accident at a given location.
+
+    JSON body:
+        location: Location description or coordinates of the accident.
+        description: Detailed description of the accident.
+
+    Returns:
+        JSON response confirming receipt of the accident report with the
+        provided location and description (HTTP 201).
+    """
     data = request.get_json()
     location = data.get("location")
     description = data.get("description")

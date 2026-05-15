@@ -16,8 +16,10 @@ bp = Blueprint("place", __name__)
 
 @bp.get("/api_info")
 def api_info():
-    """
-    장소 API 정보 제공 (개발용)
+    """Return place module API metadata for development reference.
+
+    Returns:
+        JSON response with module info and endpoint list, HTTP 200.
     """
     info = {
         "module": "place",
@@ -78,9 +80,14 @@ MAX_POINT_RADIUS_METERS = 50000
 
 
 def _fix_coords_order(coords):
-    """
-    coords array that may contain [lat, lon] or [lon, lat].
-    Detect wrong order and fix it.
+    """Detect and correct swapped lat/lon order in a GeoJSON coordinate array.
+
+    Args:
+        coords: A coordinate value - either a ``[x, y]`` pair or a nested list
+            of coordinate arrays.
+
+    Returns:
+        The corrected coordinate structure with ``[lon, lat]`` ordering.
     """
     if not isinstance(coords, list):
         return coords
@@ -105,9 +112,16 @@ def _fix_coords_order(coords):
 
 
 def _store_place_area(place, geom_obj, lat=None, lon=None):
-    """
-    Normalize GeoJSON geometry into MySQL Geometry field.
-    Ensures (lon, lat) order and valid polygon structures.
+    """Normalize a GeoJSON geometry object and assign it to a Place's ``geom`` column.
+
+    Ensures coordinates are in ``(lon, lat)`` order and that the geometry type is
+    Polygon, MultiPolygon, or LineString before calling ``ST_GeomFromGeoJSON``.
+
+    Args:
+        place: The Place ORM instance to update.
+        geom_obj: A GeoJSON dict (Polygon, MultiPolygon, or LineString), or None.
+        lat: Optional fallback latitude (currently unused).
+        lon: Optional fallback longitude (currently unused).
     """
     if isinstance(geom_obj, dict) and geom_obj.get("type") in (
         "Polygon",
@@ -127,22 +141,48 @@ def _store_place_area(place, geom_obj, lat=None, lon=None):
 
 
 def _lat_column():
+    """Return a SQLAlchemy expression for the latitude of a Place's coordinate.
+
+    Returns:
+        A SQLAlchemy function expression equivalent to ``ST_Y(Place.coordinate)``.
+    """
     return func.ST_Y(Place.coordinate)
 
 
 def _lon_column():
+    """Return a SQLAlchemy expression for the longitude of a Place's coordinate.
+
+    Returns:
+        A SQLAlchemy function expression equivalent to ``ST_X(Place.coordinate)``.
+    """
     return func.ST_X(Place.coordinate)
 
 
 def _first_segment(text):
-    if not text:
+    """Return the portion of a comma-separated string before the first comma.
+
+    Args:
+        text: Input string, potentially containing commas.
+
+    Returns:
+        The trimmed text before the first comma, or the full trimmed string if
+        no comma is present.  Returns None for falsy input.
+    """
         return None
     segment = text.split(",", 1)[0].strip()
     return segment or text.strip()
 
 
 def _reverse_geojson_feature(data):
-    if not isinstance(data, dict):
+    """Extract the first GeoJSON Feature from a Nominatim reverse-geocode response.
+
+    Args:
+        data: The parsed JSON response dict from Nominatim, which may be a
+            Feature, a FeatureCollection, or another structure.
+
+    Returns:
+        A GeoJSON Feature dict if one can be found, otherwise None.
+    """
         return None
     if data.get("type") == "FeatureCollection":
         features = data.get("features") or []
@@ -153,7 +193,19 @@ def _reverse_geojson_feature(data):
 
 
 def _bbox_to_geojson_polygon(bbox, order_hint="lonlat"):
-    """Convert bbox array into a GeoJSON Polygon respecting the indicated coordinate order."""
+    """Convert a bounding-box array into a GeoJSON Polygon.
+
+    Args:
+        bbox: A list or tuple of four numeric values representing the bounding box.
+        order_hint: Expected coordinate order - ``"lonlat"`` (default) interprets
+            the values as ``[min_lon, min_lat, max_lon, max_lat]``, while
+            ``"latlon"`` interprets them as ``[min_lat, max_lat, min_lon, max_lon]``.
+            If the first attempt produces an invalid polygon, the alternate order
+            is tried automatically.
+
+    Returns:
+        A GeoJSON Polygon dict, or None if the bbox is invalid.
+    """
     if not isinstance(bbox, (list, tuple)) or len(bbox) < 4:
         return None
 
@@ -185,8 +237,16 @@ def _bbox_to_geojson_polygon(bbox, order_hint="lonlat"):
 
 
 def _compose_reverse_tags(properties):
-    tags = {}
-    address = properties.get("address") if isinstance(properties, dict) else None
+    """Extract structured tag data from a Nominatim feature properties dict.
+
+    Args:
+        properties: A Nominatim ``properties`` dict that may contain ``address``,
+            ``extratags``, ``category``, ``type``, ``addresstype``, and
+            ``place_id``/``osm_id`` fields.
+
+    Returns:
+        A dict of tag data suitable for storing in ``Place.tags``.
+    """
     if isinstance(address, dict):
         tags["address"] = address
     extratags = properties.get("extratags") if isinstance(properties, dict) else None
@@ -204,10 +264,15 @@ def _compose_reverse_tags(properties):
 
 
 def _reverse_feature_to_payload(feature):
-    if not isinstance(feature, dict):
-        return None
-    properties = feature.get("properties") or {}
-    geometry = feature.get("geometry") or {}
+    """Convert a GeoJSON Feature from Nominatim into a normalised place payload dict.
+
+    Args:
+        feature: A GeoJSON Feature dict with ``geometry`` and ``properties``.
+
+    Returns:
+        A dict with ``name``, ``alt_name``, ``lat``, ``lon``, ``description``,
+        and ``tags`` fields, or None if the feature is invalid.
+    """
     coords = geometry.get("coordinates") or []
     if not isinstance(coords, (list, tuple)) or len(coords) < 2:
         return None
@@ -238,7 +303,17 @@ def _reverse_feature_to_payload(feature):
 
 
 def _legacy_reverse_payload(data, fallback_lat=None, fallback_lon=None):
-    if not isinstance(data, dict):
+    """Convert a legacy (non-GeoJSON) Nominatim reverse response to a place payload dict.
+
+    Args:
+        data: A flat Nominatim reverse JSON response dict (``format=json`` style).
+        fallback_lat: Latitude to use if ``data`` does not contain ``lat``.
+        fallback_lon: Longitude to use if ``data`` does not contain ``lon``/``lng``.
+
+    Returns:
+        A dict with ``name``, ``alt_name``, ``lat``, ``lon``, ``description``,
+        and ``tags`` fields, or None if coordinates cannot be determined.
+    """
         return None
     lat = data.get("lat") or fallback_lat
     lon = data.get("lon") or data.get("lng") or fallback_lon
@@ -275,7 +350,21 @@ def _legacy_reverse_payload(data, fallback_lat=None, fallback_lon=None):
 
 
 def _normalize_reverse_response(data, fallback_lat=None, fallback_lon=None):
-    feature = _reverse_geojson_feature(data)
+    """Normalise a Nominatim reverse-geocode response regardless of its format.
+
+    Handles both GeoJSON FeatureCollection/Feature responses and legacy flat
+    JSON responses, extracting geometry for the place area if available.
+
+    Args:
+        data: Parsed JSON from Nominatim reverse endpoint.
+        fallback_lat: Latitude fallback when the response omits coordinates.
+        fallback_lon: Longitude fallback when the response omits coordinates.
+
+    Returns:
+        A tuple of ``(payload, raw_origin, geom_obj)`` where ``payload`` is a
+        normalised place dict, ``raw_origin`` is the unmodified response data,
+        and ``geom_obj`` is a GeoJSON geometry dict or None.
+    """
     geom = None
     if feature:
         payload = _reverse_feature_to_payload(feature)
@@ -297,7 +386,17 @@ def _normalize_reverse_response(data, fallback_lat=None, fallback_lon=None):
 
 
 def _find_existing_place(name, lat, lon, epsilon=0.0005):
-    if not name:
+    """Look up a Place by name within a small geographic bounding box.
+
+    Args:
+        name: Place name to search for (case-insensitive).
+        lat: Latitude of the search centre.
+        lon: Longitude of the search centre.
+        epsilon: Half-side of the bounding box in degrees (default 0.0005 ≈ 55 m).
+
+    Returns:
+        The most recently updated matching Place instance, or None.
+    """
         return None
     lowered = name.lower()
     return (
@@ -312,7 +411,18 @@ def _find_existing_place(name, lat, lon, epsilon=0.0005):
 
 
 def _parse_float(value, field, min_value=None, max_value=None):
-    if value is None:
+    """Parse and range-validate a numeric query parameter.
+
+    Args:
+        value: Raw string or numeric value to parse.
+        field: Field name used in error messages.
+        min_value: Optional inclusive lower bound.
+        max_value: Optional inclusive upper bound.
+
+    Returns:
+        A tuple ``(float_value, None)`` on success, or ``(None, error_message)``
+        on failure.
+    """
         return None, None
     try:
         numeric = float(value)
@@ -326,8 +436,17 @@ def _parse_float(value, field, min_value=None, max_value=None):
 
 
 def _validate_place_payload(data, partial=False):
-    errors = []
-    payload = {}
+    """Validate and normalise a place creation or update payload.
+
+    Args:
+        data: Dict of input fields from the request body.
+        partial: If True, only fields present in ``data`` are validated (PATCH
+            semantics); if False, all required fields must be present (POST semantics).
+
+    Returns:
+        A tuple ``(payload, errors)`` where ``payload`` is a dict of validated
+        values and ``errors`` is a list of error message strings (empty on success).
+    """
 
     if (not partial) or ("name" in data):
         name = (data.get("name") or "").strip()
@@ -387,7 +506,15 @@ def _validate_place_payload(data, partial=False):
 
 
 def _validate_geojson(geom):
-    if geom is None:
+    """Validate a GeoJSON geometry object at a basic structural level.
+
+    Args:
+        geom: The value to validate; expected to be a dict with ``type`` and
+            ``coordinates`` keys containing numeric values.
+
+    Returns:
+        None if the geometry is valid (or None), otherwise an error message string.
+    """
         return None
     if not isinstance(geom, dict):
         return "geom must be a GeoJSON object"
@@ -399,7 +526,14 @@ def _validate_geojson(geom):
 
 
 def _coordinates_are_numeric(coords):
-    if isinstance(coords, (int, float)):
+    """Recursively check that all values in a GeoJSON coordinate structure are numeric.
+
+    Args:
+        coords: A number, or a (possibly nested) list of numbers.
+
+    Returns:
+        True if all leaf values are int or float, False otherwise.
+    """
         return True
     if isinstance(coords, list):
         return all(_coordinates_are_numeric(c) for c in coords)
@@ -409,11 +543,16 @@ def _coordinates_are_numeric(coords):
 @bp.post("")
 @jwt_required()
 def create_place():
-    error = admin_required()
-    if error:
-        return error
-    data = request.get_json() or {}
-    payload, errors = _validate_place_payload(data)
+    """Create a new Place record (admin only).
+
+    Expects a JSON body validated by ``_validate_place_payload``.  An optional
+    ``geom`` GeoJSON field is stored via ``_store_place_area``.
+
+    Returns:
+        JSON with a confirmation message and the new place pin, HTTP 201.
+        HTTP 400 if the payload is invalid or the DB write fails.
+        HTTP 403 if the caller is not an admin.
+    """
     if errors:
         return jsonify({"message": "Invalid input", "errors": errors}), 400
 
@@ -438,7 +577,17 @@ def create_place():
 @bp.get("")
 @jwt_required(optional=True)
 def list_places():
-    page = request.args.get("page", 1, type=int)
+    """Return a paginated list of places with optional name and tag filters.
+
+    Args (query string):
+        name: Case-insensitive substring filter on the place name.
+        tag: Filter to places whose tags contain this string.
+        page: Page number (default 1).
+        per_page: Items per page (default 20, max 100).
+
+    Returns:
+        Paginated JSON response with ``items`` list of place pin dicts, HTTP 200.
+    """
     per_page = request.args.get("per_page", DEFAULT_PAGE_SIZE, type=int)
     per_page = max(1, min(per_page, MAX_PAGE_SIZE))
 
@@ -474,23 +623,33 @@ def list_places():
 @bp.get("/<int:place_id>")
 @jwt_required(optional=True)
 def get_place(place_id):
-    place = Place.query.get(place_id)
-    if not place:
-        return jsonify({"message": "Place not found"}), 404
-    return jsonify({"place": place_to_pin(place)}), 200
+    """Return a single place by its primary key.
+
+    Args:
+        place_id: Integer primary key of the Place.
+
+    Returns:
+        JSON with the place pin dict, HTTP 200.
+        HTTP 404 if the place is not found.
+    """
 
 
 @bp.put("/<int:place_id>")
 @jwt_required()
 def update_place(place_id):
-    error = admin_required()
-    if error:
-        return error
-    place = Place.query.get(place_id)
-    if not place:
-        return jsonify({"message": "Place not found"}), 404
+    """Update fields on an existing place (admin only).
 
-    data = request.get_json() or {}
+    Applies a partial update using only fields present in the JSON body.
+
+    Args:
+        place_id: Integer primary key of the Place to update.
+
+    Returns:
+        JSON with a confirmation message and the updated place pin, HTTP 200.
+        HTTP 400 if the payload is invalid or the DB write fails.
+        HTTP 403 if the caller is not an admin.
+        HTTP 404 if the place is not found.
+    """
     payload, errors = _validate_place_payload(data, partial=True)
     if errors:
         return jsonify({"message": "Invalid input", "errors": errors}), 400
@@ -522,14 +681,17 @@ def update_place(place_id):
 @bp.delete("/<int:place_id>")
 @jwt_required()
 def delete_place(place_id):
-    error = admin_required()
-    if error:
-        return error
-    place = Place.query.get(place_id)
-    if not place:
-        return jsonify({"message": "Place not found"}), 404
+    """Delete a place by its primary key (admin only).
 
-    try:
+    Args:
+        place_id: Integer primary key of the Place to delete.
+
+    Returns:
+        JSON with a confirmation message, HTTP 200.
+        HTTP 400 if the DB delete fails.
+        HTTP 403 if the caller is not an admin.
+        HTTP 404 if the place is not found.
+    """
         db.session.delete(place)
         db.session.commit()
     except SQLAlchemyError as exc:
@@ -540,7 +702,15 @@ def delete_place(place_id):
 
 
 def place_to_dict(place):
-    """Return a frontend-friendly structure without assuming optional columns exist."""
+    """Return a frontend-friendly structure without assuming optional columns exist.
+
+    Args:
+        place: A Place ORM instance with a ``to_dict()`` method.
+
+    Returns:
+        A dict enriched with ``id``, ``display_name``, ``source``, and safe
+        defaults for ``tags``, ``geom``, and ``description``.
+    """
     data = place.to_dict()
     data["id"] = data.get("place_id")
     data["display_name"] = data.get("alt_name") or data.get("name")
@@ -553,7 +723,15 @@ def place_to_dict(place):
 
 
 def _normalize_tags(tags):
-    if tags is None:
+    """Normalise a ``Place.tags`` value to a dict or list.
+
+    Args:
+        tags: Raw tags value - may be None, a JSON string, a dict, or a list.
+
+    Returns:
+        The parsed dict or list, or an empty dict if the value is None or
+        unparseable.
+    """
         return {}
     if isinstance(tags, str):
         try:
@@ -566,9 +744,16 @@ def _normalize_tags(tags):
 
 
 def _derive_pin_type(properties, extratags=None):
-    """
-    properties: nominatim 'properties' dict
-    extratags: nominatim 'extratags'
+    """Derive a frontend pin-type string from Nominatim category/type metadata.
+
+    Args:
+        properties: Nominatim ``properties`` dict (or any name string as fallback).
+        extratags: Optional Nominatim ``extratags`` dict; read from ``properties``
+            when not provided explicitly.
+
+    Returns:
+        A pin-type string such as ``"cafe"``, ``"house"``, ``"city"``, or
+        ``"default"`` when no specific match is found.
     """
     if not isinstance(properties, dict):
         properties = {}
@@ -637,14 +822,32 @@ def _derive_pin_type(properties, extratags=None):
 
 
 def _build_label(name=None, alt_name=None, display_name=None):
-    for value in (alt_name, name, display_name):
+    """Return the best available display label from the provided name candidates.
+
+    Args:
+        name: Primary place name.
+        alt_name: Alternate or display name.
+        display_name: Full display name (lowest priority).
+
+    Returns:
+        The first non-empty value among ``alt_name``, ``name``, ``display_name``,
+        or None if all are falsy.
+    """
         if value:
             return value
     return None
 
 
 def place_to_pin(place):
-    raw = place.to_dict() if hasattr(place, "to_dict") else dict(place)
+    """Convert a Place ORM instance to a frontend-friendly pin dict.
+
+    Args:
+        place: A Place ORM instance with a ``to_dict()`` method, or a plain dict.
+
+    Returns:
+        A dict with ``id``, ``placeId``, ``name``, ``label``, ``lat``, ``lng``,
+        ``type``, ``tags``, ``source``, ``createdAt``, ``updatedAt``, and ``raw``.
+    """
     label = _build_label(raw.get("name"), raw.get("alt_name"), raw.get("display_name"))
     tags = _normalize_tags(raw.get("tags"))
     pin_type = _derive_pin_type(label, tags)
@@ -666,8 +869,14 @@ def place_to_pin(place):
 
 
 def _resolve_coordinates(item):
-    try:
-        lat = float(item.get("lat"))
+    """Extract and cast lat/lon floats from a dict.
+
+    Args:
+        item: A dict expected to contain ``lat`` and ``lon`` keys.
+
+    Returns:
+        A tuple ``(lat, lon)`` as floats, or ``(None, None)`` if conversion fails.
+    """
         lon = float(item.get("lon"))
         return lat, lon
     except (TypeError, ValueError):
@@ -675,7 +884,16 @@ def _resolve_coordinates(item):
 
 
 def _apply_point_radius_filter(query, center, radius_meters):
-    if not center or radius_meters is None:
+    """Filter a Place SQLAlchemy query to rows within a given radius of a point.
+
+    Args:
+        query: The base SQLAlchemy query to filter.
+        center: A ``(lat, lon)`` tuple for the search centre, or falsy to skip filtering.
+        radius_meters: Maximum distance from the centre in metres.
+
+    Returns:
+        The filtered query (or the original query unchanged if ``center`` is falsy).
+    """
         return query
     lat, lon = center
     radius_meters = max(1.0, min(float(radius_meters), MAX_POINT_RADIUS_METERS))
@@ -689,7 +907,17 @@ def _apply_point_radius_filter(query, center, radius_meters):
 
 
 def _build_filtered_query(search_text, tag, point_filter=None):
-    query = Place.query
+    """Build a filtered SQLAlchemy query for Place records.
+
+    Args:
+        search_text: Optional substring to match against ``name`` and ``alt_name``
+            (case-insensitive).
+        tag: Optional tag substring to filter by.
+        point_filter: Optional ``(lat, lon, radius_m)`` tuple for radius filtering.
+
+    Returns:
+        A SQLAlchemy Query object with the requested filters applied.
+    """
     if search_text:
         lowered = f"%{search_text.lower()}%"
         query = query.filter(
@@ -707,13 +935,29 @@ def _build_filtered_query(search_text, tag, point_filter=None):
 
 
 def _truncate(value, limit=255):
-    if not isinstance(value, str):
+    """Truncate a string to a maximum length.
+
+    Args:
+        value: The value to truncate; non-strings are returned unchanged.
+        limit: Maximum character count (default 255).
+
+    Returns:
+        The truncated string, or the original value if it is not a string.
+    """
         return value
     return value[:limit]
 
 
 def _normalize_nominatim_item(item):
-    if not isinstance(item, dict):
+    """Normalise a single Nominatim search result item into a place payload dict.
+
+    Args:
+        item: A dict from the Nominatim JSON search response array.
+
+    Returns:
+        A dict with ``name``, ``alt_name``, ``lat``, ``lon``, and ``tags`` fields,
+        or None if the item lacks valid coordinates or a usable name.
+    """
         return None
     lat, lon = _resolve_coordinates(item)
     if lat is None or lon is None:
@@ -744,7 +988,15 @@ def _normalize_nominatim_item(item):
 
 
 def _fetch_nominatim_places(search_text, limit):
-    params = {
+    """Query the Nominatim search API and return raw result items.
+
+    Args:
+        search_text: The search query string.
+        limit: Maximum number of results to request from Nominatim.
+
+    Returns:
+        A list of raw Nominatim result dicts, or an empty list on any error.
+    """
         "format": "json",
         "q": search_text,
         "addressdetails": 1,
@@ -767,7 +1019,17 @@ def _fetch_nominatim_places(search_text, limit):
 
 
 def _place_exists_nearby(name, lat, lon, epsilon=0.0005):
-    lowered = name.lower()
+    """Check whether a place with the given name already exists near the coordinates.
+
+    Args:
+        name: Place name to search for (case-insensitive).
+        lat: Latitude of the check location.
+        lon: Longitude of the check location.
+        epsilon: Half-side of the bounding box in degrees (default 0.0005).
+
+    Returns:
+        True if a matching place exists within the bounding box, False otherwise.
+    """
     return (
         Place.query.filter(
             func.lower(Place.name) == lowered,
@@ -779,7 +1041,20 @@ def _place_exists_nearby(name, lat, lon, epsilon=0.0005):
 
 
 def _ingest_nominatim_places(search_text, limit):
-    raw_items = _fetch_nominatim_places(search_text, limit)
+    """Fetch Nominatim results for a search term and persist new places to the DB.
+
+    Skips any result that already has a matching place nearby in the database.
+
+    Args:
+        search_text: The search query string.
+        limit: Maximum number of Nominatim results to process.
+
+    Returns:
+        A tuple ``(inserted, normalized, raw_items, db_error)`` where ``inserted``
+        is True if at least one new place was committed, ``normalized`` is the list
+        of processed payload dicts, ``raw_items`` is the unmodified Nominatim
+        response list, and ``db_error`` is True if a DB commit failed.
+    """
     normalized = []
     for item in raw_items:
         payload = _normalize_nominatim_item(item)
@@ -819,7 +1094,19 @@ def _ingest_nominatim_places(search_text, limit):
 
 
 def _serialize_transient_place(payload):
-    tags_raw = payload.get("tags")
+    """Serialize a normalised place payload dict into a frontend-compatible pin dict.
+
+    Used for Nominatim results that have not yet been (or could not be) persisted
+    to the database.
+
+    Args:
+        payload: A normalised place dict with ``name``, ``alt_name``, ``lat``,
+            ``lon``, ``description``, and ``tags`` keys.
+
+    Returns:
+        A pin dict compatible with the ``place_to_pin`` output format, with
+        ``id`` and ``placeId`` set to None and ``source`` set to ``"nominatim"``.
+    """
     tags = None
 
     if isinstance(tags_raw, (dict, list)):
@@ -869,7 +1156,24 @@ def _serialize_transient_place(payload):
 
 @bp.get("/search")
 def search_places():
-    q = (request.args.get("q") or "").strip()
+    """Search for places by name, tag, and optional geographic radius.
+
+    Falls back to Nominatim when no local results are found on the first page
+    and no tag or point filter is active.
+
+    Args (query string):
+        q: Search text (optional).
+        tag: Tag substring filter (optional).
+        lat: Centre latitude for radius search (required if ``lon`` is provided).
+        lon: Centre longitude for radius search (required if ``lat`` is provided).
+        radius: Search radius in metres (default 500, max 50000).
+        page: Page number (default 1).
+        per_page: Items per page (default 20, max 100).
+
+    Returns:
+        JSON with ``results`` list and ``meta`` pagination dict, HTTP 200.
+        HTTP 400 if lat/lon/radius values are invalid.
+    """
     tag = (request.args.get("tag") or "").strip() or None
     lat_raw = request.args.get("lat")
     lon_raw = request.args.get("lon") or request.args.get("lng")
@@ -940,9 +1244,20 @@ def search_places():
 
 @bp.get("/reverse")
 def reverse_geocode():
-    """
-    Reverse geocoding (Always save to DB except duplicates)
-    GET /place/reverse?lat=37.57&lon=126.98
+    """Reverse-geocode a coordinate via Nominatim and persist the result.
+
+    Always attempts to save the resolved place to the database unless a
+    matching place already exists nearby.
+
+    Args (query string):
+        lat: Latitude to reverse-geocode (required).
+        lon: Longitude to reverse-geocode (required).
+
+    Returns:
+        JSON with the place pin dict and a ``source`` indicator
+        (``"existing"``, ``"stored"``, or ``"reverse-db-error"``), HTTP 200/201.
+        HTTP 400 if coordinates are missing or out of range.
+        HTTP 500 if Nominatim fails or the response cannot be normalised.
     """
     lat_raw = request.args.get("lat")
     lon_raw = request.args.get("lon")

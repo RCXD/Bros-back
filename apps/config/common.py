@@ -21,14 +21,36 @@ if not env_file.exists():
 load_dotenv(env_file)
 
 
-def get_bool(key, default=False):
-    """환경 변수 문자열을 불린 값으로 변환"""
+def get_bool(key: str, default: bool = False) -> bool:
+    """Read an environment variable and coerce it to a boolean.
+
+    Truthy strings are ``"true"``, ``"1"``, ``"yes"``, and ``"on"``
+    (case-insensitive).  Everything else is considered ``False``.
+
+    Args:
+        key: Name of the environment variable.
+        default: Value to use when the variable is not set.
+
+    Returns:
+        The boolean interpretation of the environment variable's value.
+    """
     value = os.getenv(key, str(default)).lower()
     return value in ("true", "1", "yes", "on")
 
 
-def get_int(key, default=0):
-    """환경 변수 문자열을 정수로 변환"""
+def get_int(key: str, default: int = 0) -> int:
+    """Read an environment variable and coerce it to an integer.
+
+    Returns *default* if the variable is not set or cannot be parsed as
+    an integer.
+
+    Args:
+        key: Name of the environment variable.
+        default: Value to use when the variable is absent or invalid.
+
+    Returns:
+        The integer interpretation of the environment variable's value.
+    """
     try:
         return int(os.getenv(key, default))
     except (ValueError, TypeError):
@@ -36,7 +58,12 @@ def get_int(key, default=0):
 
 
 class Config:
-    """기본 설정 클래스"""
+    """Base configuration class shared by all environments.
+
+    All settings are read from environment variables (loaded from
+    ``.env.local``, ``.env.production``, or ``.env`` in that order).
+    Sensible defaults are provided for local development.
+    """
 
     # 보안
     SECRET_KEY = os.getenv("SECRET_KEY", os.urandom(32).hex())
@@ -127,21 +154,33 @@ class Config:
 
 
 class DevelopmentConfig(Config):
-    """Development configuration"""
+    """Development environment configuration.
+
+    Enables debug mode by default and configures SQLAlchemy echo based
+    on the ``SQLALCHEMY_ECHO`` environment variable.
+    """
 
     DEBUG = get_bool("FLASK_DEBUG", True)
     SQLALCHEMY_ECHO = get_bool("SQLALCHEMY_ECHO", False)
 
 
 class ProductionConfig(Config):
-    """Production configuration"""
+    """Production environment configuration.
+
+    Disables debug mode and SQLAlchemy echo by default to reduce
+    verbosity and protect sensitive information in production.
+    """
 
     DEBUG = get_bool("FLASK_DEBUG", False)
     SQLALCHEMY_ECHO = get_bool("SQLALCHEMY_ECHO", False)
 
 
 class TestConfig(Config):
-    """Test configuration"""
+    """Test environment configuration.
+
+    Uses a separate test database and disables SQLAlchemy echo to keep
+    test output clean.
+    """
 
     TESTING = True
     SQLALCHEMY_DATABASE_URI = "mysql+pymysql://root:1234@localhost:3306/404found_test"

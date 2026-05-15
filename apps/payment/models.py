@@ -6,7 +6,7 @@ from apps.config.server import db
 
 
 class Order(db.Model):
-    """Persistent order record for KakaoPay interaction."""
+    """Persistent order record tracking a KakaoPay payment lifecycle."""
 
     __tablename__ = "orders"
 
@@ -53,7 +53,7 @@ class Order(db.Model):
 
 
 class PaymentLog(db.Model):
-    """Store KakaoPay transaction history separately from orders."""
+    """Immutable audit log of every KakaoPay transaction event for an order."""
 
     __tablename__ = "payment_logs"
 

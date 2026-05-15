@@ -25,8 +25,10 @@ bp = Blueprint("user", __name__)
 
 @bp.get("/api_info")
 def api_info():
-    """
-    사용자 API 정보 제공 (개발용)
+    """Return API endpoint information for the user module (development use).
+
+    Returns:
+        JSON response with 200 status containing a description of all user endpoints.
     """
     info = {
         "module": "user",
@@ -70,7 +72,17 @@ def api_info():
 
 @bp.get("/<int:user_id>")
 def get_user(user_id):
-    """ID로 사용자 프로필 조회"""
+    """Retrieve a user's public profile by their ID.
+
+    Recalculates and persists the follower count before returning.
+
+    Args:
+        user_id: The ID of the user to retrieve.
+
+    Returns:
+        JSON response with 200 status containing the user's profile data.
+        Returns 404 if the user does not exist.
+    """
     user = User.query.get_or_404(user_id)
 
     # 팔로워 수 계산
@@ -83,7 +95,23 @@ def get_user(user_id):
 @bp.patch("/<int:user_id>/follow")
 @jwt_required()
 def follow_user(user_id):
-    """사용자 팔로우 토글"""
+    """Toggle a follow relationship between the current user and a target user.
+
+    Requires JWT authentication. Follows the target if not already following;
+    unfollows otherwise. Awards reward points on a successful follow action.
+
+    Args:
+        user_id: The ID of the user to follow or unfollow.
+
+    Returns:
+        JSON response with 201 status when a follow is created, or 200 when removed.
+        Both responses include the updated follow/followed flags and a status message.
+        Returns 400 if the user attempts to follow themselves.
+
+    Raises:
+        400: If the current user tries to follow themselves.
+        500: On database integrity error.
+    """
     current_user_id = int(get_jwt_identity())
 
     if current_user_id == user_id:
@@ -161,7 +189,19 @@ def follow_user(user_id):
 
 @bp.get("/<int:user_id>/followers")
 def get_followers(user_id):
-    """사용자의 팔로워 목록 조회"""
+    """Retrieve a paginated list of users who follow the specified user.
+
+    Args:
+        user_id: The ID of the user whose followers to retrieve.
+
+    Query params:
+        page: Page number (default: 1).
+        per_page: Items per page (default: 20).
+
+    Returns:
+        JSON response with 200 status containing paginated follower user data.
+        Returns 404 if the user does not exist.
+    """
     # 사용자 존재 확인
     User.query.get_or_404(user_id)
 
@@ -242,7 +282,19 @@ def get_followers(user_id):
 
 @bp.get("/<int:user_id>/following")
 def get_following(user_id):
-    """이 사용자가 팔로우하는 사용자 목록 조회"""
+    """Retrieve a paginated list of users that the specified user follows.
+
+    Args:
+        user_id: The ID of the user whose following list to retrieve.
+
+    Query params:
+        page: Page number (default: 1).
+        per_page: Items per page (default: 20).
+
+    Returns:
+        JSON response with 200 status containing paginated following user data.
+        Returns 404 if the user does not exist.
+    """
     # 사용자 존재 확인
     User.query.get_or_404(user_id)
 
@@ -289,7 +341,23 @@ def get_following(user_id):
 @bp.patch("/<int:user_id>/friend")
 @jwt_required()
 def toggle_friend(user_id):
-    """친구(친한친구) 등록/삭제 토글"""
+    """Toggle a close-friend relationship between the current user and a target user.
+
+    Requires JWT authentication. Adds the target as a friend if not already added;
+    removes them otherwise.
+
+    Args:
+        user_id: The ID of the user to add or remove as a close friend.
+
+    Returns:
+        JSON response with 201 status when a friend is added, or 200 when removed,
+        both including the is_friended flag. Returns 400 if the user attempts to
+        friend themselves.
+
+    Raises:
+        400: If the current user tries to friend themselves.
+        500: On database integrity error.
+    """
     current_user_id = int(get_jwt_identity())
 
     if current_user_id == user_id:
@@ -329,7 +397,13 @@ def toggle_friend(user_id):
 @bp.get("/me/friends")
 @jwt_required()
 def get_my_friends():
-    """현재 사용자의 친구 목록 조회"""
+    """Retrieve the current user's close-friends list.
+
+    Requires JWT authentication.
+
+    Returns:
+        JSON response with 200 status containing friend user details and total count.
+    """
     current_user_id = int(get_jwt_identity())
 
     friends = Friend.query.filter_by(user_id=current_user_id).all()
@@ -359,7 +433,14 @@ def get_my_friends():
 @bp.get("/me/points")
 @jwt_required()
 def get_my_points():
-    """현재 사용자의 포인트 조회"""
+    """Retrieve the current user's total points and today's reward summary.
+
+    Requires JWT authentication.
+
+    Returns:
+        JSON response with 200 status containing user ID, total points, and a
+        daily reward breakdown.
+    """
     current_user_id = int(get_jwt_identity())
     user = User.query.get_or_404(current_user_id)
 
@@ -380,7 +461,15 @@ def get_my_points():
 
 @bp.get("/<int:user_id>/points")
 def get_user_points(user_id):
-    """특정 사용자의 포인트 조회"""
+    """Retrieve a specific user's total points.
+
+    Args:
+        user_id: The ID of the user.
+
+    Returns:
+        JSON response with 200 status containing user ID and point total.
+        Returns 404 if the user does not exist.
+    """
     user = User.query.get_or_404(user_id)
 
     return (
@@ -402,7 +491,14 @@ def get_user_points(user_id):
 @bp.get("/me/medal")
 @jwt_required()
 def get_my_medal():
-    """현재 사용자의 메달 정보 조회"""
+    """Retrieve the current user's medal tier and point information.
+
+    Requires JWT authentication.
+
+    Returns:
+        JSON response with 200 status containing user ID, total points, and
+        medal tier data.
+    """
     current_user_id = int(get_jwt_identity())
     user = User.query.get_or_404(current_user_id)
 
@@ -422,7 +518,15 @@ def get_my_medal():
 
 @bp.get("/<int:user_id>/medal")
 def get_user_medal_info(user_id):
-    """특정 사용자의 메달 정보 조회"""
+    """Retrieve a specific user's medal tier and point information.
+
+    Args:
+        user_id: The ID of the user.
+
+    Returns:
+        JSON response with 200 status containing user ID, total points, and
+        medal tier data. Returns 404 if the user does not exist.
+    """
     user = User.query.get_or_404(user_id)
 
     medal_info = get_user_medal(user_id)
@@ -441,7 +545,12 @@ def get_user_medal_info(user_id):
 
 @bp.get("/medals")
 def get_all_medals():
-    """전체 메달 등급 정보 조회"""
+    """Retrieve all available medal tier definitions.
+
+    Returns:
+        JSON response with 200 status containing the full list of medal tiers
+        and the total count.
+    """
     return (
         jsonify(
             {
@@ -461,7 +570,13 @@ def get_all_medals():
 @bp.get("/me/league")
 @jwt_required()
 def get_my_league():
-    """현재 사용자의 리그 정보 조회 (미래 구현)"""
+    """Retrieve the current user's league information.
+
+    Requires JWT authentication.
+
+    Returns:
+        JSON response with 200 status containing league data for the current user.
+    """
     current_user_id = int(get_jwt_identity())
 
     league_info = get_user_league_info(current_user_id)
@@ -471,7 +586,15 @@ def get_my_league():
 
 @bp.get("/<int:user_id>/league")
 def get_user_league(user_id):
-    """특정 사용자의 리그 정보 조회 (미래 구현)"""
+    """Retrieve a specific user's league information.
+
+    Args:
+        user_id: The ID of the user.
+
+    Returns:
+        JSON response with 200 status containing league data.
+        Returns 404 if the user does not exist.
+    """
     User.query.get_or_404(user_id)
 
     league_info = get_user_league_info(user_id)
@@ -487,17 +610,24 @@ def get_user_league(user_id):
 @bp.patch("/admin/<int:user_id>/points")
 @jwt_required()
 def admin_set_user_points(user_id):
-    """
-    [관리자 전용] 사용자 포인트 설정
+    """[Admin only] Set, add, or subtract points for a specific user.
+
+    Requires JWT authentication with admin account type.
+
+    Args:
+        user_id: The ID of the target user.
 
     Query params:
-        - points: 설정할 포인트 값 (필수)
-        - mode: 설정 모드 (set, add, subtract) - 기본: set
+        points: The point value to apply (required).
+        mode: Operation mode — 'set' (default), 'add', or 'subtract'.
 
-    Examples:
-        PATCH /user/admin/1/points?points=1000          # 1000으로 설정
-        PATCH /user/admin/1/points?points=500&mode=add  # 500 추가
-        PATCH /user/admin/1/points?points=200&mode=subtract  # 200 차감
+    Returns:
+        JSON response with 200 status containing old and new point values on success.
+        Returns 403 if the current user is not an admin.
+
+    Raises:
+        403: If the current user does not have admin privileges.
+        400: If the points parameter is missing.
     """
     try:
         current_user = get_current_user()
@@ -549,11 +679,19 @@ def admin_set_user_points(user_id):
 @bp.get("/admin/points/leaderboard")
 @jwt_required()
 def admin_points_leaderboard():
-    """
-    [관리자 전용] 포인트 순위표
+    """[Admin only] Retrieve the top users ranked by points.
+
+    Requires JWT authentication with admin account type.
 
     Query params:
-        - limit: 조회할 인원 수 (기본: 20, 최대: 100)
+        limit: Number of users to return (default: 20, max: 100).
+
+    Returns:
+        JSON response with 200 status containing a ranked leaderboard with user
+        details and point totals. Returns 403 if the current user is not an admin.
+
+    Raises:
+        403: If the current user does not have admin privileges.
     """
     try:
         current_user = get_current_user()

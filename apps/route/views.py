@@ -19,8 +19,10 @@ bp = Blueprint("route", __name__)
 
 @bp.get("/api_info")
 def api_info():
-    """
-    경로 API 정보 제공 (개발용)
+    """Return route module API metadata for development reference.
+
+    Returns:
+        JSON response with module info and endpoint list, HTTP 200.
     """
     info = {
         "module": "route",
@@ -74,7 +76,16 @@ def api_info():
 
 
 def _split_points(s):
-    pts = [
+    """Parse a semicolon-separated coordinate string into start, end, and via points.
+
+    Args:
+        s: String of ``lat,lon`` pairs separated by semicolons, optionally wrapped
+            in parentheses (e.g. ``"37.5,127.0;37.6,127.1"``).
+
+    Returns:
+        A dict with keys ``start``, ``end``, and ``vias`` (list of intermediate points).
+        ``end`` is None when fewer than two points are present.
+    """
         list(map(float, p.split(","))) for p in s.strip("()").split(";") if p.strip()
     ]
 
@@ -89,9 +100,20 @@ def _split_points(s):
 
 
 def _match_osm_edge(lat, lon, session=None, base_url=None, profile=None):
-    """
-    Resolve the nearest OSM edge for a hazard point using OSRM `nearest`.
-    Falls back to None if OSRM is unavailable.
+    """Resolve the nearest OSM edge for a hazard point using the OSRM ``nearest`` API.
+
+    Args:
+        lat: Latitude of the point to resolve.
+        lon: Longitude of the point to resolve.
+        session: Optional ``requests.Session`` to reuse; a new one is created if omitted.
+        base_url: Base URL of the OSRM server; falls back to ``OSRM_BASE_URL`` env var
+            or ``http://localhost:5000``.
+        profile: OSRM routing profile; falls back to ``OSRM_PROFILE`` env var or
+            ``driving``.
+
+    Returns:
+        An edge ID string (e.g. ``"osm:123-456"``) on success, or None if OSRM is
+        unavailable or returns no waypoints.
     """
     http = session or requests.Session()
     base = (base_url or os.getenv("OSRM_BASE_URL") or "http://localhost:5000").rstrip(
@@ -121,9 +143,19 @@ def _match_osm_edge(lat, lon, session=None, base_url=None, profile=None):
 
 
 def build_hazard_osm_edge_mapping(limit=1000, base_url=None, profile=None):
-    """
-    Map active hazards to their nearest OSM edge IDs and persist updates.
-    Returns a summary dict describing the run.
+    """Map active hazards to their nearest OSM edge IDs and persist the updates.
+
+    Queries active Hazard records, calls OSRM nearest for each, and bulk-updates
+    any rows whose edge ID has changed.  Refreshes the in-process hazard cache
+    after a successful write.
+
+    Args:
+        limit: Maximum number of hazards to process (default 1000).
+        base_url: Override OSRM base URL; falls back to the ``OSRM_BASE_URL`` env var.
+        profile: OSRM profile override; falls back to the ``OSRM_PROFILE`` env var.
+
+    Returns:
+        A dict with keys ``attempted``, ``updated``, and ``missed`` summarising the run.
     """
     query = Hazard.query.filter_by(is_active=True).order_by(Hazard.updated_at.desc())
     if limit:
@@ -156,9 +188,15 @@ def build_hazard_osm_edge_mapping(limit=1000, base_url=None, profile=None):
 
 
 def hazard_edge_matcher_cli(argv=None):
-    """
-    CLI helper to backfill hazard osm_edge_id values via OSRM nearest lookups.
-    Intended for quick one-off runs: python -m apps.route.views --limit 500
+    """CLI entry point for backfilling hazard ``osm_edge_id`` values via OSRM nearest.
+
+    Intended for one-off runs: ``python -m apps.route.views --limit 500``.
+
+    Args:
+        argv: Optional list of CLI argument strings; defaults to ``sys.argv[1:]``.
+
+    Returns:
+        A summary dict with keys ``attempted``, ``updated``, and ``missed``.
     """
     import argparse
 
@@ -192,7 +230,14 @@ if __name__ == "__main__":
 
 
 def _parse_point(point):
-    """Convert incoming lat/lon dict to a normalized point."""
+    """Convert an incoming lat/lon dict to a normalized point dict.
+
+    Args:
+        point: A dict expected to contain ``lat`` and ``lon`` (or ``lng``) keys.
+
+    Returns:
+        A dict ``{"lat": float, "lon": float}``, or None if the input is invalid.
+    """
     if not isinstance(point, dict):
         return None
     lat = point.get("lat")
@@ -217,7 +262,15 @@ _HAZARD_MAX_PER_PAGE = 200
 
 
 def _rate_limited(key):
-    """Cheap sliding-window limiter keyed by IP or user."""
+    """Check whether a key has exceeded the sliding-window rate limit.
+
+    Args:
+        key: Identifier string (e.g. IP address or user ID) to track.
+
+    Returns:
+        True if the key has reached ``_RATE_LIMIT_MAX`` requests within the
+        current ``_RATE_LIMIT_WINDOW`` seconds; False otherwise.
+    """
     now = time.time()
     window = [
         ts for ts in _RATE_LIMIT_BUCKET.get(key, []) if now - ts < _RATE_LIMIT_WINDOW
@@ -231,11 +284,30 @@ def _rate_limited(key):
 
 
 def _hazard_edge_id(hazard):
+    """Return the best available edge ID for a hazard record.
+
+    Args:
+        hazard: A Hazard ORM instance.
+
+    Returns:
+        The ``osm_edge_id`` if set, otherwise the ``edge_id``.
+    """
     return hazard.osm_edge_id or hazard.edge_id
 
 
 def _collapse_hazards(hazards, traffic_entries=None):
-    cache = {}
+    """Build an edge-keyed penalty cache from hazard and traffic records.
+
+    For each edge, only the highest penalty value is retained.
+
+    Args:
+        hazards: Iterable of active Hazard ORM instances.
+        traffic_entries: Optional iterable of TrafficHazard ORM instances whose
+            penalties should be merged into the cache.
+
+    Returns:
+        A dict mapping edge ID strings to their maximum penalty float values.
+    """
     for hazard in hazards:
         edge = _hazard_edge_id(hazard)
         if not edge:
@@ -255,7 +327,11 @@ def _collapse_hazards(hazards, traffic_entries=None):
 
 
 def _hydrate_cache_from_db():
-    hazards = Hazard.query.filter_by(is_active=True).all()
+    """Load all active hazards and recent traffic entries from the DB into the cache.
+
+    Returns:
+        The refreshed edge-penalty dict stored in ``_HAZARD_CACHE["by_edge"]``.
+    """
     cutoff = datetime.now() - timedelta(minutes=5)
     traffic_entries = TrafficHazard.query.filter(
         TrafficHazard.updated_at >= cutoff
@@ -266,15 +342,26 @@ def _hydrate_cache_from_db():
 
 
 def _hazard_cache(force=False):
-    if force or (time.time() - _HAZARD_CACHE["last_refresh"] > _HAZARD_CACHE_TTL):
+    """Return the in-process hazard edge-penalty cache, refreshing if stale.
+
+    Args:
+        force: If True, bypass the TTL check and force a DB reload.
+
+    Returns:
+        The edge-penalty dict mapping edge ID strings to penalty floats.
+    """
         return _hydrate_cache_from_db()
     return _HAZARD_CACHE["by_edge"]
 
 
 def _register_hazard_in_cache(hazard):
-    edge = _hazard_edge_id(hazard)
-    if not edge:
-        return
+    """Insert or update a single hazard's penalty in the in-process cache.
+
+    Only updates the cache entry when the new penalty exceeds the current value.
+
+    Args:
+        hazard: The Hazard ORM instance to register.
+    """
     penalty = hazard.weight_penalty or penalty_from_danger(hazard.danger_score)
     cache = _hazard_cache()
     if penalty > cache.get(edge, 0.0):
@@ -284,7 +371,15 @@ def _register_hazard_in_cache(hazard):
 
 
 def _haversine_km(p1, p2):
-    radius_km = 6371.0088
+    """Calculate the great-circle distance in kilometres between two points.
+
+    Args:
+        p1: Dict with ``lat`` and ``lon`` keys (degrees).
+        p2: Dict with ``lat`` and ``lon`` keys (degrees).
+
+    Returns:
+        Distance in kilometres as a float.
+    """
     lat1, lon1 = math.radians(p1["lat"]), math.radians(p1["lon"])
     lat2, lon2 = math.radians(p2["lat"]), math.radians(p2["lon"])
     dlat = lat2 - lat1
@@ -298,7 +393,18 @@ def _haversine_km(p1, p2):
 
 
 def _segment_edges(p1, p2, session=None, base_url=None, profile=None):
-    edges = set()
+    """Collect OSM edge IDs along a straight-line segment by interpolated sampling.
+
+    Args:
+        p1: Start point dict with ``lat`` and ``lon``.
+        p2: End point dict with ``lat`` and ``lon``.
+        session: Optional ``requests.Session`` to reuse across calls.
+        base_url: Override OSRM base URL.
+        profile: Override OSRM routing profile.
+
+    Returns:
+        A set of edge ID strings found along the interpolated segment.
+    """
     http = session or requests.Session()
     for step in range(_INTERPOLATE_STEPS + 1):
         t = step / _INTERPOLATE_STEPS
@@ -313,7 +419,16 @@ def _segment_edges(p1, p2, session=None, base_url=None, profile=None):
 
 
 def _collect_route_edges(points, base_url=None, profile=None):
-    edges = set()
+    """Collect all OSM edge IDs touched by a multi-segment route.
+
+    Args:
+        points: Ordered list of point dicts (``lat``/``lon``) forming the route.
+        base_url: Override OSRM base URL.
+        profile: Override OSRM routing profile.
+
+    Returns:
+        A set of edge ID strings covering all route segments.
+    """
     if len(points) < 2:
         return edges
     session = requests.Session()
@@ -331,18 +446,44 @@ def _collect_route_edges(points, base_url=None, profile=None):
 
 
 def _route_distance(points):
-    return sum(_haversine_km(points[i], points[i + 1]) for i in range(len(points) - 1))
+    """Calculate the total Haversine distance of a polyline in kilometres.
+
+    Args:
+        points: Ordered list of point dicts with ``lat`` and ``lon`` keys.
+
+    Returns:
+        Total route distance in kilometres as a float.
+    """
 
 
 def _route_penalty(points, base_url=None, profile=None):
-    edges = _collect_route_edges(points, base_url=base_url, profile=profile)
+    """Compute the total hazard penalty for a route based on its edge coverage.
+
+    Args:
+        points: Ordered list of point dicts with ``lat`` and ``lon`` keys.
+        base_url: Override OSRM base URL.
+        profile: Override OSRM routing profile.
+
+    Returns:
+        A tuple of ``(total_penalty, edges_set)`` where ``total_penalty`` is the
+        sum of cached penalties for all matched edges.
+    """
     cache = _hazard_cache()
     penalty = sum(cache.get(edge, 0.0) for edge in edges)
     return penalty, edges
 
 
 def _parse_points_payload(data):
-    start = _parse_point(data.get("start") or data.get("start_location"))
+    """Extract and validate start, end, and waypoint dicts from a request payload.
+
+    Args:
+        data: Dict from the request JSON body.  Accepts ``start``/``start_location``,
+            ``end``/``end_location``, and ``vias``/``waypoints``.
+
+    Returns:
+        A tuple ``(start, end, vias)`` where each point is a ``{"lat", "lon"}`` dict,
+        or ``(None, None, None)`` if any point is invalid.
+    """
     end = _parse_point(data.get("end") or data.get("end_location"))
     raw_vias = data.get("vias") or data.get("waypoints") or []
     if raw_vias and not isinstance(raw_vias, list):
@@ -359,7 +500,16 @@ def _parse_points_payload(data):
 
 
 def _hazard_to_pin(hazard):
-    raw = hazard.serialize() if hasattr(hazard, "serialize") else {}
+    """Convert a Hazard ORM instance to a frontend-friendly pin dict.
+
+    Args:
+        hazard: A Hazard ORM instance or object with a ``serialize()`` method.
+
+    Returns:
+        A dict with ``id``, ``hazardId``, ``lat``, ``lng``, ``description``,
+        ``type``, ``dangerScore``, ``source``, ``createdAt``, ``updatedAt``,
+        and a ``raw`` copy of the serialized hazard.
+    """
     hazard_type = (
         getattr(hazard, "hazard_type", None) or raw.get("hazard_type") or "hazard"
     )
@@ -384,7 +534,18 @@ def _hazard_to_pin(hazard):
 
 @bp.post("/hazards")
 def ingest_hazard():
-    """Ingest a hazard point and keep active cache updated."""
+    """Ingest a hazard point, resolve its OSM edge, and update the active cache.
+
+    Expects a JSON body with ``lat``, ``lon``, and optional ``danger_score`` and
+    ``is_active`` fields.  Rate-limited per remote IP.
+
+    Returns:
+        JSON with the new hazard, its pin representation, and OSRM customize
+        status, HTTP 201.
+        HTTP 400 if coordinates or danger_score are invalid.
+        HTTP 429 if the rate limit is exceeded.
+        HTTP 503 if the OSM edge cannot be resolved.
+    """
     data = request.get_json(silent=True) or {}
     requester = request.remote_addr or "anon"
     if _rate_limited(requester):
@@ -442,7 +603,17 @@ def ingest_hazard():
 
 @bp.get("/hazards")
 def list_hazards():
-    """Return normalized hazard pins with min_score filtering."""
+    """Return a paginated list of normalised active hazard pins.
+
+    Args (query string):
+        min_score: Minimum danger score filter (default 0).
+        page: Page number (default 1).
+        per_page: Items per page (default 50, max 200).
+
+    Returns:
+        JSON with ``results`` list of pin dicts and ``meta`` pagination info, HTTP 200.
+        HTTP 400 if ``min_score`` is not numeric.
+    """
     try:
         min_score = float(request.args.get("min_score", 0))
     except (TypeError, ValueError):
@@ -475,7 +646,16 @@ def list_hazards():
 
 @bp.put("/hazards/<int:hazard_id>")
 def update_hazard(hazard_id):
-    """Update an existing hazard record and refresh caches."""
+    """Update an existing hazard record and refresh the cache and OSRM weights.
+
+    Args:
+        hazard_id: Primary key of the Hazard to update.
+
+    Returns:
+        JSON with updated hazard and pin dicts, HTTP 200.
+        HTTP 400 if ``danger_score`` is invalid.
+        HTTP 404 if the hazard is not found.
+    """
     hazard = Hazard.query.get(hazard_id)
     if not hazard:
         return jsonify({"error": "hazard_not_found"}), 404
@@ -516,7 +696,15 @@ def update_hazard(hazard_id):
 
 @bp.delete("/hazards/<int:hazard_id>")
 def delete_hazard(hazard_id):
-    """Soft-delete a hazard by deactivating it."""
+    """Soft-delete a hazard by setting ``is_active`` to False.
+
+    Args:
+        hazard_id: Primary key of the Hazard to deactivate.
+
+    Returns:
+        JSON with deactivated hazard and pin dicts, HTTP 200.
+        HTTP 404 if the hazard is not found.
+    """
     hazard = Hazard.query.get(hazard_id)
     if not hazard:
         return jsonify({"error": "hazard_not_found"}), 404
@@ -546,7 +734,11 @@ def delete_hazard(hazard_id):
 
 @bp.get("/hazard/active")
 def list_active_hazards():
-    hazards = (
+    """Return up to 500 active hazard pins ordered by most recently updated.
+
+    Returns:
+        JSON with ``results`` list of pin dicts and ``total`` count, HTTP 200.
+    """
         Hazard.query.filter_by(is_active=True)
         .order_by(Hazard.updated_at.desc())
         .limit(500)
@@ -558,7 +750,11 @@ def list_active_hazards():
 
 @bp.post("/hazard/refresh")
 def refresh_hazard_cache():
-    cache = _hazard_cache(force=True)
+    """Force a full reload of the in-process hazard edge-penalty cache from the DB.
+
+    Returns:
+        JSON with a confirmation message and the number of active edges, HTTP 200.
+    """
     return (
         jsonify({"message": "hazard cache refreshed", "active_edges": len(cache)}),
         200,
@@ -567,7 +763,15 @@ def refresh_hazard_cache():
 
 @bp.post("/hazard/map-osm-edges")
 def map_hazards_to_osm_edges():
-    """Backfill or refresh hazard edge IDs using OSRM nearest lookups."""
+    """Backfill or refresh hazard OSM edge IDs using OSRM nearest lookups.
+
+    Expects an optional JSON body with ``limit`` (int) and optionally
+    ``osrm_base_url`` and ``profile`` overrides.
+
+    Returns:
+        JSON with a confirmation message and mapping summary stats, HTTP 200.
+        HTTP 400 if ``limit`` is not a valid integer.
+    """
     payload = request.get_json(silent=True) or {}
     limit = payload.get("limit") or 1000
     try:
@@ -585,7 +789,18 @@ def map_hazards_to_osm_edges():
 
 @bp.post("/route/safe")
 def safe_route():
-    """Compute a hazard-aware route by querying OSRM, decoding geometry, mapping to edges, and applying penalties."""
+    """Compute a hazard-aware route by querying OSRM, mapping geometry to edges, and applying penalties.
+
+    Expects a JSON body with ``start`` and ``end`` point dicts (``lat``/``lon``),
+    and an optional ``vias`` list.  Samples the OSRM route geometry to identify
+    touched OSM edges and sums their hazard penalties.
+
+    Returns:
+        JSON with route metadata (distance, duration, penalty) and a hazard
+        overlay list, HTTP 200.
+        HTTP 400 if start or end is missing.
+        HTTP 502 if OSRM is unavailable.
+    """
     data = request.get_json(silent=True) or {}
     start, end, vias = _parse_points_payload(data)
     if not start or not end:
@@ -686,8 +901,15 @@ def safe_route():
 
 @bp.post("/navigate")
 def navigate():
-    try:
-        data = request.get_json()
+    """Placeholder navigation endpoint (OSRM integration pending).
+
+    Parses start, end, and via points and returns a stub response until full
+    OSRM routing is implemented.
+
+    Returns:
+        JSON with a stub route dict, HTTP 501.
+        HTTP 400 if the request body is malformed.
+    """
 
         start, end, vias = _split_points(data)
         profile = data.get("profile", "driving")
@@ -722,7 +944,11 @@ def navigate():
 @bp.get("/paths")
 @jwt_required()
 def get_my_paths():
-    """Get current user's saved paths"""
+    """Return all saved paths belonging to the authenticated user.
+
+    Returns:
+        JSON with a ``paths`` list of serialized path dicts, HTTP 200.
+    """
     user_id = get_jwt_identity()
     paths = (
         MyPath.query.filter_by(user_id=user_id).order_by(MyPath.created_at.desc()).all()
@@ -733,13 +959,17 @@ def get_my_paths():
 @bp.post("/paths")
 @jwt_required()
 def save_path():
-    """
-    Save a navigation path
-    JSON body:
-        - name: Required
-        - start_location: Required {lat, lon}
-        - end_location: Required {lat, lon}
-        - waypoints: Optional array of {lat, lon}
+    """Save a new navigation path for the authenticated user.
+
+    Args (JSON body):
+        name: Path label (required).
+        start_location: Start point dict with ``lat`` and ``lon`` (required).
+        end_location: End point dict with ``lat`` and ``lon`` (required).
+        waypoints: Optional list of intermediate point dicts.
+
+    Returns:
+        JSON with a confirmation message and the saved path dict, HTTP 201.
+        HTTP 400 if required fields are missing or waypoints are malformed.
     """
     data = request.get_json() or {}
     user_id = get_jwt_identity()
@@ -778,7 +1008,15 @@ def save_path():
 @bp.get("/paths/<int:path_id>")
 @jwt_required()
 def get_path(path_id):
-    """Get specific saved path details"""
+    """Return details for a specific saved path owned by the authenticated user.
+
+    Args:
+        path_id: Primary key of the MyPath to retrieve.
+
+    Returns:
+        JSON with the path dict, HTTP 200.
+        HTTP 404 if the path does not exist or does not belong to the user.
+    """
     user_id = get_jwt_identity()
     path = MyPath.query.filter_by(path_id=path_id, user_id=user_id).first()
     if not path:
@@ -789,7 +1027,16 @@ def get_path(path_id):
 @bp.put("/paths/<int:path_id>")
 @jwt_required()
 def update_path(path_id):
-    """Update a saved path"""
+    """Update the name or waypoints of a saved path owned by the authenticated user.
+
+    Args:
+        path_id: Primary key of the MyPath to update.
+
+    Returns:
+        JSON with a confirmation message and the updated path dict, HTTP 200.
+        HTTP 400 if waypoints are malformed.
+        HTTP 404 if the path does not exist or does not belong to the user.
+    """
     user_id = get_jwt_identity()
     path = MyPath.query.filter_by(path_id=path_id, user_id=user_id).first()
     if not path:
@@ -833,7 +1080,15 @@ def update_path(path_id):
 @bp.delete("/paths/<int:path_id>")
 @jwt_required()
 def delete_path(path_id):
-    """Delete a saved path"""
+    """Delete a saved path owned by the authenticated user.
+
+    Args:
+        path_id: Primary key of the MyPath to delete.
+
+    Returns:
+        JSON with a confirmation message, HTTP 200.
+        HTTP 404 if the path does not exist or does not belong to the user.
+    """
     user_id = get_jwt_identity()
     path = MyPath.query.filter_by(path_id=path_id, user_id=user_id).first()
     if not path:

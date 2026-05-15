@@ -1,5 +1,5 @@
 """
-검색 서비스 뷰
+Search service views — API endpoints for unified content and user search.
 """
 
 from flask import jsonify, request, g
@@ -20,8 +20,10 @@ from apps.favorite.models import Favorite, FavoriteType
 
 @bp.get("/api_info")
 def api_info():
-    """
-    검색 API 정보 제공 (개발용)
+    """Return search API metadata for development use.
+
+    Returns:
+        JSON object describing available search endpoints with 200 status.
     """
     info = {
         "module": "search",
@@ -125,7 +127,18 @@ def api_info():
 
 
 def save_search_history(user_id, query, search_type, result_count):
-    """검색 기록 저장"""
+    """Persist a search history record and update the search popularity cache.
+
+    Does nothing when ``user_id`` is falsy (unauthenticated request).
+
+    Args:
+        user_id: ID of the user performing the search, or ``None`` for
+            anonymous searches.
+        query: The raw search string entered by the user.
+        search_type: Category label for the search (e.g. ``"post"``,
+            ``"user"``, ``"product"``).
+        result_count: Number of results returned by the search.
+    """
     if not user_id:
         return
 
@@ -148,15 +161,21 @@ def save_search_history(user_id, query, search_type, result_count):
 
 
 def search_posts_query(query_string, base_query=None):
-    """
-    게시글 검색 쿼리 생성 (공통 로직)
+    """Build a SQLAlchemy query that searches posts by content, author, and mentions.
+
+    Combines three sub-queries via UNION:
+    1. Posts whose content matches the search string.
+    2. Posts whose author's nickname or username matches.
+    3. Posts that mention a user whose nickname or username matches.
 
     Args:
-        query_string: 검색어
-        base_query: 기본 쿼리 (None이면 Post.query 사용)
+        query_string: The search term to match against.
+        base_query: Starting SQLAlchemy query to filter from.  Defaults to
+            ``Post.query`` when ``None``.
 
     Returns:
-        검색 결과 쿼리
+        A SQLAlchemy query object representing the UNION of all three
+        sub-queries.
     """
     if base_query is None:
         base_query = Post.query
@@ -189,7 +208,17 @@ def search_posts_query(query_string, base_query=None):
 
 @bp.get("/posts")
 def search_posts():
-    """게시글 검색 (닉네임, 본문, 멘션된 사용자)"""
+    """Search posts by content, author nickname/username, and mentioned users.
+
+    Query params:
+        q: Search term (required).
+        page: Page number (default: 1).
+        per_page: Results per page (default: 20).
+
+    Returns:
+        Paginated JSON response containing matching posts and metadata with
+        200 status, or 400 if the query string is missing.
+    """
     query_string = request.args.get("q", "").strip()
     page = request.args.get("page", 1, type=int)
     per_page = request.args.get("per_page", 20, type=int)
@@ -259,7 +288,12 @@ def search_posts():
 @bp.get("/my-posts")
 @jwt_required()
 def search_my_posts():
-    """내 게시글 검색"""
+    """Search posts authored by the current user.
+
+    Returns:
+        JSON response with paginated list of matching posts authored by the
+        current user, along with query metadata and pagination info.
+    """
     current_user_id = int(get_jwt_identity())
     query_string = request.args.get("q", "").strip()
     page = request.args.get("page", 1, type=int)
@@ -316,7 +350,12 @@ def search_my_posts():
 @bp.get("/liked-posts")
 @jwt_required()
 def search_liked_posts():
-    """좋아요한 게시글 검색"""
+    """Search posts that the current user has liked.
+
+    Returns:
+        JSON response with paginated list of matching liked posts, along with
+        query metadata and pagination info.
+    """
     current_user_id = int(get_jwt_identity())
     query_string = request.args.get("q", "").strip()
     page = request.args.get("page", 1, type=int)
@@ -376,7 +415,12 @@ def search_liked_posts():
 @bp.get("/saved-posts")
 @jwt_required()
 def search_saved_posts():
-    """보관한 게시글 검색"""
+    """Search posts that the current user has saved (bookmarked).
+
+    Returns:
+        JSON response with paginated list of matching saved posts, along with
+        query metadata and pagination info.
+    """
     current_user_id = int(get_jwt_identity())
     query_string = request.args.get("q", "").strip()
     page = request.args.get("page", 1, type=int)
@@ -446,7 +490,12 @@ def search_saved_posts():
 @bp.get("/notifications")
 @jwt_required()
 def search_notifications():
-    """알림 검색 (발신자 닉네임, 메시지 내용)"""
+    """Search the current user's notifications by sender nickname or message content.
+
+    Returns:
+        JSON response with paginated list of matching notifications, along with
+        query metadata and pagination info.
+    """
     current_user_id = int(get_jwt_identity())
     query_string = request.args.get("q", "").strip()
     page = request.args.get("page", 1, type=int)
@@ -511,7 +560,12 @@ def search_notifications():
 @bp.get("/followers")
 @jwt_required()
 def search_followers():
-    """팔로워 검색"""
+    """Search users who follow the current user by nickname or username.
+
+    Returns:
+        JSON response with paginated list of matching followers, including
+        mutual-follow status, query metadata, and pagination info.
+    """
     current_user_id = int(get_jwt_identity())
     query_string = request.args.get("q", "").strip()
     page = request.args.get("page", 1, type=int)
@@ -569,7 +623,12 @@ def search_followers():
 @bp.get("/following")
 @jwt_required()
 def search_following():
-    """팔로잉 검색"""
+    """Search users that the current user is following by nickname or username.
+
+    Returns:
+        JSON response with paginated list of matching followed users, including
+        mutual-follow status, query metadata, and pagination info.
+    """
     current_user_id = int(get_jwt_identity())
     query_string = request.args.get("q", "").strip()
     page = request.args.get("page", 1, type=int)
@@ -626,7 +685,12 @@ def search_following():
 
 @bp.get("/products")
 def search_products():
-    """상품 검색 (상품명, 브랜드, 판매자, 카테고리, 몰)"""
+    """Search products by name, brand, seller, category, or mall name.
+
+    Returns:
+        JSON response with paginated list of matching products, along with
+        query metadata and pagination info.
+    """
     query_string = request.args.get("q", "").strip()
     page = request.args.get("page", 1, type=int)
     per_page = request.args.get("per_page", 20, type=int)
@@ -689,7 +753,12 @@ def search_products():
 
 @bp.get("/users")
 def search_users():
-    """유저 검색 (닉네임)"""
+    """Search users by nickname.
+
+    Returns:
+        JSON response with paginated list of matching users. When the caller is
+        authenticated, each user entry also includes mutual follow status.
+    """
     query_string = request.args.get("q", "").strip()
     page = request.args.get("page", 1, type=int)
     per_page = request.args.get("per_page", 20, type=int)
@@ -756,7 +825,11 @@ def search_users():
 @bp.get("/history")
 @jwt_required()
 def get_search_history():
-    """내 검색 기록 조회"""
+    """Retrieve the current user's search history with optional type filtering.
+
+    Returns:
+        JSON response with paginated search history items and pagination info.
+    """
     current_user_id = int(get_jwt_identity())
     page = request.args.get("page", 1, type=int)
     per_page = request.args.get("per_page", 20, type=int)
@@ -789,7 +862,14 @@ def get_search_history():
 @bp.delete("/history/<int:search_id>")
 @jwt_required()
 def delete_search_history(search_id):
-    """검색 기록 삭제"""
+    """Delete a specific search history entry owned by the current user.
+
+    Args:
+        search_id: The ID of the search history entry to delete.
+
+    Returns:
+        JSON response confirming deletion with HTTP 200.
+    """
     current_user_id = int(get_jwt_identity())
 
     history = SearchHistory.query.filter_by(
@@ -805,7 +885,11 @@ def delete_search_history(search_id):
 @bp.delete("/history")
 @jwt_required()
 def clear_search_history():
-    """모든 검색 기록 삭제"""
+    """Delete all search history entries for the current user.
+
+    Returns:
+        JSON response confirming deletion with HTTP 200.
+    """
     current_user_id = int(get_jwt_identity())
 
     SearchHistory.query.filter_by(user_id=current_user_id).delete()
@@ -816,7 +900,11 @@ def clear_search_history():
 
 @bp.get("/popular")
 def get_popular_searches():
-    """인기 검색어 조회"""
+    """Retrieve popular search terms, optionally filtered by search type.
+
+    Returns:
+        JSON response with a list of popular search cache items and the total count.
+    """
     search_type = request.args.get("type")
     limit = request.args.get("limit", 10, type=int)
 

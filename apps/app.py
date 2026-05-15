@@ -19,15 +19,19 @@ from apps.cosmetic.seed import seed_cosmetics
 import os
 
 
-def create_app(config_name="default"):
-    """
-    애플리케이션 팩토리 패턴
+def create_app(config_name: str = "default"):
+    """Create and configure the Flask application instance.
+
+    Implements the application factory pattern: initialises extensions,
+    registers blueprints, and creates required upload directories.
 
     Args:
-        config_name: 설정 이름 (development, production, test)
+        config_name: Configuration profile to load. One of
+            ``"development"``, ``"production"``, ``"test"``, or
+            ``"default"`` (which maps to ``DevelopmentConfig``).
 
     Returns:
-        Flask 애플리케이션 인스턴스
+        A fully-configured :class:`flask.Flask` application instance.
     """
     app = Flask(__name__)
 
@@ -69,8 +73,12 @@ def create_app(config_name="default"):
     return app
 
 
-def import_all_models():
-    """모든 모델을 import하여 Flask-Migrate가 인식하도록 함"""
+def import_all_models() -> None:
+    """Import all SQLAlchemy models so Flask-Migrate can detect them.
+
+    This function must be called inside an active application context
+    before ``flask db migrate`` or ``flask db upgrade`` is run.
+    """
     from apps.auth.models import User, OauthType, AccountType
     from apps.post.models import Post, PostLike, Category
     from apps.image.models import Image
@@ -89,8 +97,12 @@ def import_all_models():
     # 필요한 다른 모델들도 여기에 추가
 
 
-def register_blueprints(app):
-    """모든 애플리케이션 블루프린트 등록"""
+def register_blueprints(app) -> None:
+    """Register all application blueprints with their URL prefixes.
+
+    Args:
+        app: The Flask application instance to register blueprints on.
+    """
 
     # 인증 모듈
     from apps.auth.views import bp as auth_bp
@@ -197,8 +209,17 @@ def register_blueprints(app):
     #     app.register_blueprint(test_bp, url_prefix="/test")
 
 
-def create_directories(app):
-    """파일 업로드를 위한 필수 디렉토리 생성"""
+def create_directories(app) -> None:
+    """Create required upload directories if they do not already exist.
+
+    Directories created include profile images, post images, product
+    images, and cosmetic overlay images, all under the app's static
+    folder.
+
+    Args:
+        app: The Flask application instance whose ``root_path`` is used
+            as the base for directory creation.
+    """
     directories = [
         os.path.join(app.root_path, "static", "profile_images"),
         os.path.join(app.root_path, "static", "post_images"),

@@ -16,11 +16,19 @@ error_logger = logging.getLogger("error")
 
 
 def log_response(response):
-    """
-    모든 응답을 로깅 (성공/실패 분리)
+    """Log every HTTP response to the appropriate log file.
+
+    Successful responses (2xx) are written to ``success.log`` and
+    error responses (4xx/5xx) to ``error.log``.  Sensitive headers and
+    body fields (``Authorization``, ``password``, ``token``) are masked
+    before logging.
 
     Args:
-        response: Flask Response 객체
+        response: The :class:`flask.Response` object being returned to
+            the client.
+
+    Returns:
+        The unmodified *response* object.
     """
     try:
         # 요청 정보
@@ -91,28 +99,46 @@ def log_response(response):
     return response
 
 
-def register_interceptors(app):
-    """
-    Flask 앱에 인터셉터 등록
+def register_interceptors(app) -> None:
+    """Register before/after request hooks and error handlers on *app*.
+
+    Hooks registered:
+
+    * ``before_request`` – logs the incoming method and path in debug
+      mode.
+    * ``after_request`` – passes the response through
+      :func:`log_response`.
+    * ``errorhandler(404)`` – returns a JSON 404 body.
+    * ``errorhandler(500)`` – logs the exception and returns a JSON 500
+      body.
+    * ``errorhandler(Exception)`` – catch-all for unhandled exceptions.
 
     Args:
-        app: Flask 애플리케이션 인스턴스
+        app: The :class:`flask.Flask` application instance to register
+            interceptors on.
     """
 
     @app.before_request
     def log_request_info():
-        """요청 시작 시 로깅 (선택적)"""
+        """Log the incoming request method and path when debug mode is active."""
         if app.config.get("DEBUG"):
             logger.debug(f"Request: {request.method} {request.path}")
 
     @app.after_request
     def intercept_response(response):
-        """모든 응답을 인터셉트하여 로깅 (성공/실패 분리)"""
+        """Pass every response through the response logger.
+
+        Args:
+            response: The :class:`flask.Response` to log.
+
+        Returns:
+            The unmodified *response* object.
+        """
         return log_response(response)
 
     @app.errorhandler(404)
     def handle_404(error):
-        """404 에러 핸들러"""
+        """Return a JSON 404 response for missing resources."""
         response = jsonify(
             {"message": "요청하신 리소스를 찾을 수 없습니다", "path": request.path}
         )
@@ -121,7 +147,7 @@ def register_interceptors(app):
 
     @app.errorhandler(500)
     def handle_500(error):
-        """500 에러 핸들러"""
+        """Log the error and return a JSON 500 response."""
         logger.error(f"Internal Server Error: {str(error)}", exc_info=True)
         response = jsonify(
             {
@@ -136,7 +162,11 @@ def register_interceptors(app):
 
     @app.errorhandler(Exception)
     def handle_exception(error):
-        """처리되지 않은 예외 핸들러"""
+        """Catch-all handler for unhandled exceptions.
+
+        HTTP exceptions are returned with their own status code; all
+        other exceptions produce a 500 response.
+        """
         logger.error(f"Unhandled Exception: {str(error)}", exc_info=True)
 
         # HTTP 예외인 경우
@@ -167,12 +197,24 @@ def register_interceptors(app):
     logger.info("HTTP interceptors registered successfully")
 
 
-def setup_logging(app):
-    """
-    로깅 설정
+def setup_logging(app) -> None:
+    """Configure file and stream logging handlers for the Flask app.
+
+    Sets up three rotating file handlers:
+
+    * ``logs/success.log`` – INFO level, for successful responses.
+    * ``logs/error.log`` – ERROR level, for error responses and
+      exceptions.
+    * ``logs/debug.log`` – DEBUG level, all messages.
+
+    A stream handler is also added for console output.  Werkzeug's
+    default logger is reconfigured with a custom
+    :class:`IPNicknameFormatter` that includes the caller's IP address
+    and nickname.
 
     Args:
-        app: Flask 애플리케이션 인스턴스
+        app: The :class:`flask.Flask` application instance to configure
+            logging for.
     """
     import os
     from logging.handlers import RotatingFileHandler
@@ -263,8 +305,14 @@ def setup_logging(app):
     # IP 닉네임 매핑
     ip_nicknames = app.config.get("IP_NICKNAMES", {})
 
-    # 커스텀 포맷터 클래스
     class IPNicknameFormatter(logging.Formatter):
+        """Custom log formatter that appends a nickname to IP addresses.
+
+        IP-to-nickname mappings are read from the ``IP_NICKNAMES`` Flask
+        config key (a ``{ip_str: nickname}`` dict).  For example, the
+        log line ``192.168.1.89 - -`` becomes ``192.168.1.89(DEV3) - -``.
+        """
+
         def format(self, record):
             # 원본 메시지 가져오기
             original_msg = super().format(record)

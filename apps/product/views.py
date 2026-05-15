@@ -23,10 +23,32 @@ bp = Blueprint("product", __name__)
 
 
 def _serialize_metadata(entity):
+    """Serialize a metadata entity to a dict, returning None if absent.
+
+    Args:
+        entity: A model instance with a ``to_dict`` method, or None.
+
+    Returns:
+        The entity dict, or None if ``entity`` is None.
+    """
     return entity.to_dict() if entity else None
 
 
 def _assign_metadata_from_data(product, data, id_key, name_key, entity_attr, model):
+    """Assign a single metadata relationship or name field to a product from request data.
+
+    Prefers the relationship entity (looked up via ``id_key``) over the plain name
+    field (``name_key``).  If ``id_key`` is present but its value is falsy the
+    relationship is cleared.
+
+    Args:
+        product: The Product instance to mutate.
+        data: Dict of raw request data.
+        id_key: Key in ``data`` that holds the foreign-key ID.
+        name_key: Key in ``data`` that holds the plain name string fallback.
+        entity_attr: Attribute name on ``product`` to set the entity instance.
+        model: SQLAlchemy model class to look up by ID.
+    """
     if id_key in data:
         raw_id = data.get(id_key)
         entity = model.query.get(raw_id) if raw_id else None
@@ -36,6 +58,12 @@ def _assign_metadata_from_data(product, data, id_key, name_key, entity_attr, mod
 
 
 def _apply_metadata_updates(product, data):
+    """Apply seller, mall, and brand metadata updates from request data to a product.
+
+    Args:
+        product: The Product instance to mutate.
+        data: Dict of raw request data containing optional metadata keys.
+    """
     _assign_metadata_from_data(
         product, data, "seller_id", "seller_name", "seller_entity", ProductSeller
     )
@@ -49,8 +77,10 @@ def _apply_metadata_updates(product, data):
 
 @bp.get("/api_info")
 def api_info():
-    """
-    상품 API 정보 제공 (개발용)
+    """Return product module API metadata for development reference.
+
+    Returns:
+        JSON response with module info and endpoint list, HTTP 200.
     """
     info = {
         "module": "product",
@@ -184,17 +214,23 @@ def api_info():
 
 @bp.get("")
 def get_products():
-    """
-    상품 목록 조회
-    Query params:
-        - category: 카테고리 필터 (fishing, motorcycle, car, bicycle, camping)
-        - search: 검색어 (상품명, 설명, 브랜드 검색)
-        - min_price: 최소 가격
-        - max_price: 최대 가격
-        - sort: 정렬 (price_asc, price_desc, rating_desc, created_desc, name_asc)
-        - page: 페이지 번호 (기본: 1)
-        - per_page: 페이지당 개수 (기본: 20, 최대: 100)
-        - is_active: 활성 상태 필터 (기본: true)
+    """Return a paginated, filtered, and sorted list of products.
+
+    Args (query string):
+        category: Category filter (e.g., ``fishing``, ``motorcycle``, ``car``,
+            ``bicycle``, ``camping``).
+        search: Keyword searched against name, description, brand, and model number.
+        min_price: Minimum price filter.
+        max_price: Maximum price filter.
+        sort: Sort order — ``price_asc``, ``price_desc``, ``rating_desc``,
+            ``name_asc``, or ``created_desc`` (default).
+        page: Page number (default 1).
+        per_page: Items per page (default 20, max 100).
+        is_active: Include only active products when ``true`` (default ``true``).
+
+    Returns:
+        JSON with ``items`` list and pagination metadata, HTTP 200.
+        HTTP 500 on unexpected error.
     """
     try:
         # 쿼리 파라미터 추출
@@ -312,20 +348,19 @@ def get_products():
 @bp.post("")
 @jwt_required()
 def create_product():
-    """
-    상품 생성 (관리자 전용)
-    JSON body:
-        - code: 필수 - 상품 코드 (고유)
-        - name: 필수 - 상품명
-        - category: 필수 - 카테고리
-        - price: 필수 - 가격
-        - description: 선택 - 설명
-        - original_price: 선택 - 원래 가격
-        - discount_percentage: 선택 - 할인율
-        - stock: 선택 - 재고
-        - brand: 선택 - 브랜드
-        - options: 선택 - 옵션 (JSON)
-        ... (기타 Product 모델 필드)
+    """Create a new Product (admin only).
+
+    Expects a JSON body with ``code``, ``name``, ``category``, and ``price``
+    (all required) plus optional fields for description, pricing, stock,
+    seller/mall/brand metadata, and product URL.
+
+    Returns:
+        JSON with the new product's ``product_id``, ``uuid``, ``code``, and
+        ``name``, HTTP 201.
+        HTTP 400 if required fields are missing.
+        HTTP 403 if the caller is not an admin.
+        HTTP 409 if the product code already exists.
+        HTTP 500 on unexpected error.
     """
     try:
         current_user = get_current_user()
@@ -408,8 +443,15 @@ def create_product():
 
 @bp.get("/<int:product_id>")
 def get_product(product_id):
-    """
-    특정 상품 상세 조회
+    """Return full details for a single product including images.
+
+    Args:
+        product_id: Integer primary key of the Product.
+
+    Returns:
+        JSON with the full product dict including images, HTTP 200.
+        HTTP 404 if the product is not found.
+        HTTP 500 on unexpected error.
     """
     try:
         product = Product.query.get_or_404(product_id)
@@ -477,9 +519,19 @@ def get_product(product_id):
 @bp.put("/<int:product_id>")
 @jwt_required()
 def update_product(product_id):
-    """
-    상품 수정 (관리자 전용)
-    JSON body: Product 모델의 모든 필드 (선택적)
+    """Partially update an existing Product (admin only).
+
+    Applies only the fields present in the JSON body.  Decimal fields
+    (``price``, ``original_price``, ``rating``) are coerced correctly.
+
+    Args:
+        product_id: Integer primary key of the Product to update.
+
+    Returns:
+        JSON with the updated product's ``product_id`` and ``name``, HTTP 200.
+        HTTP 403 if the caller is not an admin.
+        HTTP 404 if the product is not found.
+        HTTP 500 on unexpected error.
     """
     try:
         current_user = get_current_user()
@@ -561,9 +613,16 @@ def update_product(product_id):
 @bp.delete("/<int:product_id>")
 @jwt_required()
 def delete_product(product_id):
-    """
-    상품 삭제 (관리자 전용)
-    실제로는 is_active를 False로 변경 (소프트 삭제)
+    """Soft-delete a Product by setting ``is_active`` to False (admin only).
+
+    Args:
+        product_id: Integer primary key of the Product to deactivate.
+
+    Returns:
+        JSON with a confirmation message, HTTP 200.
+        HTTP 403 if the caller is not an admin.
+        HTTP 404 if the product is not found.
+        HTTP 500 on unexpected error.
     """
     try:
         current_user = get_current_user()
@@ -588,8 +647,11 @@ def delete_product(product_id):
 
 @bp.get("/categories")
 def get_categories():
-    """
-    상품 카테고리 목록 조회 및 카테고리별 상품 수
+    """Return a list of active product categories with their product counts.
+
+    Returns:
+        JSON with a ``categories`` list of ``{category, count}`` dicts, HTTP 200.
+        HTTP 500 on unexpected error.
     """
     try:
         # 카테고리별 상품 수 집계
@@ -610,9 +672,13 @@ def get_categories():
 
 @bp.get("/search")
 def search_products():
-    """
-    상품 검색 (get_products와 동일한 기능이지만 명시적인 검색 엔드포인트)
-    Query params: get_products와 동일
+    """Alias for ``get_products`` providing an explicit search endpoint.
+
+    Accepts the same query parameters as ``GET /product``.
+
+    Returns:
+        Delegates entirely to ``get_products``; see its documentation for the
+        full response contract.
     """
     return get_products()
 
@@ -623,16 +689,25 @@ def search_products():
 
 
 def _get_metadata_list(entity_class, id_field, fk_field, list_key):
-    """
-    메타데이터 리스트 조회 공통 로직
+    """Return a paginated, filtered list of metadata entities with active product counts.
 
-    Query params:
-        - search: 이름 검색
-        - min_products: 최소 상품 수 (기본: 0, 상품 없는 것도 포함)
-        - sort: 정렬 기준 (product_count, name, created)
-        - order: 정렬 순서 (asc, desc)
-        - page: 페이지 번호
-        - per_page: 페이지당 개수
+    Args:
+        entity_class: SQLAlchemy model class for the metadata entity.
+        id_field: Primary-key attribute name on ``entity_class``.
+        fk_field: Foreign-key attribute name on the Product model that references
+            the entity.
+        list_key: Key name used for the result list in the returned dict.
+
+    Args (query string):
+        search: Partial name search (case-insensitive).
+        min_products: Minimum active product count required (default 0).
+        sort: Sort field — ``product_count`` (default), ``name``, or ``created``.
+        order: ``asc`` or ``desc`` (default ``desc``).
+        page: Page number (default 1).
+        per_page: Items per page (default 50, max 100).
+
+    Returns:
+        A dict with the entity list under ``list_key`` and pagination metadata.
     """
     search = request.args.get("search", "").strip()
     min_products = request.args.get("min_products", 0, type=int)
@@ -707,7 +782,24 @@ def _get_metadata_list(entity_class, id_field, fk_field, list_key):
 
 
 def _get_products_by_metadata(entity_class, entity_id_field, entity_id, slug=None):
-    """메타데이터 엔티티 기반 상품 조회 공통 로직"""
+    """Return a paginated product list filtered by a metadata entity (brand/seller/mall).
+
+    Args:
+        entity_class: SQLAlchemy model class for the metadata entity.
+        entity_id_field: Attribute name shared by the entity and Product for joining.
+        entity_id: Integer primary key to look up the entity, or None when using
+            ``slug``.
+        slug: Slug string to look up the entity instead of ``entity_id``.
+
+    Args (query string):
+        page: Page number (default 1).
+        per_page: Items per page (default 20, max 100).
+        sort: ``price_asc``, ``price_desc``, ``rating_desc``, ``name_asc``, or
+            ``created_desc`` (default).
+
+    Returns:
+        A dict with ``entity``, ``items`` list, and pagination metadata.
+    """
     page = request.args.get("page", 1, type=int)
     per_page = min(request.args.get("per_page", 20, type=int), 100)
     sort = request.args.get("sort", "created_desc")
@@ -779,15 +871,19 @@ def _get_products_by_metadata(entity_class, entity_id_field, entity_id, slug=Non
 
 @bp.get("/brands")
 def get_all_brands():
-    """
-    브랜드 목록 조회 (상품 수 포함)
+    """Return a paginated list of brands with active product counts.
 
-    Query params:
-        - search: 브랜드명 검색
-        - min_products: 최소 상품 수 (기본: 0)
-        - sort: 정렬 (product_count, name, created)
-        - order: 정렬 순서 (asc, desc)
-        - page, per_page: 페이지네이션
+    Args (query string):
+        search: Partial brand name search.
+        min_products: Minimum active product count (default 0).
+        sort: ``product_count`` (default), ``name``, or ``created``.
+        order: ``asc`` or ``desc`` (default ``desc``).
+        page: Page number.
+        per_page: Items per page (max 100).
+
+    Returns:
+        JSON with ``brands`` list and pagination metadata, HTTP 200.
+        HTTP 500 on unexpected error.
     """
     try:
         result = _get_metadata_list(ProductBrand, "brand_id", "brand_id", "brands")
@@ -798,7 +894,16 @@ def get_all_brands():
 
 @bp.get("/brand/<int:brand_id>")
 def get_products_by_brand_id(brand_id):
-    """브랜드 ID로 상품 목록 조회"""
+    """Return a paginated product list for a brand identified by its integer ID.
+
+    Args:
+        brand_id: Integer primary key of the ProductBrand.
+
+    Returns:
+        JSON with ``entity``, ``items`` list, and pagination metadata, HTTP 200.
+        HTTP 404 if the brand is not found.
+        HTTP 500 on unexpected error.
+    """
     try:
         result = _get_products_by_metadata(ProductBrand, "brand_id", brand_id)
         return jsonify(result), 200
@@ -808,7 +913,16 @@ def get_products_by_brand_id(brand_id):
 
 @bp.get("/brand/slug/<slug>")
 def get_products_by_brand_slug(slug):
-    """브랜드 슬러그로 상품 목록 조회"""
+    """Return a paginated product list for a brand identified by its slug.
+
+    Args:
+        slug: URL slug of the ProductBrand.
+
+    Returns:
+        JSON with ``entity``, ``items`` list, and pagination metadata, HTTP 200.
+        HTTP 404 if the brand is not found.
+        HTTP 500 on unexpected error.
+    """
     try:
         result = _get_products_by_metadata(ProductBrand, "brand_id", None, slug=slug)
         return jsonify(result), 200
@@ -821,15 +935,19 @@ def get_products_by_brand_slug(slug):
 
 @bp.get("/sellers")
 def get_all_sellers():
-    """
-    판매자 목록 조회 (상품 수 포함)
+    """Return a paginated list of sellers with active product counts.
 
-    Query params:
-        - search: 판매자명 검색
-        - min_products: 최소 상품 수 (기본: 0)
-        - sort: 정렬 (product_count, name, created)
-        - order: 정렬 순서 (asc, desc)
-        - page, per_page: 페이지네이션
+    Args (query string):
+        search: Partial seller name search.
+        min_products: Minimum active product count (default 0).
+        sort: ``product_count`` (default), ``name``, or ``created``.
+        order: ``asc`` or ``desc`` (default ``desc``).
+        page: Page number.
+        per_page: Items per page (max 100).
+
+    Returns:
+        JSON with ``sellers`` list and pagination metadata, HTTP 200.
+        HTTP 500 on unexpected error.
     """
     try:
         result = _get_metadata_list(ProductSeller, "seller_id", "seller_id", "sellers")
@@ -840,7 +958,16 @@ def get_all_sellers():
 
 @bp.get("/seller/<int:seller_id>")
 def get_products_by_seller_id(seller_id):
-    """판매자 ID로 상품 목록 조회"""
+    """Return a paginated product list for a seller identified by its integer ID.
+
+    Args:
+        seller_id: Integer primary key of the ProductSeller.
+
+    Returns:
+        JSON with ``entity``, ``items`` list, and pagination metadata, HTTP 200.
+        HTTP 404 if the seller is not found.
+        HTTP 500 on unexpected error.
+    """
     try:
         result = _get_products_by_metadata(ProductSeller, "seller_id", seller_id)
         return jsonify(result), 200
@@ -850,7 +977,16 @@ def get_products_by_seller_id(seller_id):
 
 @bp.get("/seller/slug/<slug>")
 def get_products_by_seller_slug(slug):
-    """판매자 슬러그로 상품 목록 조회"""
+    """Return a paginated product list for a seller identified by its slug.
+
+    Args:
+        slug: URL slug of the ProductSeller.
+
+    Returns:
+        JSON with ``entity``, ``items`` list, and pagination metadata, HTTP 200.
+        HTTP 404 if the seller is not found.
+        HTTP 500 on unexpected error.
+    """
     try:
         result = _get_products_by_metadata(ProductSeller, "seller_id", None, slug=slug)
         return jsonify(result), 200
@@ -863,15 +999,19 @@ def get_products_by_seller_slug(slug):
 
 @bp.get("/malls")
 def get_all_malls():
-    """
-    몰 목록 조회 (상품 수 포함)
+    """Return a paginated list of malls with active product counts.
 
-    Query params:
-        - search: 몰 이름 검색
-        - min_products: 최소 상품 수 (기본: 0)
-        - sort: 정렬 (product_count, name, created)
-        - order: 정렬 순서 (asc, desc)
-        - page, per_page: 페이지네이션
+    Args (query string):
+        search: Partial mall name search.
+        min_products: Minimum active product count (default 0).
+        sort: ``product_count`` (default), ``name``, or ``created``.
+        order: ``asc`` or ``desc`` (default ``desc``).
+        page: Page number.
+        per_page: Items per page (max 100).
+
+    Returns:
+        JSON with ``malls`` list and pagination metadata, HTTP 200.
+        HTTP 500 on unexpected error.
     """
     try:
         result = _get_metadata_list(ProductMall, "mall_id", "mall_id", "malls")
@@ -882,7 +1022,16 @@ def get_all_malls():
 
 @bp.get("/mall/<int:mall_id>")
 def get_products_by_mall_id(mall_id):
-    """몰 ID로 상품 목록 조회"""
+    """Return a paginated product list for a mall identified by its integer ID.
+
+    Args:
+        mall_id: Integer primary key of the ProductMall.
+
+    Returns:
+        JSON with ``entity``, ``items`` list, and pagination metadata, HTTP 200.
+        HTTP 404 if the mall is not found.
+        HTTP 500 on unexpected error.
+    """
     try:
         result = _get_products_by_metadata(ProductMall, "mall_id", mall_id)
         return jsonify(result), 200
@@ -892,7 +1041,16 @@ def get_products_by_mall_id(mall_id):
 
 @bp.get("/mall/slug/<slug>")
 def get_products_by_mall_slug(slug):
-    """몰 슬러그로 상품 목록 조회"""
+    """Return a paginated product list for a mall identified by its slug.
+
+    Args:
+        slug: URL slug of the ProductMall.
+
+    Returns:
+        JSON with ``entity``, ``items`` list, and pagination metadata, HTTP 200.
+        HTTP 404 if the mall is not found.
+        HTTP 500 on unexpected error.
+    """
     try:
         result = _get_products_by_metadata(ProductMall, "mall_id", None, slug=slug)
         return jsonify(result), 200

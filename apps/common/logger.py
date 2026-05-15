@@ -1,6 +1,7 @@
-"""
-테스트 데이터 생성 로깅 유틸리티
-verbosity 레벨에 따라 출력을 제어하고 파일에 로그를 기록
+"""Test-data generation logging utility.
+
+Controls output based on a verbosity level and optionally writes
+structured log records to a file.
 """
 
 import os
@@ -10,18 +11,31 @@ from datetime import datetime
 
 
 class Logger:
-    """로깅 유틸리티 클래스"""
+    """Verbosity-controlled logging utility.
+
+    Supports three verbosity levels:
+
+    * ``QUIET`` (0) – errors only.
+    * ``NORMAL`` (1) – major progress messages.
+    * ``VERBOSE`` (2) – full debug information.
+
+    Messages at ``NORMAL`` level and above are printed to stdout.
+    All messages are optionally written to a rotating file handler.
+    """
 
     # Verbosity 레벨
     QUIET = 0  # 오류만
     NORMAL = 1  # 주요 진행상황
     VERBOSE = 2  # 모든 디버그 정보
 
-    def __init__(self, verbosity=1, log_file=None):
-        """
+    def __init__(self, verbosity: int = 1, log_file: str = None) -> None:
+        """Initialise the logger.
+
         Args:
-            verbosity: 로그 레벨 (0: QUIET, 1: NORMAL, 2: VERBOSE)
-            log_file: 로그 파일 경로 (선택)
+            verbosity: Output level – ``0`` quiet, ``1`` normal,
+                ``2`` verbose.
+            log_file: Optional path to a log file.  Parent directories
+                are created automatically.
         """
         self.verbosity = verbosity
         self.file_logger = None
@@ -50,8 +64,14 @@ class Logger:
 
             self.file_logger.addHandler(file_handler)
 
-    def _log_to_file(self, level, message):
-        """파일에 로그 기록"""
+    def _log_to_file(self, level: str, message: str) -> None:
+        """Write a message to the file logger at the specified level.
+
+        Args:
+            level: One of ``"ERROR"``, ``"WARNING"``, ``"INFO"``, or any
+                other string (treated as DEBUG).
+            message: The log message text.
+        """
         if self.file_logger:
             if level == "ERROR":
                 self.file_logger.error(message)
@@ -62,51 +82,85 @@ class Logger:
             else:
                 self.file_logger.debug(message)
 
-    def error(self, message):
-        """항상 표시되는 오류 메시지"""
+    def error(self, message: str) -> None:
+        """Print an error message and write it to the log file.
+
+        Always outputs regardless of verbosity level.
+
+        Args:
+            message: Error message text.
+        """
         print(f"[ERROR] {message}")
         self._log_to_file("ERROR", message)
 
-    def info(self, message):
-        """레벨 1 이상: 주요 정보"""
+    def info(self, message: str) -> None:
+        """Print an informational message at verbosity level 1 or above.
+
+        Args:
+            message: Informational message text.
+        """
         if self.verbosity >= self.NORMAL:
             print(message)
         self._log_to_file("INFO", message)
 
-    def debug(self, message):
-        """레벨 2: 상세 디버그 정보"""
+    def debug(self, message: str) -> None:
+        """Print a debug message at verbosity level 2.
+
+        Args:
+            message: Debug message text.
+        """
         if self.verbosity >= self.VERBOSE:
             print(message)
         self._log_to_file("DEBUG", message)
 
-    def section(self, title):
-        """섹션 헤더 (레벨 1 이상)"""
+    def section(self, title: str) -> None:
+        """Print a prominent section header at verbosity level 1 or above.
+
+        Args:
+            title: Section title text.
+        """
         if self.verbosity >= self.NORMAL:
             print(f"\n{'='*60}")
             print(title)
             print("=" * 60)
         self._log_to_file("INFO", f"=== {title} ===")
 
-    def subsection(self, title):
-        """서브섹션 헤더 (레벨 1 이상)"""
+    def subsection(self, title: str) -> None:
+        """Print a sub-section header at verbosity level 1 or above.
+
+        Args:
+            title: Sub-section title text.
+        """
         if self.verbosity >= self.NORMAL:
             print(f"\n[{title}]")
         self._log_to_file("INFO", f"[{title}]")
 
-    def success(self, message):
-        """성공 메시지 (레벨 1 이상)"""
+    def success(self, message: str) -> None:
+        """Print a success message at verbosity level 1 or above.
+
+        Args:
+            message: Success message text.
+        """
         if self.verbosity >= self.NORMAL:
             print(f"SUCCESS: {message}")
         self._log_to_file("INFO", f"SUCCESS: {message}")
 
-    def warning(self, message):
-        """경고 메시지 (레벨 1 이상)"""
+    def warning(self, message: str) -> None:
+        """Print a warning message at verbosity level 1 or above.
+
+        Args:
+            message: Warning message text.
+        """
         if self.verbosity >= self.NORMAL:
             print(f"WARNING: {message}")
         self._log_to_file("WARNING", message)
 
-    def summary(self, items):
-        """요약 정보 (레벨 1 이상)"""
+    def summary(self, items: dict) -> None:
+        """Print a key-value summary at verbosity level 1 or above.
+
+        Args:
+            items: Mapping of label strings to values to display.
+        """
         if self.verbosity >= self.NORMAL:
             for key, value in items.items():
                 print(f"  {key}: {value}")
@@ -119,20 +173,28 @@ class Logger:
 logger = None
 
 
-def init_logger(verbosity=1, log_file=None):
-    """로거 초기화
+def init_logger(verbosity: int = 1, log_file: str = None) -> "Logger":
+    """Initialise and return the global logger instance.
 
     Args:
-        verbosity: 로그 레벨 (0: QUIET, 1: NORMAL, 2: VERBOSE)
-        log_file: 로그 파일 경로 (선택)
+        verbosity: Output level – ``0`` quiet, ``1`` normal, ``2`` verbose.
+        log_file: Optional path to a log file.
+
+    Returns:
+        The newly created :class:`Logger` instance (also stored as the
+        module-level ``logger`` global).
     """
     global logger
     logger = Logger(verbosity, log_file)
     return logger
 
 
-def get_logger():
-    """로거 인스턴스 반환"""
+def get_logger() -> "Logger":
+    """Return the global logger instance, creating a default one if needed.
+
+    Returns:
+        The current :class:`Logger` instance.
+    """
     global logger
     if logger is None:
         logger = Logger(1)  # 기본값

@@ -9,7 +9,7 @@ from apps.config.server import db
 
 
 class Image(db.Model):
-    """통합 이미지 관리 모델"""
+    """Unified image management model for profiles, posts, and products."""
 
     __tablename__ = "images"
 
@@ -59,4 +59,5 @@ class Image(db.Model):
     )
 
     def __repr__(self):
+        """Returns string representation of the Image instance."""
         return f"<Image {self.image_id} uuid={self.uuid}>"

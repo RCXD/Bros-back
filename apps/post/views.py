@@ -27,6 +27,15 @@ MAX_VIEWED_RECORDS = 200  # 세션당 최대 조회 기록 수
 
 
 def _register_post_view(post_id):  # 세션에 게시물 조회 기록 등록
+    """Register a post view in the session to prevent duplicate view counts.
+
+    Args:
+        post_id: The ID of the post being viewed.
+
+    Returns:
+        True if the view was successfully registered (first visit in this session),
+        False if the post was already viewed in this session.
+    """
     viewed = session.get(VIEWED_POSTS_SESSION_KEY, [])
     if post_id in viewed:
         return False
@@ -38,8 +47,10 @@ def _register_post_view(post_id):  # 세션에 게시물 조회 기록 등록
 
 @bp.get("/api_info")
 def api_info():
-    """
-    게시물 API 정보 제공 (개발용)
+    """Return API endpoint information for the post module (development use).
+
+    Returns:
+        JSON response with 200 status containing a description of all post endpoints.
     """
     info = {
         "module": "post",
@@ -122,6 +133,19 @@ from flask import g
 
 @bp.get("")
 def get_posts():
+    """Retrieve a paginated list of posts, optionally filtered by category and sorted.
+
+    Query params:
+        page: Page number (default: 1).
+        per_page: Items per page (default: 20).
+        category: Category name filter (optional).
+        order_by: Sort order, either 'latest' (default) or 'popular'.
+
+    Returns:
+        JSON response with 200 status containing paginated post data with author
+        info, attached images, like counts, view counts, and like status for the
+        current user.
+    """
     # 페이지 정보와 카테고리, 정렬 기준 가져오기
     page = request.args.get("page", 1, type=int)
     per_page = request.args.get("per_page", 20, type=int)
@@ -226,13 +250,23 @@ def get_posts():
 @bp.post("")
 @jwt_required()
 def create_post():
-    """
-    새 게시글 작성
+    """Create a new post with optional images and user mentions.
+
+    Requires JWT authentication. On success, fan-out feed items are created for
+    all followers and real-time SocketIO notifications are emitted.
+
     Form data:
-        - content: 필수
-        - category_id: 필수
-        - images: 선택 (다중 파일)
-        - mentions: 선택 (멘션된 사용자 ID 목록, 쉼표로 구분)
+        content: Post body text (required, max 2000 characters).
+        category_id: Category ID (required).
+        images: Image files to attach (optional, multiple allowed).
+        mentions: Comma-separated user IDs to mention (optional).
+
+    Returns:
+        JSON response with 201 status on success.
+
+    Raises:
+        400: If content or category_id is missing, content exceeds 2000 characters,
+            the category does not exist, or mention IDs are malformed.
     """
     from apps.common.image_handlers import (
         compress_image,
@@ -385,7 +419,16 @@ def create_post():
 
 @bp.get("/<int:post_id>")
 def get_post(post_id):
-    """ID로 단일 게시글 조회"""
+    """Retrieve a single post by its ID and increment the session view count.
+
+    Args:
+        post_id: The ID of the post to retrieve.
+
+    Returns:
+        JSON response with 200 status containing post details including author info,
+        content, category, view counts, like count, like status for the current user,
+        and timestamps. Returns 404 if the post does not exist.
+    """
     post = Post.query.get_or_404(post_id)
 
     # 세션당 중복 카운팅 방지
@@ -444,13 +487,27 @@ def get_post(post_id):
 @bp.put("/<int:post_id>")
 @jwt_required()
 def update_post(post_id):
-    """
-    게시글 수정
+    """Update the content and/or images of an existing post.
+
+    Requires JWT authentication. Only the post author may update the post.
+
+    Args:
+        post_id: The ID of the post to update.
+
     Form data:
-        - content: 선택 (게시글 내용)
-        - images: 선택 (새 이미지 추가)
-        - new_images: 선택 (새 이미지 추가, 'images'와 동일)
-        - delete_image_ids: 선택 (삭제할 이미지 ID 목록, 쉼표로 구분)
+        content: Updated post body text (optional, max 2000 characters).
+        images: New image files to attach (optional).
+        new_images: Alias for images (optional).
+        delete_image_ids: Comma-separated image IDs to remove (optional).
+
+    Returns:
+        JSON response with 200 status on success, optionally including lists of
+        deleted and uploaded image metadata.
+
+    Raises:
+        403: If the current user does not own the post.
+        400: If content exceeds 2000 characters or image IDs are invalid.
+        404: If a specified image ID does not belong to the post.
     """
     from apps.common.image_handlers import delete_image
 
@@ -576,7 +633,20 @@ def update_post(post_id):
 @bp.delete("/<int:post_id>")
 @jwt_required()
 def delete_post(post_id):
-    """게시글 삭제"""
+    """Delete a post and all its associated notifications and comments.
+
+    Requires JWT authentication. Only the post author may delete the post.
+
+    Args:
+        post_id: The ID of the post to delete.
+
+    Returns:
+        JSON response with 200 status on success.
+
+    Raises:
+        403: If the current user does not own the post.
+        400: On unexpected error.
+    """
     try:
         current_user = get_current_user()
         post = Post.query.get_or_404(post_id)
@@ -610,7 +680,19 @@ def delete_post(post_id):
 @bp.patch("/<int:post_id>/like")
 @jwt_required()
 def like_post(post_id):
-    """게시글 좋아요 (토글)"""
+    """Toggle a like on a post for the current user.
+
+    Requires JWT authentication. Adds a like if not already liked; removes it
+    otherwise. Awards reward points to both the liker and the post author when
+    liking another user's post.
+
+    Args:
+        post_id: The ID of the post to like or unlike.
+
+    Returns:
+        JSON response with 201 status and updated like count when a like is added,
+        or 200 status when a like is removed. Returns 404 if the post does not exist.
+    """
     current_user_id = int(get_jwt_identity())
 
     # 게시글 존재 확인
@@ -656,7 +738,13 @@ def like_post(post_id):
 @bp.get("/me/liked-posts")
 @jwt_required()
 def get_my_likes_posts():
-    """내가 좋아요 누른 포스트 번호 조회"""
+    """Retrieve the list of post IDs liked by the current user.
+
+    Requires JWT authentication.
+
+    Returns:
+        JSON response with 200 status containing a list of liked post IDs.
+    """
     current_user_id = int(get_jwt_identity())
     likes = PostLike.query.filter_by(user_id=current_user_id).all()
 
@@ -667,7 +755,15 @@ def get_my_likes_posts():
 
 @bp.get("/<int:post_id>/who-likes")
 def get_post_likes(post_id):
-    """게시글에 좋아요한 사용자 목록 조회"""
+    """Retrieve the list of users who liked a specific post.
+
+    Args:
+        post_id: The ID of the post.
+
+    Returns:
+        JSON response with 200 status containing user details for each liker and the
+        total count. Returns 404 if the post does not exist.
+    """
     Post.query.get_or_404(post_id)
 
     likes = PostLike.query.filter_by(post_id=post_id).all()
@@ -691,7 +787,18 @@ def get_post_likes(post_id):
 @bp.get("/me")
 @jwt_required()
 def get_my_posts():
-    """현재 사용자의 게시글 조회"""
+    """Retrieve a paginated list of posts created by the current user.
+
+    Requires JWT authentication.
+
+    Query params:
+        page: Page number (default: 1).
+        per_page: Items per page (default: 20).
+
+    Returns:
+        JSON response with 200 status containing paginated post data with attached
+        images, like counts, and like status for the current user.
+    """
     current_user_id = int(get_jwt_identity())
     page = request.args.get("page", 1, type=int)
     per_page = request.args.get("per_page", 20, type=int)

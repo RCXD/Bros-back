@@ -7,7 +7,7 @@ from apps.config.server import db
 
 
 class SearchHistory(db.Model):
-    """검색 기록 모델"""
+    """Stores per-user search history entries."""
 
     __tablename__ = "search_history"
 
@@ -31,7 +31,11 @@ class SearchHistory(db.Model):
     )
 
     def to_dict(self):
-        """딕셔너리로 변환"""
+        """Serialize the search history entry to a JSON-compatible dictionary.
+
+        Returns:
+            A dictionary containing all public search history fields.
+        """
         return {
             "search_id": self.search_id,
             "user_id": self.user_id,
@@ -43,7 +47,7 @@ class SearchHistory(db.Model):
 
 
 class SearchCache(db.Model):
-    """검색 결과 캐싱 모델 (인기 검색어 등)"""
+    """Cached search result metadata used to surface popular search terms."""
 
     __tablename__ = "search_cache"
 
@@ -60,7 +64,11 @@ class SearchCache(db.Model):
     )
 
     def to_dict(self):
-        """딕셔너리로 변환"""
+        """Serialize the search cache entry to a JSON-compatible dictionary.
+
+        Returns:
+            A dictionary containing the query, type, count, and last searched timestamp.
+        """
         return {
             "cache_id": self.cache_id,
             "search_query": self.search_query,
@@ -73,7 +81,15 @@ class SearchCache(db.Model):
 
     @staticmethod
     def increment_search_count(query, search_type):
-        """검색 횟수 증가"""
+        """Increment the search count for a query, creating a cache entry if absent.
+
+        Args:
+            query: The search query string to track.
+            search_type: The category of search (e.g. ``"post"``, ``"user"``).
+
+        Returns:
+            The updated or newly created ``SearchCache`` instance.
+        """
         cache = SearchCache.query.filter_by(
             search_query=query, search_type=search_type
         ).first()
@@ -95,7 +111,16 @@ class SearchCache(db.Model):
 
     @staticmethod
     def get_popular_searches(search_type=None, limit=10):
-        """인기 검색어 조회"""
+        """Return the most frequently searched queries, optionally filtered by type.
+
+        Args:
+            search_type: Optional category filter (e.g. ``"post"``, ``"user"``).
+                If ``None``, all categories are included.
+            limit: Maximum number of results to return. Defaults to ``10``.
+
+        Returns:
+            A list of ``SearchCache`` instances ordered by descending search count.
+        """
         query = SearchCache.query
 
         if search_type:
