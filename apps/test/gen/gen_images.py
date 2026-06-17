@@ -159,7 +159,7 @@ def _generate_profile_images_direct(app, dummy_profile_dir, profile_storage_dir)
 
     # 기존 프로필 이미지 레코드 삭제 (post_id가 NULL인 이미지)
     log.debug("  기존 프로필 이미지 레코드 정리 중...")
-    Image.query.filter(Image.post_id == None).delete()
+    Image.query.filter(Image.post_id is None).delete()
     db.session.commit()
     log.debug("  기존 프로필 이미지 레코드 삭제 완료")
 
@@ -238,7 +238,7 @@ def _generate_profile_images_direct(app, dummy_profile_dir, profile_storage_dir)
     log.success(f"  성공: {total_success}개")
     if total_failed > 0:
         log.warning(f"  실패: {total_failed}개")
-    log.debug(f"  이미지 레코드: {Image.query.filter(Image.post_id == None).count()}개")
+    log.debug(f"  이미지 레코드: {Image.query.filter(Image.post_id is None).count()}개")
 
 
 def _generate_profile_images_via_api(app, dummy_profile_dir):
@@ -363,8 +363,8 @@ def _generate_profile_images_via_api(app, dummy_profile_dir):
     # 검증: 업로드된 이미지 확인
     log.debug("\n  📊 데이터베이스 검증 중...")
     db.session.expire_all()  # 캐시 무효화
-    users_with_images = User.query.filter(User.profile_img != None).count()
-    profile_images_in_db = Image.query.filter(Image.post_id == None).count()
+    users_with_images = User.query.filter(User.profile_img is not None).count()
+    profile_images_in_db = Image.query.filter(Image.post_id is None).count()
 
     log.success(f"  성공: {total_success}개")
     if total_failed > 0:
@@ -456,7 +456,7 @@ def _generate_images_direct(app, dummy_image_dir, image_storage_dir):
     image_storage_dir.mkdir(parents=True, exist_ok=True)
 
     log.info("기존 게시글 이미지 레코드 정리 중...")
-    Image.query.filter(Image.post_id != None).delete()
+    Image.query.filter(Image.post_id is not None).delete()
     db.session.commit()
     log.info("기존 게시글 이미지 레코드 삭제 완료")
 
@@ -557,7 +557,7 @@ def _generate_images_direct(app, dummy_image_dir, image_storage_dir):
     from apps.post.models import Post
 
     orphan_images = (
-        db.session.query(Image).outerjoin(Post).filter(Post.post_id == None).count()
+        db.session.query(Image).outerjoin(Post).filter(Post.post_id is None).count()
     )
     if orphan_images > 0:
         log.warning(f"{orphan_images}개의 이미지가 존재하지 않는 게시글을 참조합니다!")
